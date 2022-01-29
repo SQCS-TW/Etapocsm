@@ -8,4 +8,4 @@
 
 ## ☘️ Introduction
 
-- A new bot as a alternative of SQCS_Bot (which has shut down due to discord.py outage and bot maintenance), written in JS using official Discord API.
+- A new bot as an alternative of SQCS_Bot (which has shut down due to discord.py outage and bot maintenance), written in JS using official Discord API.
