@@ -2,46 +2,47 @@ const { avail_cadre_choices } = require('../../core/cadre_config.js');
 const { Constants } = require('discord.js');
 const { CogExtension } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
-const { working_guild_id, slCmdChecker } = require('./basic_verify.js');
+const { slCmdChecker } = require('./basic_verify.js');
 
 class Cadre extends CogExtension {
-    slCmdRegister() {
-        const guild = this.bot.guilds.cache.get(working_guild_id);
+    slCmdRegister = () => {
+        let commands = this.working_guild.commands;
 
-        let commands = guild.commands;
+        const cmd_register_list = [
+            {
+                name: 'ping',
+                description: 'Hit the bot!'
+            },
+            {
+                name: 'get_cadre_role',
+                description: '獲取幹部身分組',
+                options: [
+                    {
+                        name: 'role',
+                        description: '你要獲取的幹部身分組',
+                        type: Constants.ApplicationCommandOptionTypes.STRING,
+                        required: true,
+                        choices: avail_cadre_choices
+                    }
+                ]
+            }
+        ]
 
-        commands.create({
-            name: 'ping',
-            description: 'Hit the bot!'
-        });
-
-        commands.create({
-            name: 'get_cadre_role',
-            description: '獲取幹部身分組',
-            options: [
-                {
-                    name: 'role',
-                    description: '你要獲取的幹部身分組',
-                    type: Constants.ApplicationCommandOptionTypes.STRING,
-                    required: true,
-                    choices: avail_cadre_choices
-                }
-            ]
-        });
+        for (const cmd of cmd_register_list) commands.create(cmd)
     };
 
-    slCmdHandler(interaction) {
+    slCmdHandler = async (interaction) => {
         if (!slCmdChecker(interaction)) {
-            interaction.reply(this.check_failed_warning);
+            await interaction.reply(this.check_failed_warning);
             return;
         }
         if (!this.in_use) {
-            interaction.reply(this.not_in_use_warning);
+            await interaction.reply(this.not_in_use_warning);
             return;
         }
 
         if (interaction.commandName === 'ping') {
-            interaction.reply({
+            await interaction.reply({
                 content: 'pong!',
                 ephemeral: false
             });
@@ -51,7 +52,7 @@ class Cadre extends CogExtension {
             const role_token_id = '791680285464199198';
 
             if (!interaction.member.roles.cache.some(role => role.id === role_token_id)) {
-                interaction.reply({
+                await interaction.reply({
                     content: '請求拒絕，你沒有 `role-token` 身分組呦，詳情請洽總召。',
                     ephemeral: true
                 });
@@ -63,7 +64,7 @@ class Cadre extends CogExtension {
             interaction.member.roles.add(role_id);
             interaction.member.roles.remove(role_token_id);
 
-            interaction.reply({
+            await interaction.reply({
                 content: '幹部身分組已給予，請察收！',
                 ephemeral: true
             })
@@ -78,7 +79,9 @@ function setup(bot) {
     Cadre_act.slCmdRegister();
 }
 
-bot.on('interactionCreate', async (interaction) => Cadre_act.slCmdHandler(interaction));
+bot.on('interactionCreate', async (interaction) => {
+    Cadre_act.slCmdHandler(interaction)
+});
 
 module.exports = {
     setup

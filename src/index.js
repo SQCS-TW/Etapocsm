@@ -11,8 +11,10 @@ const bot = new Client({
 
 bot.on('ready', () => {
     console.log(`${bot.user.username} has logged in!`);
+    release_slCmd(bot);
 
     recurLoadCogs('./src/cogs/');
+    console.log('Cogs loaded!');
 });
 
 function recurLoadCogs(dir) {
@@ -26,6 +28,13 @@ function recurLoadCogs(dir) {
             }
         });
     });
+}
+
+function release_slCmd(bot) {
+    working_guild_id = '790978307235512360';
+    working_guild = bot.guilds.cache.get(working_guild_id);
+    let commands = working_guild.commands;
+    commands.set([]);
 }
 
 bot.login(process.env.BOT_TOKEN);

@@ -1,27 +1,29 @@
 const { CogExtension } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
-const { working_guild_id, slCmdChecker } = require('./basic_verify.js');
+const { slCmdChecker } = require('./basic_verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 
 class Test extends CogExtension {
     slCmdRegister() {
-        const guild = this.bot.guilds.cache.get(working_guild_id);
+        let commands = this.working_guild.commands;
 
-        let commands = guild.commands;
+        const cmd_register_list = [
+            {
+                name: 'pong',
+                description: 'Hit the botty!'
+            }
+        ]
 
-        commands.create({
-            name: 'pong',
-            description: 'Hit the botty!'
-        });
+        for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
-    async slCmdHandler(interaction) {
+    slCmdHandler = async (interaction) => {
         if (!slCmdChecker(interaction)) {
-            interaction.reply(this.check_failed_warning);
+            await interaction.reply(this.check_failed_warning);
             return;
         }
         if (!this.in_use) {
-            interaction.reply(this.not_in_use_warning);
+            await interaction.reply(this.not_in_use_warning);
             return;
         }
 
