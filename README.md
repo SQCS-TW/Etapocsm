@@ -15,7 +15,7 @@
 
 ---
 
-> 此專案受社群內 [創作條例](https://hackmd.io/@sqcs-8e9/community_regulations) 保護，以下定義授權範圍。
+> 此專案受 [SBR/URoICC, URoICGC](https://hackmd.io/@sqcs-8e9/community_regulations) 保護，以下定義授權範圍。
 
 ## 操作授權
 
