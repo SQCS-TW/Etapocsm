@@ -1,6 +1,7 @@
 const { CogExtension } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
 const { working_guild_id, slCmdChecker } = require('./basic_verify.js');
+const { Mongo } = require('../../core/db/mongodb.js');
 
 class Test extends CogExtension {
     slCmdRegister() {
@@ -14,7 +15,7 @@ class Test extends CogExtension {
         });
     };
 
-    slCmdHandler(interaction) {
+    async slCmdHandler(interaction) {
         if (!slCmdChecker(interaction)) {
             interaction.reply(this.check_failed_warning);
             return;
@@ -25,10 +26,11 @@ class Test extends CogExtension {
         }
 
         if (interaction.commandName === 'pong') {
-            interaction.reply({
-                content: 'paaaaaaaaaaaaaaaaaaaaaaaang!',
-                ephemeral: false
-            });
+            const db = new Mongo('sqcs-bot');
+            const cursor = db.get_cur('Cadre');
+
+            (await cursor).find({ _id: 0 }).toArray()
+                .then((callback) => console.log(callback));
         }
     };
 };

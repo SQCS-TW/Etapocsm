@@ -5,6 +5,7 @@
 ```markdown
 - 2022/1/30:
   - Setup slCmd Handler
+  - Connect to MongoDB
 
 - 2022/1/29:
   - Setup slCmd
