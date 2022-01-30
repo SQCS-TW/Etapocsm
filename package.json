@@ -1,25 +1,16 @@
 {
-  "name": "Etapocsm",
+  "name": "etapocsm",
   "version": "1.0.0",
   "description": "",
-  "main": "bot.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./bot.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SQCS-TW/Etapocsm.git"
+    "start": "node ./src/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/SQCS-TW/Etapocsm/issues"
-  },
-  "homepage": "https://github.com/SQCS-TW/Etapocsm#readme",
   "dependencies": {
-    "discord.js": "^13.6.0",
-    "dotenv": "^14.3.2"
+    "discord.js": "^13.6.0"
   }
 }
