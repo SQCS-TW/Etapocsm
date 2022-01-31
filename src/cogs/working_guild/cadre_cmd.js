@@ -1,12 +1,12 @@
 const { avail_cadre_choices } = require('../../core/cadre_config.js');
 const { Constants } = require('discord.js');
-const { CogExtension } = require('../../core/cog_config.js');
+const { cogExtension, workingGuildConfig } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
-const { slCmdChecker } = require('./basic_verify.js');
+const { slCmdChecker } = require('./verify.js');
 
 class Cadre extends CogExtension {
     slCmdRegister = () => {
-        let commands = this.working_guild.commands;
+        let commands = (new workingGuildConfig(this.bot)).guild.commands;
 
         const cmd_register_list = [
             {
@@ -28,7 +28,7 @@ class Cadre extends CogExtension {
             }
         ]
 
-        for (const cmd of cmd_register_list) commands.create(cmd)
+        for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
     slCmdHandler = async (interaction) => {
@@ -74,7 +74,7 @@ class Cadre extends CogExtension {
 
 let Cadre_act;
 
-function setup(bot) {
+function promoter(bot) {
     Cadre_act = new Cadre(bot);
     Cadre_act.slCmdRegister();
 }
@@ -84,5 +84,5 @@ bot.on('interactionCreate', async (interaction) => {
 });
 
 module.exports = {
-    setup
+    promoter
 }

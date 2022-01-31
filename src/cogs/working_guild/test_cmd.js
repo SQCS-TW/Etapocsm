@@ -1,11 +1,11 @@
-const { CogExtension } = require('../../core/cog_config.js');
+const { cogExtension, workingGuildConfig } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
-const { slCmdChecker } = require('./basic_verify.js');
+const { slCmdChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 
 class Test extends CogExtension {
     slCmdRegister() {
-        let commands = this.working_guild.commands;
+        let commands = (new workingGuildConfig(this.bot)).guild.commands;
 
         const cmd_register_list = [
             {
@@ -39,7 +39,7 @@ class Test extends CogExtension {
 
 let Test_act;
 
-function setup(bot) {
+function promoter(bot) {
     Test_act = new Test(bot);
     Test_act.slCmdRegister();
 }
@@ -47,5 +47,5 @@ function setup(bot) {
 bot.on('interactionCreate', async (interaction) => Test_act.slCmdHandler(interaction));
 
 module.exports = {
-    setup
+    promoter
 }
