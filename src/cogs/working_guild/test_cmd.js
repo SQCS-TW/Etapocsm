@@ -3,37 +3,32 @@ const { bot } = require('../../index.js');
 const { slCmdChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 
-class Test extends CogExtension {
+class Test extends cogExtension {
     slCmdRegister() {
-        let commands = (new workingGuildConfig(this.bot)).guild.commands;
-
         const cmd_register_list = [
             {
                 name: 'pong',
                 description: 'Hit the botty!'
             }
-        ]
+        ];
 
-        for (const cmd of cmd_register_list) commands.create(cmd);
+        (new workingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
-    slCmdHandler = async (interaction) => {
-        if (!slCmdChecker(interaction)) {
-            await interaction.reply(this.check_failed_warning);
-            return;
-        }
-        if (!this.in_use) {
-            await interaction.reply(this.not_in_use_warning);
-            return;
-        }
+    async slCmdHandler(interaction) {
+        if (!slCmdChecker(interaction)) return;
+        if (!this.in_use) return;
 
-        if (interaction.commandName === 'pong') {
-            const db = new Mongo('sqcs-bot');
-            const cursor = db.get_cur('Cadre');
+        switch (interaction.commandName) {
+            case 'pong': {
+                const db = new Mongo('sqcs-bot');
+                const cursor = db.get_cur('Cadre');
 
-            (await cursor).find({ _id: 0 }).toArray()
-                .then((callback) => console.log(callback));
-        }
+                (await cursor).find({ _id: 0 }).toArray()
+                    .then((callback) => console.log(callback));
+                break;
+            };
+        };
     };
 };
 

@@ -13,7 +13,7 @@ class Mongo {
         this.db = client.db(database);
     }
 
-    async get_cur(collection) {
+    async getCur(collection) {
         return this.db.collection(collection);
     }
 

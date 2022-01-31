@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const fs = require('fs')
 const { Client, Intents } = require('discord.js');
-const { workingGuildConfig } = require('./core/cog_config.js')
+const { mainGuildConfig, workingGuildConfig } = require('./core/cog_config.js')
 
 const bot = new Client({
     intents: [
@@ -20,7 +20,7 @@ bot.on('ready', () => {
 });
 
 function recurLoadCogs(dir) {
-    fs.readdir(dir, files => {
+    fs.readdir(dir, (err, files) => {
         files.forEach(file => {
             if (file.endsWith('.js')) {
                 const { promoter } = require(`./${dir.substring(6)}${file}`);
@@ -33,8 +33,8 @@ function recurLoadCogs(dir) {
 }
 
 function resetSlCmd(bot) {
-    let commands = (new workingGuildConfig(bot)).guild.commands;
-    commands.set([]);
+    (new mainGuildConfig(bot)).slCmdReset();
+    (new workingGuildConfig(bot)).slCmdReset();
 }
 
 bot.login(process.env.BOT_TOKEN);

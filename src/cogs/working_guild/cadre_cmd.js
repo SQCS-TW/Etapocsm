@@ -4,10 +4,8 @@ const { cogExtension, workingGuildConfig } = require('../../core/cog_config.js')
 const { bot } = require('../../index.js');
 const { slCmdChecker } = require('./verify.js');
 
-class Cadre extends CogExtension {
-    slCmdRegister = () => {
-        let commands = (new workingGuildConfig(this.bot)).guild.commands;
-
+class Cadre extends cogExtension {
+    slCmdRegister() {
         const cmd_register_list = [
             {
                 name: 'ping',
@@ -26,48 +24,46 @@ class Cadre extends CogExtension {
                     }
                 ]
             }
-        ]
+        ];
 
-        for (const cmd of cmd_register_list) commands.create(cmd);
+        (new workingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
-    slCmdHandler = async (interaction) => {
-        if (!slCmdChecker(interaction)) {
-            await interaction.reply(this.check_failed_warning);
-            return;
-        }
-        if (!this.in_use) {
-            await interaction.reply(this.not_in_use_warning);
-            return;
-        }
+    async slCmdHandler(interaction) {
+        if (!slCmdChecker(interaction)) return;
+        if (!this.in_use) return;
 
-        if (interaction.commandName === 'ping') {
-            await interaction.reply({
-                content: 'pong!',
-                ephemeral: false
-            });
-        }
-
-        if (interaction.commandName === 'get_cadre_role') {
-            const role_token_id = '791680285464199198';
-
-            if (!interaction.member.roles.cache.some(role => role.id === role_token_id)) {
+        switch (interaction.commandName) {
+            case 'ping': {
                 await interaction.reply({
-                    content: '請求拒絕，你沒有 `role-token` 身分組呦，詳情請洽總召。',
+                    content: 'pong!',
+                    ephemeral: false
+                });
+                break;
+            };
+            case 'get_cadre_role': {
+                await interaction.deferReply();
+                const role_token_id = '791680285464199198';
+
+                if (!interaction.member.roles.cache.some(role => role.id === role_token_id)) {
+                    await interaction.editReply({
+                        content: '請求拒絕，你沒有 `role-token` 身分組呦，詳情請洽總召。',
+                        ephemeral: true
+                    });
+                    return;
+                };
+
+                const role_id = interaction.options.getString('role');
+
+                interaction.member.roles.add(role_id);
+                interaction.member.roles.remove(role_token_id);
+
+                await interaction.editReply({
+                    content: '幹部身分組已給予，請察收！',
                     ephemeral: true
                 });
-                return;
-            }
-
-            const role_id = interaction.options.getString('role');
-
-            interaction.member.roles.add(role_id);
-            interaction.member.roles.remove(role_token_id);
-
-            await interaction.reply({
-                content: '幹部身分組已給予，請察收！',
-                ephemeral: true
-            })
+                break;
+            };
         };
     };
 };
@@ -79,9 +75,7 @@ function promoter(bot) {
     Cadre_act.slCmdRegister();
 }
 
-bot.on('interactionCreate', async (interaction) => {
-    Cadre_act.slCmdHandler(interaction)
-});
+bot.on('interactionCreate', async (interaction) => Cadre_act.slCmdHandler(interaction));
 
 module.exports = {
     promoter
