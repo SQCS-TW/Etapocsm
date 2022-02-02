@@ -24,8 +24,9 @@ class Test extends cogExtension {
                 const db = new Mongo('sqcs-bot');
                 const cursor = db.get_cur('Cadre');
 
-                (await cursor).find({ _id: 0 }).toArray()
-                    .then((callback) => console.log(callback));
+                let data = await (await cursor).find({ _id: 0 }).toArray();
+
+                console.log(data);
                 break;
             };
         };
