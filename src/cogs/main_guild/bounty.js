@@ -71,7 +71,7 @@ class bountyManager extends cogExtension {
 class bountyAccountManager {
     constructor(member_id) {
         this.member_id = member_id;
-        this.cursor = (new Mongo('Etapocsm')).getCur('BountyAccounts');
+        this.cursor = (new Mongo('Bounty')).getCur('Accounts');
     };
 
     async checkAccount() {
