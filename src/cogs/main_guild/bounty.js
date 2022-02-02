@@ -5,7 +5,7 @@ const { Mongo } = require('../../core/db/mongodb.js');
 const { Constants } = require('discord.js')
 
 
-class quizManager extends cogExtension {
+class bountyManager extends cogExtension {
     slCmdRegister() {
         const cmd_register_list = [
             {
@@ -108,14 +108,14 @@ class bountyAccountManager {
 }
 
 
-let quizManager_act;
+let bountyManager_act;
 
 function promoter(bot) {
-    quizManager_act = new quizManager(bot);
-    quizManager_act.slCmdRegister();
+    bountyManager_act = new quizManager(bot);
+    bountyManager_act.slCmdRegister();
 }
 
-bot.on('interactionCreate', async (interaction) => quizManager_act.slCmdHandler(interaction));
+bot.on('interactionCreate', async (interaction) => bountyManager_act.slCmdHandler(interaction));
 
 module.exports = {
     promoter
