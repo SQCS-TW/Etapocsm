@@ -111,7 +111,7 @@ class bountyAccountManager {
 let bountyManager_act;
 
 function promoter(bot) {
-    bountyManager_act = new quizManager(bot);
+    bountyManager_act = new bountyManager(bot);
     bountyManager_act.slCmdRegister();
 }
 
