@@ -68,6 +68,7 @@ class bountyManager extends cogExtension {
     };
 }
 
+
 class bountyAccountManager {
     constructor(member_id) {
         this.member_id = member_id;
@@ -104,6 +105,23 @@ class bountyAccountManager {
 
         console.log('ack', result.acknowledged);
         return result.acknowledged;
+    };
+}
+
+
+class bountyQnsDBManager extends cogExtension {
+    slCmdRegister() {
+        const cmd_register_list = [
+            {
+                name: 'upload_'
+            }
+        ];
+
+        (new mainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
+    };
+
+    async slCmdHandler() {
+
     };
 }
 

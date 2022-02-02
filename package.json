@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "child_process": "^1.0.2",
     "discord.js": "^13.6.0",
     "dotenv": "^14.3.2",
     "mongodb": "^4.3.1"
