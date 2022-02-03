@@ -1,5 +1,5 @@
 import os
-from ...uplink_python import Uplink, ListObjectsOptions
+from uplink_python import Uplink, ListObjectsOptions
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -44,4 +44,4 @@ def get_folder_size(bucket_name: str, prefix: str = ''):
         ListObjectsOptions(**options)
     )
 
-    return len([obj.key for obj in objects_list])
+    return len([obj.key for obj in objects_list if (obj.key.endswith('.png') or obj.key.endswith('.jpg'))])

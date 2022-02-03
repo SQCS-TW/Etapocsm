@@ -48,13 +48,13 @@ class bountyManager extends cogExtension {
     async slCmdHandler(interaction) {
         if (!slCmdChecker(interaction)) return;
         if (!this.in_use) return;
+        if (interaction.channel.id !== '743677861000380527') return;
 
         switch (interaction.commandName) {
             case 'activate_bounty': {
                 await interaction.deferReply({ ephemeral: true });
                 let account_status = await (new bountyAccountManager(interaction.member.id)).checkAccount();
 
-                console.log('as', account_status);
                 if (!account_status) {
                     await interaction.editReply({
                         content: '[帳號 創建/登入 錯誤] 請洽總召！',
@@ -69,11 +69,20 @@ class bountyManager extends cogExtension {
                 });
 
                 const diffi = interaction.options.getInteger('difficulty');
-                const total_qns_count = get_folder_size('bounty-questions-db', `${diffi}/`);
+                const total_qns_count = await get_folder_size('bounty-questions-db', `${diffi}/`);
                 const number = this.getRandomInt(total_qns_count);
 
-                let result = await storj_download('bounty-questions-db', `${diffi}/${number}.png`, `./assets/buffer/storj/${number}.png`);
-                if (!result) return;
+                let result = await storj_download('bounty-questions-db', `./assets/buffer/storj/${number}.png`, `${diffi}/${number}.png`);
+                if (!result) {
+                    await interaction.followUp({
+                        content: '[題目獲取錯誤] 請洽總召！',
+                        files: [
+                            './assets/gif/error.gif'
+                        ],
+                        ephemeral: true
+                    });
+                    return;
+                };
 
                 await interaction.followUp({
                     content: '[題目]',
@@ -83,7 +92,7 @@ class bountyManager extends cogExtension {
                     ephemeral: true
                 });
 
-                fs.unlink(`./assets/buffer/storj/${number}.png`);
+                fs.unlink(`./assets/buffer/storj/${number}.png`, (err) => { });
 
                 // push to pipeline
                 break;
@@ -104,7 +113,6 @@ class bountyAccountManager {
 
         if (!member_data) {
             let create_status = await this._createAccount();
-            console.log('create_status', create_status);
             return create_status;
         } else {
             return true;
@@ -127,7 +135,6 @@ class bountyAccountManager {
 
         let result = await (await this.cursor).insertOne(default_member_data);
 
-        console.log('ack', result.acknowledged);
         return result.acknowledged;
     };
 }

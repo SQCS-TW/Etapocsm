@@ -3,6 +3,9 @@
 `version 2.0.3.0.1.30`
 
 ```markdown
+- 2022/02/03:
+  - Finish storj transfer func.
+
 - 2022/02/02:
   - Setup BountyAccont slcmd
   - Integrate Uplink-pyhon api wrapper

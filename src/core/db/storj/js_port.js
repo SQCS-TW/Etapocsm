@@ -1,25 +1,20 @@
-const spawn = require("child_process").spawn;
+const execSync = require("child_process").execSync;
 
-async function storj_download(bucket_name, db_file_name, local_file_name) {
-    const pythonProcess = spawn('python', ["./js_port.py", 'storj_download', bucket_name, db_file_name, local_file_name]);
-    let download = await new Promise((resolve) => {
-        pythonProcess.stdout.on('data', (data) => {
-            console.log(data.toString());
-            resolve('Ok');
-        });
-    });
-    if (download) return true;
+
+async function storj_download(bucket_name, local_file_name, db_file_name) {
+    let download_result = execSync(`python ./src/core/db/storj/py_port.py download_file ${bucket_name} ${local_file_name} ${db_file_name}`);
+    download_result = download_result.toString("utf-8");
+
+    download_result = (download_result.trim() === 'true');
+    return download_result;
 }
 
 async function get_folder_size(bucket_name, prefix) {
-    const pythonProcess = spawn('python', ["./js_port.py", 'get_folder_size', bucket_name, prefix]);
-    let size = await new Promise((resolve) => {
-        pythonProcess.stdout.on('data', (data) => {
-            resolve(data.toString());
-        });
-    });
-    return size;
+    let size = execSync(`python ./src/core/db/storj/py_port.py get_folder_size ${bucket_name} ${prefix}`);
+    size = size.toString('utf-8');
+    return Number(size);
 }
+
 
 module.exports = {
     storj_download,
