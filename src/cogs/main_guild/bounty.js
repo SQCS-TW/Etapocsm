@@ -2,7 +2,9 @@ const { cogExtension, mainGuildConfig } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
 const { slCmdChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
-const { Constants } = require('discord.js')
+const { Constants } = require('discord.js');
+const { storj_download, get_folder_size } = require('../../core/db/storj/js_port.js');
+const fs = require('fs');
 
 
 class bountyManager extends cogExtension {
@@ -39,6 +41,10 @@ class bountyManager extends cogExtension {
         (new mainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
+    getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
+
     async slCmdHandler(interaction) {
         if (!slCmdChecker(interaction)) return;
         if (!this.in_use) return;
@@ -58,10 +64,28 @@ class bountyManager extends cogExtension {
                 };
 
                 await interaction.editReply({
-                    content: '[帳號檢查完畢][活動開始] ...！',
+                    content: '[帳號檢查完畢] 活動開始！',
                     ephemeral: true
                 });
 
+                const diffi = interaction.options.getInteger('difficulty');
+                const total_qns_count = get_folder_size('bounty-questions-db', `${diffi}/`);
+                const number = this.getRandomInt(total_qns_count);
+
+                let result = await storj_download('bounty-questions-db', `${diffi}/${number}.png`, `./assets/buffer/storj/${number}.png`);
+                if (!result) return;
+
+                await interaction.followUp({
+                    content: '[題目]',
+                    files: [
+                        `./assets/buffer/storj/${number}.png`
+                    ],
+                    ephemeral: true
+                });
+
+                fs.unlink(`./assets/buffer/storj/${number}.png`);
+
+                // push to pipeline
                 break;
             };
         }
@@ -105,23 +129,6 @@ class bountyAccountManager {
 
         console.log('ack', result.acknowledged);
         return result.acknowledged;
-    };
-}
-
-
-class bountyQnsDBManager extends cogExtension {
-    slCmdRegister() {
-        const cmd_register_list = [
-            {
-                name: 'upload_'
-            }
-        ];
-
-        (new mainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
-    };
-
-    async slCmdHandler() {
-
     };
 }
 

@@ -1,5 +1,5 @@
 import os
-from .....local_module import Uplink
+from ...uplink_python import Uplink, ListObjectsOptions
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,3 +29,19 @@ def download_file(bucket_name: str, local_path: str, storj_path: str):
         download.read_file(file_handle)
         # close the download stream
         download.close()
+
+
+def get_folder_size(bucket_name: str, prefix: str = ''):
+    # default options
+    options = {
+        "prefix": prefix,
+        "recursive": True,
+        "system": False
+    }
+
+    objects_list = project.list_objects(
+        bucket_name,
+        ListObjectsOptions(**options)
+    )
+
+    return len([obj.key for obj in objects_list])
