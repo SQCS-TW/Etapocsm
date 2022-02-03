@@ -33,15 +33,16 @@ class Test extends cogExtension {
     };
 };
 
+
 let Test_act;
 
 function promoter(bot) {
     Test_act = new Test(bot);
     Test_act.slCmdRegister();
-}
+};
 
 bot.on('interactionCreate', async (interaction) => Test_act.slCmdHandler(interaction));
 
 module.exports = {
     promoter
-}
+};

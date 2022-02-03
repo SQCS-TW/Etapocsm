@@ -5,8 +5,8 @@ function slCmdChecker(interaction) {
     if (interaction.guildId !== working_guild_id) return false;
 
     return true;
-}
+};
 
 module.exports = {
     slCmdChecker
-}
+};

@@ -41,6 +41,7 @@ class Cadre extends cogExtension {
                 });
                 break;
             };
+
             case 'get_cadre_role': {
                 await interaction.deferReply();
                 const role_token_id = '791680285464199198';
@@ -68,6 +69,7 @@ class Cadre extends cogExtension {
     };
 };
 
+
 let Cadre_act;
 
 function promoter(bot) {
@@ -79,4 +81,4 @@ bot.on('interactionCreate', async (interaction) => Cadre_act.slCmdHandler(intera
 
 module.exports = {
     promoter
-}
+};

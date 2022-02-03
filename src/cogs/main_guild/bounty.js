@@ -43,7 +43,7 @@ class bountyManager extends cogExtension {
 
     getRandomInt(max) {
         return Math.floor(Math.random() * max);
-    }
+    };
 
     async slCmdHandler(interaction) {
         if (!slCmdChecker(interaction)) return;
@@ -97,9 +97,9 @@ class bountyManager extends cogExtension {
                 // push to pipeline
                 break;
             };
-        }
+        };
     };
-}
+};
 
 
 class bountyAccountManager {
@@ -116,7 +116,7 @@ class bountyAccountManager {
             return create_status;
         } else {
             return true;
-        }
+        };
     };
 
     async _createAccount() {
@@ -137,7 +137,7 @@ class bountyAccountManager {
 
         return result.acknowledged;
     };
-}
+};
 
 
 let bountyManager_act;
@@ -145,10 +145,10 @@ let bountyManager_act;
 function promoter(bot) {
     bountyManager_act = new bountyManager(bot);
     bountyManager_act.slCmdRegister();
-}
+};
 
 bot.on('interactionCreate', async (interaction) => bountyManager_act.slCmdHandler(interaction));
 
 module.exports = {
     promoter
-}
+};
