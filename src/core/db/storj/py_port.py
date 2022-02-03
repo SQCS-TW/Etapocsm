@@ -10,16 +10,23 @@ if mode == 'download_file':
     local_path = sys.argv[3]
     download_path = sys.argv[4]
 
-    download_file(
-        bucket_name=bucket_name,
-        local_path=local_path,
-        storj_path=download_path
-    )
+    try:
+        download_file(
+            bucket_name=bucket_name,
+            local_path=local_path,
+            storj_path=download_path
+        )
 
-    print('true')
+        print('true')
+    except Exception as e:
+        print('false')
+
 elif mode == 'get_folder_size':
     bucket_name = sys.argv[2]
     prefix = sys.argv[3]
 
-    size = get_folder_size(bucket_name=bucket_name, prefix=prefix)
-    print(size)
+    try:
+        size = get_folder_size(bucket_name=bucket_name, prefix=prefix)
+        print(size)
+    except:
+        print('false')

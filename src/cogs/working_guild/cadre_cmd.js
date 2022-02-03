@@ -48,7 +48,7 @@ class Cadre extends cogExtension {
 
                 if (!interaction.member.roles.cache.some(role => role.id === role_token_id)) {
                     await interaction.editReply({
-                        content: '請求拒絕，你沒有 `role-token` 身分組呦，詳情請洽總召。',
+                        content: ':x:**【請求拒絕】**你沒有 `role-token` 身分組呦，詳情請洽總召。',
                         ephemeral: true
                     });
                     return;
@@ -60,7 +60,7 @@ class Cadre extends cogExtension {
                 interaction.member.roles.remove(role_token_id);
 
                 await interaction.editReply({
-                    content: '幹部身分組已給予，請察收！',
+                    content: ':white_check_mark:**【請求接受】**幹部身分組已給予，請察收！',
                     ephemeral: true
                 });
                 break;

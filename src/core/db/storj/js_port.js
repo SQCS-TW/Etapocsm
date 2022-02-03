@@ -12,6 +12,8 @@ async function storj_download(bucket_name, local_file_name, db_file_name) {
 async function get_folder_size(bucket_name, prefix) {
     let size = execSync(`python ./src/core/db/storj/py_port.py get_folder_size ${bucket_name} ${prefix}`);
     size = size.toString('utf-8');
+    
+    if (size === 'false') return false;
     return Number(size);
 };
 

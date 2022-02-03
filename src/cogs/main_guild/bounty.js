@@ -57,14 +57,14 @@ class bountyManager extends cogExtension {
 
                 if (!account_status) {
                     await interaction.editReply({
-                        content: '[帳號 創建/登入 錯誤] 請洽總召！',
+                        content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！',
                         ephemeral: true
                     })
                     return;
                 };
 
                 await interaction.editReply({
-                    content: '[帳號檢查完畢] 活動開始！',
+                    content: ':white_check_mark:**【帳號檢查完畢】**活動開始！',
                     ephemeral: true
                 });
 
@@ -75,7 +75,7 @@ class bountyManager extends cogExtension {
                 let result = await storj_download('bounty-questions-db', `./assets/buffer/storj/${number}.png`, `${diffi}/${number}.png`);
                 if (!result) {
                     await interaction.followUp({
-                        content: '[題目獲取錯誤] 請洽總召！',
+                        content: ':x:**【題目獲取錯誤】**請洽總召！',
                         files: [
                             './assets/gif/error.gif'
                         ],
@@ -85,7 +85,7 @@ class bountyManager extends cogExtension {
                 };
 
                 await interaction.followUp({
-                    content: '[題目]',
+                    content: '**【題目】**',
                     files: [
                         `./assets/buffer/storj/${number}.png`
                     ],
