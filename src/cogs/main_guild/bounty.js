@@ -17,20 +17,20 @@ class bountyManager extends cogExtension {
                     {
                         name: 'difficulty',
                         description: '難度',
-                        type: Constants.ApplicationCommandOptionTypes.INTEGER,
+                        type: Constants.ApplicationCommandOptionTypes.STRING,
                         require: true,
                         choices: [
                             {
                                 name: '簡單',
-                                value: 0
+                                value: 'easy'
                             },
                             {
                                 name: '中等',
-                                value: 1
+                                value: 'medium'
                             },
                             {
                                 name: '困難',
-                                value: 2
+                                value: 'hard'
                             }
                         ]
                     }
@@ -59,7 +59,7 @@ class bountyManager extends cogExtension {
                     await interaction.editReply({
                         content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！',
                         ephemeral: true
-                    })
+                    });
                     return;
                 };
 

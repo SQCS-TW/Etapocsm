@@ -4,6 +4,7 @@ const fs = require('fs')
 const { Client, Intents } = require('discord.js');
 const { mainGuildConfig, workingGuildConfig } = require('./core/cog_config.js')
 
+
 const bot = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
@@ -30,15 +31,15 @@ function recurLoadCogs(dir) {
             }
         });
     });
-}
+};
 
 function resetSlCmd(bot) {
     (new mainGuildConfig(bot)).slCmdReset();
     (new workingGuildConfig(bot)).slCmdReset();
-}
+};
 
 bot.login(process.env.BOT_TOKEN);
 
 module.exports = {
     bot
-}
+};
