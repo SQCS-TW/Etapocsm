@@ -3,7 +3,7 @@ const { bot } = require('../../index.js');
 const { slCmdChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 const { Constants } = require('discord.js');
-const { storj_download, get_folder_size, get_folder_files } = require('../../core/db/storj/js_port.js');
+const { storj_download, get_folder_files } = require('../../core/db/storj/js_port.js');
 const fs = require('fs');
 
 
@@ -53,8 +53,8 @@ class bountyManager extends cogExtension {
         switch (interaction.commandName) {
             case 'activate_bounty': {
                 await interaction.deferReply({ ephemeral: true });
-                let account_status = await (new bountyAccountManager(interaction.member.id)).checkAccount();
 
+                let account_status = await (new bountyAccountManager(interaction.member.id)).checkAccount();
                 if (!account_status) {
                     await interaction.editReply({
                         content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！',
@@ -69,10 +69,18 @@ class bountyManager extends cogExtension {
                 });
 
                 const diffi = interaction.options.getString('difficulty');
-                const files = await get_folder_files('bounty-questions-db', `${diffi}/`, '.png-.jpg');
+                const files = await get_folder_files(
+                    bucket_name = 'bounty-questions-db',
+                    prefix = `${diffi}/`,
+                    suffixes = '.png-.jpg'
+                );
                 const random_filename = files[this.getRandomInt(files.length)];
 
-                let result = await storj_download('bounty-questions-db', `./assets/buffer/storj/${random_filename}`, `${diffi}/${random_filename}`);
+                let result = await storj_download(
+                    bucket_name = 'bounty-questions-db',
+                    local_file_name = `./assets/buffer/storj/${random_filename}`,
+                    db_file_nmae = `${diffi}/${random_filename}`
+                );
                 if (!result) {
                     await interaction.followUp({
                         content: ':x:**【題目獲取錯誤】**請洽總召！',
@@ -159,8 +167,14 @@ class bountyQuestionsManager extends cogExtension {
         switch (interaction.commandName) {
             case 'activate': {
                 await interaction.deferReply();
+
                 for (const diffi of ['easy', 'medium', 'hard']) {
-                    const file_names = await get_folder_files('bounty-questions-db', `${diffi}/`, '.png-.jpg');
+                    const file_names = await get_folder_files(
+                        bucket_name = 'bounty-questions-db',
+                        prefix = `${diffi}/`,
+                        suffixes = '.png-.jpg'
+                    );
+
                     for (let i = 0; i < file_names.length; i++) {
                         file_names[i] = file_names[i]
                             .replace(".png", '')
@@ -177,7 +191,7 @@ class bountyQuestionsManager extends cogExtension {
                             time_avail: 150
                         };
 
-                        (await cursor).insertOne(qns_data);
+                        await (await cursor).insertOne(qns_data);
                     };
                 };
                 await interaction.editReply(':white_check_mark: 問題資料庫已建立！');

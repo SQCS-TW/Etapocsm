@@ -18,7 +18,6 @@ bot.on('ready', async () => {
     await resetSlCmd(bot);
     console.log('Cogs reseted!');
 
-
     await new Promise(resolve => {
         recurLoadCogs('./src/cogs/');
         resolve('ok!');
