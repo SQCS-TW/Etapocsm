@@ -31,7 +31,7 @@ def download_file(bucket_name: str, local_path: str, storj_path: str):
         download.close()
 
 
-def get_folder_size(bucket_name: str, prefix: str = ''):
+def list_objects(bucket_name: str, prefix: str = '', suffixes: list = []):
     # default options
     options = {
         "prefix": prefix,
@@ -44,4 +44,18 @@ def get_folder_size(bucket_name: str, prefix: str = ''):
         ListObjectsOptions(**options)
     )
 
-    return len([obj.key for obj in objects_list if (obj.key.endswith('.png') or obj.key.endswith('.jpg'))])
+    objects_name_list = [obj.key for obj in objects_list]
+    
+    def suffix_finding(string: str):
+        in_list = False
+        for suffix in suffixes:
+            if string.endswith(suffix):
+                in_list = True
+                break
+
+        return in_list
+    
+    if suffixes:
+        objects_name_list = filter(lambda name: suffix_finding(name), objects_name_list)
+    
+    return objects_name_list

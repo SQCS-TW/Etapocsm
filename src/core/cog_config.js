@@ -26,7 +26,7 @@ class mainGuildConfig {
         for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
-    slCmdReset() {
+    async slCmdReset() {
         let commands = this.guild.commands;
         commands.set([]);
     };
@@ -44,7 +44,7 @@ class workingGuildConfig {
         for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
-    slCmdReset() {
+    async slCmdReset() {
         let commands = this.guild.commands;
         commands.set([]);
     };

@@ -12,11 +12,17 @@ const bot = new Client({
     ]
 });
 
-bot.on('ready', () => {
+bot.on('ready', async () => {
     console.log(`${bot.user.username} has logged in!`);
-    resetSlCmd(bot);
 
-    recurLoadCogs('./src/cogs/');
+    await resetSlCmd(bot);
+    console.log('Cogs reseted!');
+
+
+    await new Promise(resolve => {
+        recurLoadCogs('./src/cogs/');
+        resolve('ok!');
+    });
     console.log('Cogs loaded!');
 });
 
@@ -33,9 +39,9 @@ function recurLoadCogs(dir) {
     });
 };
 
-function resetSlCmd(bot) {
-    (new mainGuildConfig(bot)).slCmdReset();
-    (new workingGuildConfig(bot)).slCmdReset();
+async function resetSlCmd(bot) {
+    await (new mainGuildConfig(bot)).slCmdReset();
+    await (new workingGuildConfig(bot)).slCmdReset();
 };
 
 bot.login(process.env.BOT_TOKEN);
