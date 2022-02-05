@@ -1,13 +1,15 @@
 # Etapocsm
 
-[![forthebadge](https://forthebadge.com/images/badges/made-with-javascript.svg)](https://forthebadge.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![JS](https://img.shields.io/badge/MADE%20WITH-JAVASCRIPT-yellow?style=for-the-badge)
+![PY](https://img.shields.io/badge/MIXED%20WITH-PYTHON-blue?style=for-the-badge)
+![MIT](https://img.shields.io/badge/LICENSE-MIT-brightgreen?style=for-the-badge)
+![HEART](https://img.shields.io/badge/MADE%20WITH-%F0%9F%92%96-red?style=for-the-badge)
 
 <img src="https://i.imgur.com/MrSR8kJ.jpg" alt="icon" width=400>
 
 ## 🔧 Developer
 
-- Programed and run by `@phantom0174`, made with ❤️️.
+- Programed and run by `@phantom0174`.
 
 ## ☘️ Introduction
 
