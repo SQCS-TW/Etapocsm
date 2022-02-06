@@ -79,7 +79,7 @@ class bountyManager extends cogExtension {
                 let result = await storj_download(
                     bucket_name = 'bounty-questions-db',
                     local_file_name = `./assets/buffer/storj/${random_filename}`,
-                    db_file_nmae = `${diffi}/${random_filename}`
+                    db_file_name = `${diffi}/${random_filename}`
                 );
                 if (!result) {
                     await interaction.followUp({
