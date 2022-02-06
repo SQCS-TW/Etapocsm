@@ -17,11 +17,11 @@ if mode == 'download_file':
             storj_path=download_path
         )
         print('true')
-    
+
     except:
         print('false')
 
-elif mode == 'get_folder_size':
+elif mode == 'getFolderSize':
     bucket_name = sys.argv[2]
     prefix = sys.argv[3]
 
@@ -37,11 +37,11 @@ elif mode == 'get_folder_size':
             suffixes=suffixes
         ))
         print(size)
-    
+
     except:
         print('false')
 
-elif mode == 'get_folder_files':
+elif mode == 'getFolderFiles':
     bucket_name = sys.argv[2]
     prefix = sys.argv[3]
 
@@ -58,6 +58,6 @@ elif mode == 'get_folder_files':
         )
         filenames = [filename[len(prefix):] for filename in filenames]
         print(str(filenames)[1:-1])  # ['e1', 'e2', ..., 'en'] -> 'e1', 'e2', ..., 'en'
-    
+
     except:
         print('false')

@@ -2,9 +2,9 @@ const { exec } = require("child_process");
 const execSync = require("child_process").execSync;
 
 
-async function storj_download(bucket_name, local_file_name, db_file_name) {
+async function storjDownload(bucket_name, local_file_name, db_file_name) {
     let command = `python ./src/core/db/storj/py_port.py download_file ${bucket_name} ${local_file_name} ${db_file_name}`;
-    
+
     let download_result = execSync(command);
     download_result = download_result.toString("utf-8");
 
@@ -12,8 +12,8 @@ async function storj_download(bucket_name, local_file_name, db_file_name) {
     return download_result;
 };
 
-async function get_folder_size(bucket_name, prefix, suffixes) {
-    let command = `python ./src/core/db/storj/py_port.py get_folder_size ${bucket_name} ${prefix}`;
+async function getFolderSize(bucket_name, prefix, suffixes) {
+    let command = `python ./src/core/db/storj/py_port.py getFolderSize ${bucket_name} ${prefix}`;
     if (suffixes) command += ` ${suffixes}`;
 
     let size = execSync(command);
@@ -23,8 +23,8 @@ async function get_folder_size(bucket_name, prefix, suffixes) {
     return Number(size);
 };
 
-async function get_folder_files(bucket_name, prefix, suffixes) {
-    let command = `python ./src/core/db/storj/py_port.py get_folder_files ${bucket_name} ${prefix}`;
+async function getFolderFiles(bucket_name, prefix, suffixes) {
+    let command = `python ./src/core/db/storj/py_port.py getFolderFiles ${bucket_name} ${prefix}`;
     if (suffixes) command += ` ${suffixes}`;
 
     let filenames = execSync(command);
@@ -43,7 +43,7 @@ async function get_folder_files(bucket_name, prefix, suffixes) {
 
 
 module.exports = {
-    storj_download,
-    get_folder_size,
-    get_folder_files
+    storjDownload,
+    getFolderSize,
+    getFolderFiles
 };

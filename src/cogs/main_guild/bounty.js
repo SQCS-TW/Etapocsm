@@ -1,13 +1,13 @@
-const { cogExtension, mainGuildConfig } = require('../../core/cog_config.js');
+const { CogExtension, MainGuildConfig } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
 const { slCmdChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 const { Constants } = require('discord.js');
-const { storj_download, get_folder_files } = require('../../core/db/storj/js_port.js');
+const { storjDownload, getFolderFiles } = require('../../core/db/storj/js_port.js');
 const fs = require('fs');
 
 
-class bountyManager extends cogExtension {
+class BountyManager extends CogExtension {
     slCmdRegister() {
         const cmd_register_list = [
             {
@@ -38,7 +38,7 @@ class bountyManager extends cogExtension {
             }
         ];
 
-        (new mainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
+        (new MainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
     getRandomInt(max) {
@@ -69,14 +69,14 @@ class bountyManager extends cogExtension {
                 });
 
                 const diffi = interaction.options.getString('difficulty');
-                const files = await get_folder_files(
+                const files = await getFolderFiles(
                     bucket_name = 'bounty-questions-db',
                     prefix = `${diffi}/`,
                     suffixes = '.png-.jpg'
                 );
                 const random_filename = files[this.getRandomInt(files.length)];
 
-                let result = await storj_download(
+                let result = await storjDownload(
                     bucket_name = 'bounty-questions-db',
                     local_file_name = `./assets/buffer/storj/${random_filename}`,
                     db_file_name = `${diffi}/${random_filename}`
@@ -148,7 +148,7 @@ class bountyAccountManager {
 };
 
 
-class bountyQuestionsManager extends cogExtension {
+class BountyQuestionsManager extends CogExtension {
     slCmdRegister() {
         const cmd_register_list = [
             {
@@ -157,7 +157,7 @@ class bountyQuestionsManager extends cogExtension {
             }
         ];
 
-        (new mainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
+        (new MainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
     async slCmdHandler(interaction) {
@@ -169,7 +169,7 @@ class bountyQuestionsManager extends cogExtension {
                 await interaction.deferReply();
 
                 for (const diffi of ['easy', 'medium', 'hard']) {
-                    const file_names = await get_folder_files(
+                    const file_names = await getFolderFiles(
                         bucket_name = 'bounty-questions-db',
                         prefix = `${diffi}/`,
                         suffixes = '.png-.jpg'
@@ -201,19 +201,19 @@ class bountyQuestionsManager extends cogExtension {
 };
 
 
-let bountyManager_act;
-let bountyQuestionsManager_act;
+let BountyManager_act;
+let BountyQuestionsManager_act;
 
 function promoter(bot) {
-    bountyManager_act = new bountyManager(bot);
-    bountyManager_act.slCmdRegister();
+    BountyManager_act = new BountyManager(bot);
+    BountyManager_act.slCmdRegister();
 
-    bountyQuestionsManager_act = new bountyQuestionsManager(bot);
-    bountyQuestionsManager_act.slCmdRegister();
+    BountyQuestionsManager_act = new BountyQuestionsManager(bot);
+    BountyQuestionsManager_act.slCmdRegister();
 };
 
-bot.on('interactionCreate', async (interaction) => bountyManager_act.slCmdHandler(interaction));
-bot.on('interactionCreate', async (interaction) => bountyQuestionsManager_act.slCmdHandler(interaction));
+bot.on('interactionCreate', async (interaction) => BountyManager_act.slCmdHandler(interaction));
+bot.on('interactionCreate', async (interaction) => BountyQuestionsManager_act.slCmdHandler(interaction));
 
 
 module.exports = {

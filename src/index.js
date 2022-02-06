@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const fs = require('fs')
 const { Client, Intents } = require('discord.js');
-const { mainGuildConfig, workingGuildConfig } = require('./core/cog_config.js')
+const { MainGuildConfig, WorkingGuildConfig } = require('./core/cog_config.js');
 
 
 const bot = new Client({
@@ -39,8 +39,8 @@ function recurLoadCogs(dir) {
 };
 
 async function resetSlCmd(bot) {
-    await (new mainGuildConfig(bot)).slCmdReset();
-    await (new workingGuildConfig(bot)).slCmdReset();
+    await (new MainGuildConfig(bot)).slCmdReset();
+    await (new WorkingGuildConfig(bot)).slCmdReset();
 };
 
 bot.login(process.env.BOT_TOKEN);

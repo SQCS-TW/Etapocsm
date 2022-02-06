@@ -1,10 +1,10 @@
 const { avail_cadre_choices } = require('../../core/cadre_config.js');
 const { Constants } = require('discord.js');
-const { cogExtension, workingGuildConfig } = require('../../core/cog_config.js');
+const { CogExtension, WorkingGuildConfig } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
 const { slCmdChecker } = require('./verify.js');
 
-class Cadre extends cogExtension {
+class Cadre extends CogExtension {
     slCmdRegister() {
         const cmd_register_list = [
             {
@@ -26,7 +26,7 @@ class Cadre extends cogExtension {
             }
         ];
 
-        (new workingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
+        (new WorkingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
     async slCmdHandler(interaction) {
