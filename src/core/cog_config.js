@@ -11,6 +11,8 @@ class CogExtension {
             content: '[Warning] This cog is currently not in use!',
             ephemeral: true
         };
+
+        this.error_gif = ['./assets/gif/error.gif'];
     };
 };
 

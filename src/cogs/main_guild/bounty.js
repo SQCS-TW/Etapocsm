@@ -84,9 +84,7 @@ class BountyManager extends CogExtension {
                 if (!result) {
                     await interaction.followUp({
                         content: ':x:**【題目獲取錯誤】**請洽總召！',
-                        files: [
-                            './assets/gif/error.gif'
-                        ],
+                        files: this.error_gif,
                         ephemeral: true
                     });
                     return;
@@ -102,7 +100,50 @@ class BountyManager extends CogExtension {
 
                 fs.unlink(`./assets/buffer/storj/${random_filename}`, (err) => { });
 
-                // push to pipeline
+                // push to pipeline: warning: not tested yet
+                const qns_cursor = (new Mongo('Bounty')).getCur('Questions');
+
+                const qns_id = random_filename
+                    .replace(".png", '')
+                    .replace(".jpg", '');
+
+                const qns_data = (await qns_cursor).findOne({ _id: qns_id });
+                const time_until = Date.now() + qns_data.time_avail * 1000; // in miliseconds
+
+                const player_data = {
+                    _id: interaction.member.id,
+                    stop_time: time_until
+                };
+
+                const pipeline_cursor = (new Mongo('Bounty')).getCur('OngoingPipeline');
+                const result = await (await pipeline_cursor).insertOne(player_data);
+
+                if (!result.acknowledged) {
+                    await interaction.followUp({
+                        content: ':x:**【計時檔案建立錯誤】**請洽總召！',
+                        files: this.error_gif,
+                        ephemeral: true
+                    });
+                    return;
+                };
+
+                const account_cursor = (new Mongo('Bounty')).getCur('Accounts');
+                const execute = {
+                    $set: {
+                        active: true
+                    }
+                };
+
+                const result = await (await account_cursor).updateOne({ _id: interaction.member.id }, execute);
+                if (!result.acknowledged) {
+                    await interaction.followUp({
+                        content: ':x:**【個人狀態設定錯誤】**請洽總召！',
+                        files: this.error_gif,
+                        ephemeral: true
+                    });
+                    return;
+                };
+
                 break;
             };
         };
