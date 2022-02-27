@@ -15,6 +15,7 @@ class Mongo {
     };
 
     async getCur(collection) {
+        // return the cursor of collection: "collection"
         return this.db.collection(collection);
     };
 

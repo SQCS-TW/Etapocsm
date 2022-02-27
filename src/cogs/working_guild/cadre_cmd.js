@@ -44,6 +44,8 @@ class Cadre extends CogExtension {
 
             case 'get_cadre_role': {
                 await interaction.deferReply();
+
+                // the id of dc_role: "role-token"
                 const role_token_id = '791680285464199198';
 
                 if (!interaction.member.roles.cache.some(role => role.id === role_token_id)) {
@@ -53,7 +55,8 @@ class Cadre extends CogExtension {
                     });
                     return;
                 };
-
+                
+                // the id of the role that the user applies for
                 const role_id = interaction.options.getString('role');
 
                 interaction.member.roles.add(role_id);

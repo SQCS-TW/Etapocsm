@@ -48,11 +48,13 @@ class WorkingGuildConfig {
     };
 
     slCmdCreater(cmd_register_list) {
+        // same as above
         let commands = this.guild.commands;
         for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
     async slCmdReset() {
+        // same as above
         let commands = this.guild.commands;
         commands.set([]);
     };

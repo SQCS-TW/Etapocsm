@@ -7,7 +7,6 @@ function slCmdChecker(interaction) {
     return true;
 };
 
-
 function buttonChecker(interaction) {
     if (!interaction.isButton()) return false;
     if (interaction.guildId !== working_guild_id) return false;

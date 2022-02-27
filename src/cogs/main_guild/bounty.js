@@ -1,6 +1,6 @@
 const { CogExtension, MainGuildConfig } = require('../../core/cog_config.js');
 const { bot } = require('../../index.js');
-const { slCmdChecker } = require('./verify.js');
+const { slCmdChecker, buttonChecker, dropdownChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 const { Constants } = require('discord.js');
 const { storjDownload, getFolderFiles } = require('../../core/db/storj/js_port.js');
@@ -12,29 +12,7 @@ class BountyManager extends CogExtension {
         const cmd_register_list = [
             {
                 name: 'activate_bounty',
-                description: '開始懸賞活動',
-                options: [
-                    {
-                        name: 'difficulty',
-                        description: '難度',
-                        type: Constants.ApplicationCommandOptionTypes.STRING,
-                        require: true,
-                        choices: [
-                            {
-                                name: '簡單',
-                                value: 'easy'
-                            },
-                            {
-                                name: '中等',
-                                value: 'medium'
-                            },
-                            {
-                                name: '困難',
-                                value: 'hard'
-                            }
-                        ]
-                    }
-                ]
+                description: '開始懸賞活動'
             }
         ];
 
@@ -48,21 +26,10 @@ class BountyManager extends CogExtension {
     async slCmdHandler(interaction) {
         if (!slCmdChecker(interaction)) return;
         if (!this.in_use) return;
+
+        // only receive messages from the bounty-use channel
+        // currently use cmd-use channel for testing
         if (interaction.channel.id !== '743677861000380527') return;
-
-        console.log(interaction);
-        console.log(interaction.id);
-        const channel_mng = this.bot.channels;
-        const channel = await channel_mng.fetch('743677861000380527');
-        const msg_mng = channel.messages;
-        console.log(msg_mng);
-        console.log(typeof msg_mng);
-
-        const obj = await msg_mng.fetch(String(interaction.id));
-        console.log(obj.content);
-        console.log(obj.id);
-
-        return;
 
         switch (interaction.commandName) {
             case 'activate_bounty': {
@@ -82,81 +49,179 @@ class BountyManager extends CogExtension {
                     ephemeral: true
                 });
 
-                const diffi = interaction.options.getString('difficulty');
-                const files = await getFolderFiles(
-                    bucket_name = 'bounty-questions-db',
-                    prefix = `${diffi}/`,
-                    suffixes = '.png-.jpg'
-                );
-                const random_filename = files[this.getRandomInt(files.length)];
-
-                let result = await storjDownload(
-                    bucket_name = 'bounty-questions-db',
-                    local_file_name = `./assets/buffer/storj/${random_filename}`,
-                    db_file_name = `${diffi}/${random_filename}`
-                );
-                if (!result) {
-                    await interaction.followUp({
-                        content: ':x:**【題目獲取錯誤】**請洽總召！',
-                        files: this.error_gif,
-                        ephemeral: true
-                    });
-                    return;
-                };
-
-                await interaction.followUp({
-                    content: '**【題目】**',
-                    files: [
-                        `./assets/buffer/storj/${random_filename}`
-                    ],
+                const dropdown_msg = await interaction.followUp({
+                    content: '請選擇問題難度（限時 15 秒）',
+                    components: this.bounty_qns_difficulty_dropdown,
+                    fetchReply: true,
                     ephemeral: true
                 });
+                const dropdown_id = dropdown_msg.id;
 
-                fs.unlink(`./assets/buffer/storj/${random_filename}`, (err) => { });
+                const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
 
-                // push to pipeline: warning: not tested yet
-                const qns_cursor = (new Mongo('Bounty')).getCur('Questions');
+                const player_application = {
+                    _id: interaction.user.id,
+                    linked_dropdown_id: dropdown_id,
+                    type: 'choose_bounty_qns_difficulty',
+                    due_time: Date.now() + 15 * 1000
+                }
 
-                const qns_id = random_filename
-                    .replace(".png", '')
-                    .replace(".jpg", '');
-
-                const qns_data = (await qns_cursor).findOne({ _id: qns_id });
-                const time_until = Date.now() + qns_data.time_avail * 1000; // in miliseconds
-
-                const player_data = {
-                    _id: interaction.member.id,
-                    stop_time: time_until
-                };
-
-                const pipeline_cursor = (new Mongo('Bounty')).getCur('OngoingPipeline');
-                const ongoing_data_insert_result = await (await pipeline_cursor).insertOne(player_data);
-
-                if (!ongoing_data_insert_result.acknowledged) {
+                const apply_result = await (await cursor).insertOne(player_application);
+                if (!apply_result.acknowledged) {
+                    await dropdown_msg.delete();
                     await interaction.followUp({
-                        content: ':x:**【計時檔案建立錯誤】**請洽總召！',
+                        content: ':x:**【選單申請錯誤】**請洽總召！',
                         files: this.error_gif,
                         ephemeral: true
                     });
+
                     return;
                 };
 
-                const account_cursor = (new Mongo('Bounty')).getCur('Accounts');
-                const execute = {
-                    $set: {
-                        active: true
-                    }
-                };
+                break;
 
-                const update_result = await (await account_cursor).updateOne({ _id: interaction.member.id }, execute);
-                if (!update_result.acknowledged) {
-                    await interaction.followUp({
-                        content: ':x:**【個人狀態設定錯誤】**請洽總召！',
+                // const diffi = interaction.options.getString('difficulty');
+                // const files = await getFolderFiles(
+                //     bucket_name = 'bounty-questions-db',
+                //     prefix = `${diffi}/`,
+                //     suffixes = '.png-.jpg'
+                // );
+                // const random_filename = files[this.getRandomInt(files.length)];
+
+                // let result = await storjDownload(
+                //     bucket_name = 'bounty-questions-db',
+                //     local_file_name = `./assets/buffer/storj/${random_filename}`,
+                //     db_file_name = `${diffi}/${random_filename}`
+                // );
+                // if (!result) {
+                //     await interaction.followUp({
+                //         content: ':x:**【題目獲取錯誤】**請洽總召！',
+                //         files: this.error_gif,
+                //         ephemeral: true
+                //     });
+                //     return;
+                // };
+
+                // await interaction.followUp({
+                //     content: '**【題目】**',
+                //     files: [
+                //         `./assets/buffer/storj/${random_filename}`
+                //     ],
+                //     ephemeral: true
+                // });
+
+                // fs.unlink(`./assets/buffer/storj/${random_filename}`, (err) => { });
+
+                // // push to pipeline: warning: not tested yet
+                // const qns_cursor = (new Mongo('Bounty')).getCur('Questions');
+
+                // const qns_id = random_filename
+                //     .replace(".png", '')
+                //     .replace(".jpg", '');
+
+                // const qns_data = (await qns_cursor).findOne({ _id: qns_id });
+                // const time_until = Date.now() + qns_data.time_avail * 1000; // in miliseconds
+
+                // const player_data = {
+                //     _id: interaction.member.id,
+                //     stop_time: time_until
+                // };
+
+                // const pipeline_cursor = (new Mongo('Bounty')).getCur('OngoingPipeline');
+                // const ongoing_data_insert_result = await (await pipeline_cursor).insertOne(player_data);
+
+                // if (!ongoing_data_insert_result.acknowledged) {
+                //     await interaction.followUp({
+                //         content: ':x:**【計時檔案建立錯誤】**請洽總召！',
+                //         files: this.error_gif,
+                //         ephemeral: true
+                //     });
+                //     return;
+                // };
+
+                // const account_cursor = (new Mongo('Bounty')).getCur('Accounts');
+                // const execute = {
+                //     $set: {
+                //         active: true
+                //     }
+                // };
+
+                // const update_result = await (await account_cursor).updateOne({ _id: interaction.member.id }, execute);
+                // if (!update_result.acknowledged) {
+                //     await interaction.followUp({
+                //         content: ':x:**【個人狀態設定錯誤】**請洽總召！',
+                //         files: this.error_gif,
+                //         ephemeral: true
+                //     });
+                //     return;
+                // };
+            };
+        };
+    };
+
+
+    bounty_qns_difficulty_dropdown = [
+        {
+            type: 1,
+            components: [
+                {
+                    type: 3,
+                    placeholder: "選個難度吧！",
+                    custom_id: "choose_bounty_qns_difficulty",
+                    options: [
+                        {
+                            label: "簡單",
+                            value: "easy"
+                        },
+                        {
+                            label: "中等",
+                            value: "medium"
+                        },
+                        {
+                            label: "困難",
+                            value: "hard"
+                        }
+                    ],
+                    min_values: 1,
+                    max_values: 1,
+                    disabled: false
+                }
+            ]
+        }
+    ];
+
+    async dropdownHandler(interaction) {
+        if (!dropdownChecker(interaction)) return;
+        if (!this.in_use) return;
+
+        // only receive messages from the bounty-use channel
+        // currently use cmd-use channel for testing
+        if (interaction.channel.id !== '743677861000380527') return;
+
+        switch (interaction.component.customId) {
+            case 'choose_bounty_qns_difficulty': {
+                await interaction.deferReply({ ephemeral: true });
+
+                const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
+
+                const verify = {
+                    _id: interaction.user.id,
+                    type: 'choose_bounty_qns_difficulty'
+                };
+                const player_application = await (await cursor).findOne(verify);
+
+                if (!player_application) {
+                    await interaction.editReply({
+                        content: ':x:**【申請認證錯誤】**選單已經逾期；或是請勿重複選擇。',
                         files: this.error_gif,
                         ephemeral: true
                     });
+
                     return;
                 };
+
+                await (await cursor).deleteOne(verify);
+                await interaction.editReply(`you clicked ${interaction.values}!`);
 
                 break;
             };
@@ -267,7 +332,11 @@ function promoter(bot) {
     BountyQuestionsManager_act.slCmdRegister();
 };
 
-bot.on('interactionCreate', async (interaction) => BountyManager_act.slCmdHandler(interaction));
+bot.on('interactionCreate', async (interaction) => {
+    await BountyManager_act.slCmdHandler(interaction);
+    await BountyManager_act.dropdownHandler(interaction);
+});
+
 bot.on('interactionCreate', async (interaction) => BountyQuestionsManager_act.slCmdHandler(interaction));
 
 

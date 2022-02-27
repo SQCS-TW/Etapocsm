@@ -32,6 +32,7 @@ def download_file(bucket_name: str, local_path: str, storj_path: str):
 
 
 def list_objects(bucket_name: str, prefix: str = '', suffixes: list = []):
+    # "prefix": a certain path
     # default options
     options = {
         "prefix": prefix,
@@ -45,7 +46,7 @@ def list_objects(bucket_name: str, prefix: str = '', suffixes: list = []):
     )
 
     objects_name_list = [obj.key for obj in objects_list]
-    
+
     def suffix_finding(string: str):
         in_list = False
         for suffix in suffixes:
@@ -54,8 +55,8 @@ def list_objects(bucket_name: str, prefix: str = '', suffixes: list = []):
                 break
 
         return in_list
-    
+
     if suffixes:
         objects_name_list = filter(lambda name: suffix_finding(name), objects_name_list)
-    
+
     return objects_name_list

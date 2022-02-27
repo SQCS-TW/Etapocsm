@@ -1,4 +1,9 @@
-const { exec } = require("child_process");
+/*
+
+    此檔案為利用 js 呼叫 py 的 js -> js 端口
+
+*/
+
 const execSync = require("child_process").execSync;
 
 
