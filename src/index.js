@@ -18,6 +18,8 @@ bot.on('ready', async () => {
     await resetSlCmd(bot);
     console.log('Cogs reseted!');
 
+    // directly transforming recursive func: "recurLoadCogs" into async func 
+    // will cause weird problems
     await new Promise(resolve => {
         recurLoadCogs('./src/cogs/');
         resolve('ok!');
@@ -26,6 +28,7 @@ bot.on('ready', async () => {
 });
 
 function recurLoadCogs(dir) {
+    // load "cogs" files with func: "promoter" under ./cogs/
     fs.readdir(dir, (err, files) => {
         files.forEach(file => {
             if (file.endsWith('.js')) {
@@ -39,6 +42,7 @@ function recurLoadCogs(dir) {
 };
 
 async function resetSlCmd(bot) {
+    // clear registered slash commands in every guild
     await (new MainGuildConfig(bot)).slCmdReset();
     await (new WorkingGuildConfig(bot)).slCmdReset();
 };

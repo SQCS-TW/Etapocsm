@@ -50,6 +50,20 @@ class BountyManager extends CogExtension {
         if (!this.in_use) return;
         if (interaction.channel.id !== '743677861000380527') return;
 
+        console.log(interaction);
+        console.log(interaction.id);
+        const channel_mng = this.bot.channels;
+        const channel = await channel_mng.fetch('743677861000380527');
+        const msg_mng = channel.messages;
+        console.log(msg_mng);
+        console.log(typeof msg_mng);
+
+        const obj = await msg_mng.fetch(String(interaction.id));
+        console.log(obj.content);
+        console.log(obj.id);
+
+        return;
+
         switch (interaction.commandName) {
             case 'activate_bounty': {
                 await interaction.deferReply({ ephemeral: true });
@@ -116,9 +130,9 @@ class BountyManager extends CogExtension {
                 };
 
                 const pipeline_cursor = (new Mongo('Bounty')).getCur('OngoingPipeline');
-                const result = await (await pipeline_cursor).insertOne(player_data);
+                const ongoing_data_insert_result = await (await pipeline_cursor).insertOne(player_data);
 
-                if (!result.acknowledged) {
+                if (!ongoing_data_insert_result.acknowledged) {
                     await interaction.followUp({
                         content: ':x:**【計時檔案建立錯誤】**請洽總召！',
                         files: this.error_gif,
@@ -134,8 +148,8 @@ class BountyManager extends CogExtension {
                     }
                 };
 
-                const result = await (await account_cursor).updateOne({ _id: interaction.member.id }, execute);
-                if (!result.acknowledged) {
+                const update_result = await (await account_cursor).updateOne({ _id: interaction.member.id }, execute);
+                if (!update_result.acknowledged) {
                     await interaction.followUp({
                         content: ':x:**【個人狀態設定錯誤】**請洽總召！',
                         files: this.error_gif,

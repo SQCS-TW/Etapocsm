@@ -4,14 +4,12 @@ const fs = require('fs');
 // warning: not tested yet
 
 /*
-* * * * * *
-| | | | | |
-| | | | | day of week
-| | | | month
-| | | day of month
-| | hour
-| minute
-second ( optional )
+    * --- day of week
+    * --- month
+    * --- day of month
+    * --- hour
+    * --- minute
+    * --- second (optional)
 */
 
 function checkOngoingPipelineDueTime() {

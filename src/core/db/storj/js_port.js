@@ -23,7 +23,12 @@ async function getFolderSize(bucket_name, prefix, suffixes) {
     return Number(size);
 };
 
-async function getFolderFiles(bucket_name, prefix, suffixes) {
+async function getFolderFiles(options) { // bucket_name, prefix, suffixes
+    /*
+        options = {
+            bucket_name: 
+        }
+    */
     let command = `python ./src/core/db/storj/py_port.py getFolderFiles ${bucket_name} ${prefix}`;
     if (suffixes) command += ` ${suffixes}`;
 

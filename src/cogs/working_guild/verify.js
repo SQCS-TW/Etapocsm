@@ -7,6 +7,23 @@ function slCmdChecker(interaction) {
     return true;
 };
 
+
+function buttonChecker(interaction) {
+    if (!interaction.isButton()) return false;
+    if (interaction.guildId !== working_guild_id) return false;
+
+    return true;
+};
+
+function dropdownChecker(interaction) {
+    if (!interaction.isSelectMenu()) return false;
+    if (interaction.guildId !== working_guild_id) return false;
+
+    return true;
+};
+
 module.exports = {
-    slCmdChecker
+    slCmdChecker,
+    buttonChecker,
+    dropdownChecker
 };

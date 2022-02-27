@@ -7,11 +7,15 @@ class CogExtension {
             content: '[Warning] This command is unavailable!',
             ephemeral: true
         };
+
+        // an alternative for "load" and "unload" concept from discord.py
+        // actual feature is not written yet
         this.not_in_use_warning = {
             content: '[Warning] This cog is currently not in use!',
             ephemeral: true
         };
 
+        // file to send when sth goes wrong
         this.error_gif = ['./assets/gif/error.gif'];
     };
 };
@@ -24,11 +28,13 @@ class MainGuildConfig {
     };
 
     slCmdCreater(cmd_register_list) {
+        // register slCmds in array: "cmd_register_list"
         let commands = this.guild.commands;
         for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
     async slCmdReset() {
+        // reset slCmds registered in guild: "this.guild"
         let commands = this.guild.commands;
         commands.set([]);
     };
