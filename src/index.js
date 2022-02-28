@@ -15,8 +15,8 @@ const bot = new Client({
 bot.on('ready', async () => {
     console.log(`${bot.user.username} has logged in!`);
 
-    await resetSlCmd(bot);
-    console.log('Cogs reseted!');
+    //await resetSlCmd(bot);
+    //console.log('Cogs reseted!');
 
     // directly transforming recursive func: "recurLoadCogs" into async func 
     // will cause weird problems

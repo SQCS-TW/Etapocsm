@@ -4,8 +4,6 @@ const { slCmdChecker, buttonChecker, dropdownChecker } = require('./verify.js');
 const { Mongo } = require('../../core/db/mongodb.js');
 
 
-const clone = async (obj) => { return JSON.parse(JSON.stringify(obj)); }
-
 class Test extends CogExtension {
     slCmdRegister() {
         const cmd_register_list = [
@@ -32,10 +30,9 @@ class Test extends CogExtension {
 
         switch (interaction.commandName) {
             case 'pong': {
-                const db = new Mongo('sqcs-bot');
-                const cursor = db.get_cur('Cadre');
+                const cursor = await (new Mongo('Bounty')).getCur('Accounts');
 
-                let data = await (await cursor).find({ _id: 0 }).toArray();
+                let data = await cursor.find({}).toArray();
 
                 console.log(data);
                 break;
@@ -187,7 +184,7 @@ let Test_act;
 
 function promoter(bot) {
     Test_act = new Test(bot);
-    Test_act.slCmdRegister();
+    //Test_act.slCmdRegister();
 };
 
 bot.on('interactionCreate', async (interaction) => {

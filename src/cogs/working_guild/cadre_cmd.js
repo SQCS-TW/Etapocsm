@@ -77,7 +77,7 @@ let Cadre_act;
 
 function promoter(bot) {
     Cadre_act = new Cadre(bot);
-    Cadre_act.slCmdRegister();
+    //Cadre_act.slCmdRegister();
 };
 
 bot.on('interactionCreate', async (interaction) => Cadre_act.slCmdHandler(interaction));
