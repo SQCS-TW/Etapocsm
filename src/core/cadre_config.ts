@@ -25,6 +25,6 @@ const avail_cadre_choices = [
     }
 ]
 
-module.exports = {
+export {
     avail_cadre_choices
 };

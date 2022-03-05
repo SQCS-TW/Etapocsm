@@ -1,6 +1,7 @@
-const cron = require('node-cron');
-const fs = require('fs');
-const { Mongo } = require('../../core/db/mongodb.js');
+import cron from 'node-cron';
+import fs from 'fs';
+import { Mongo } from '../../core/db/mongodb';
+import { Client } from 'discord.js'
 
 /*
     * --- day of week
@@ -11,14 +12,14 @@ const { Mongo } = require('../../core/db/mongodb.js');
     * --- second (optional)
 */
 
-class BountyTaskManager extends CogExtension {
+// class BountyTaskManager extends CogExtension {
 
-}
+// }
 
 async function checkOngoingPipeline() {
-    const json_path = './assets/buffer/bounty/player_data.json'
+    const json_path = './cache/bounty/player_data.json'
 
-    const rawdata = fs.readFileSync(json_path);
+    const rawdata: string = String(fs.readFileSync(json_path));
     const player_data = JSON.parse(rawdata);
 
     if (Object.keys(player_data).length === 0) {
@@ -31,7 +32,7 @@ async function checkOngoingPipeline() {
         if (!nearest_due_data) return;
 
         const player_data = {
-            id: nearest_due_data._id,
+            user_id: nearest_due_data.user_id,
             recent_due_time: nearest_due_data.due_time
         };
 
@@ -51,19 +52,19 @@ async function checkMenuApplications() {
     const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
     const data = await cursor.find({}).toArray();
 
-    for (let i = 0; i < data.length; i++) {
-        if (data[i].due_time < Date.now()) {
-            await cursor.deleteOne({ _id: data[i]._id });
+    data.forEach(async (item) => {
+        if (item.due_time < Date.now()) {
+            await cursor.deleteOne({ user_id: item.user_id });
             console.log('deleted:');
-            console.log(data[i]);
+            console.log(item);
         };
-    };
+    });
 };
 
-let BountyTaskManager_act;
+// let BountyTaskManager_act;
 
-function promoter(bot) {
-    BountyTaskManager_act = new BountyTaskManager(bot);
+function promoter(bot: Client) {
+    // BountyTaskManager_act = new BountyTaskManager(bot);
 
     // do this every 5 seconds
     cron.schedule('*/5 * * * * *', checkMenuApplications);

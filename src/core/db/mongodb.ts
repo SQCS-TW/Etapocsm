@@ -1,4 +1,4 @@
-import { Db, MongoClient, Collection } from "mongodb";
+import { Db, MongoClient, Collection, ObjectId } from "mongodb";
 
 const MONGODB_ACCOUNT = process.env.MONGODB_ACCOUNT;
 const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD;
@@ -7,6 +7,11 @@ const uri: string = `mongodb+srv://${MONGODB_ACCOUNT}:${MONGODB_PASSWORD}@atlas.
 const client = new MongoClient(uri);
 
 client.connect();
+
+interface MongoDataInterface {
+    _id: ObjectId
+    [key: string]: any
+}
 
 class Mongo {
     db: Db;
@@ -33,5 +38,6 @@ class Mongo {
 
 
 export {
-    Mongo
+    Mongo,
+    MongoDataInterface
 };

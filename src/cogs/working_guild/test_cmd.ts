@@ -1,8 +1,8 @@
-import { CogExtension, WorkingGuildConfig } from '../../core/cog_config.js';
-import { bot } from '../../index.js';
-import { slCmdChecker, buttonChecker, dropdownChecker } from './verify.js';
-import { Mongo } from '../../core/db/mongodb.js';
-import { Client } from 'discord.js';
+import { CogExtension, WorkingGuildConfig } from '../../core/cog_config';
+import { bot } from '../../index';
+import { interactionChecker } from './verify';
+import { Mongo } from '../../core/db/mongodb';
+import { Client, CommandInteraction, ButtonInteraction, SelectMenuInteraction } from 'discord.js';
 
 
 class Test extends CogExtension {
@@ -29,8 +29,7 @@ class Test extends CogExtension {
         (new WorkingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
-    async slCmdHandler(interaction) {
-        if (!slCmdChecker(interaction)) return;
+    async slCmdHandler(interaction: CommandInteraction) {
         if (!this.in_use) return;
 
         switch (interaction.commandName) {
@@ -89,11 +88,10 @@ class Test extends CogExtension {
 
     butt_msg: any = 0;
 
-    async buttonHandler(interaction) {
-        if (!buttonChecker(interaction)) return;
+    async buttonHandler(interaction: ButtonInteraction) {
         if (!this.in_use) return;
 
-        switch (interaction.component.customId) {
+        switch (interaction.customId) {
             case 'click_one': {
                 // let edit_butt = await clone(this.butt_row);
                 // edit_butt[0].components[0].disabled = true;
@@ -160,11 +158,10 @@ class Test extends CogExtension {
 
     drop_msg: any = 0;
 
-    async dropdownHandler(interaction) {
-        if (!dropdownChecker(interaction)) return;
+    async dropdownHandler(interaction: SelectMenuInteraction) {
         if (!this.in_use) return;
 
-        switch (interaction.component.customId) {
+        switch (interaction.customId) {
             case 'select dd': {
                 // let edit_drop = await clone(this.drop_row);
                 // edit_drop[0].components[0].disabled = true;
@@ -185,7 +182,7 @@ class Test extends CogExtension {
 };
 
 
-let Test_act;
+let Test_act: Test;
 
 function promoter(bot: Client) {
     Test_act = new Test(bot);
@@ -193,9 +190,15 @@ function promoter(bot: Client) {
 };
 
 bot.on('interactionCreate', async (interaction) => {
-    await Test_act.slCmdHandler(interaction);
-    await Test_act.buttonHandler(interaction);
-    await Test_act.dropdownHandler(interaction);
+    if (!interactionChecker(interaction)) return;
+
+    if (interaction.isCommand()) {
+        await Test_act.slCmdHandler(interaction);
+    } else if (interaction.isButton()) {
+        await Test_act.buttonHandler(interaction);
+    } else if (interaction.isSelectMenu()) {
+        await Test_act.dropdownHandler(interaction);
+    };
 });
 
 export {

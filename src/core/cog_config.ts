@@ -7,7 +7,7 @@ class CogExtension {
     not_in_use_warning: InteractionReplyOptions;
     error_gif: Array<string>
     
-    constructor(bot) {
+    constructor(bot: Client) {
         this.bot = bot;
         this.in_use = true;
 
@@ -61,7 +61,7 @@ class WorkingGuildConfig {
         this.guild = bot.guilds.cache.get(this.guildId);
     };
 
-    slCmdCreater(cmd_register_list) {
+    slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
         // same as above
         let commands = this.guild.commands;
         for (const cmd of cmd_register_list) commands.create(cmd);

@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import fs from 'fs';
 import { Client, Intents } from 'discord.js';
-import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config.js';
+import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config';
 
 
 const bot = new Client({
@@ -15,8 +15,8 @@ const bot = new Client({
 bot.on('ready', async () => {
     console.log(`${bot.user.username} has logged in!`);
 
-    //await resetSlCmd(bot);
-    //console.log('Cogs reseted!');
+    // await resetSlCmd(bot);
+    // console.log('Cogs reseted!');
 
     // directly transforming recursive func: "recurLoadCogs" into async func 
     // will cause weird problems
@@ -27,11 +27,13 @@ bot.on('ready', async () => {
     console.log('Cogs loaded!');
 });
 
+declare function require(name: string): any;
+
 function recurLoadCogs(dir: string): void {
     // load "cogs" files with func: "promoter" under ./cogs/
     fs.readdir(dir, (err, files) => {
         files.forEach(file => {
-            if (file.endsWith('.js')) {
+            if (file.endsWith('.ts')) {
                 const { promoter } = require(`./${dir.substring(6)}${file}`);
                 if (promoter) promoter(bot);
             } else if (file.indexOf('.') === -1) {
@@ -41,7 +43,7 @@ function recurLoadCogs(dir: string): void {
     });
 };
 
-async function resetSlCmd(bot): Promise<void> {
+async function resetSlCmd(bot: Client): Promise<void> {
     // clear registered slash commands in every guild
     await (new MainGuildConfig(bot)).slCmdReset();
     await (new WorkingGuildConfig(bot)).slCmdReset();

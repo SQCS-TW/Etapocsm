@@ -1,21 +1,17 @@
-import { CogExtension, MainGuildConfig } from'../../core/cog_config.js';
-import { bot } from '../../index.js';
-import { slCmdChecker, dropdownChecker } from './verify.js';
-import { Mongo } from '../../core/db/mongodb.js';
-import { storjDownload, getFolderFiles } from '../../core/db/storj/js_port.js';
+import { CogExtension, MainGuildConfig } from '../../core/cog_config';
+import { bot } from '../../index';
+import { interactionChecker } from './verify';
+import { Mongo, MongoDataInterface } from '../../core/db/mongodb';
+import { storjDownload, getFolderFiles } from '../../core/db/storj/ts_port';
 import fs from 'fs';
-import { timeAfterSecs, getRandomInt, verifyMenuApplication } from '../../core/utils.js';
-import { CommandInteraction, SelectMenuInteraction, InteractionReplyOptions } from 'discord.js'
-import { ObjectId, Collection } from 'mongodb';
+import { timeAfterSecs, getRandomInt, verifyMenuApplication } from '../../core/utils';
+import { CommandInteraction, SelectMenuInteraction, ApplicationCommandData, Client } from 'discord.js'
+import { Collection, ObjectId } from 'mongodb';
 
-interface MongoData {
-    _id: ObjectId
-    [key: string]: any
-}
 
 class BountyManager extends CogExtension {
     slCmdRegister() {
-        const cmd_register_list = [
+        const cmd_register_list: Array<ApplicationCommandData> = [
             {
                 name: 'activate_bounty',
                 description: '開始懸賞活動'
@@ -26,7 +22,6 @@ class BountyManager extends CogExtension {
     };
 
     async slCmdHandler(interaction: CommandInteraction) {
-        if (!slCmdChecker(interaction)) return;
         if (!this.in_use) return;
 
         // only receive messages from the bounty-use channel
@@ -54,7 +49,7 @@ class BountyManager extends CogExtension {
                 // avoid redundant application
                 const redundant_data = await cursor.findOne(
                     {
-                        _id: interaction.user.id,
+                        user_id: interaction.user.id,
                         type: 'choose_bounty_qns_difficulty',
                     }
                 );
@@ -85,8 +80,9 @@ class BountyManager extends CogExtension {
                     ephemeral: true
                 });
 
-                const player_application: MongoData = {
-                    _id: new ObjectId(interaction.user.id),
+                const player_application: MongoDataInterface = {
+                    _id: new ObjectId(),
+                    user_id: interaction.user.id,
                     type: 'choose_bounty_qns_difficulty',
                     due_time: (await timeAfterSecs(15))
                 };
@@ -139,7 +135,6 @@ class BountyManager extends CogExtension {
     ];
 
     async dropdownHandler(interaction: SelectMenuInteraction) {
-        if (!dropdownChecker(interaction)) return;
         if (!this.in_use) return;
 
         // only receive messages from the bounty-use channel
@@ -152,8 +147,9 @@ class BountyManager extends CogExtension {
 
                 // check if there's exists such an application:
                 const verify = {
-                    _id: interaction.user.id,
-                    type: 'choose_bounty_qns_difficulty'
+                    _id: new ObjectId(),
+                    user_id: interaction.user.id,
+                    type: "choose_bounty_qns_difficulty"
                 };
                 if (!(await verifyMenuApplication(verify))) {
                     await interaction.editReply({
@@ -236,10 +232,11 @@ class BountyManager extends CogExtension {
             .replace(".png", '')
             .replace(".jpg", '');
 
-        const qns_data = await qns_cursor.findOne({ _id: qns_id });
+        const qns_data = await qns_cursor.findOne({ qns_id: qns_id });
 
         const player_data = {
-            _id: player_id,
+            _id: new ObjectId(),
+            user_id: player_id,
             difficulty: diffi,
             qns_id: qns_id,
             due_time: await timeAfterSecs(qns_data.time_avail)
@@ -272,7 +269,7 @@ class BountyManager extends CogExtension {
                 active: true
             }
         };
-        const update_result = await account_cursor.updateOne({ _id: player_id }, execute);
+        const update_result = await account_cursor.updateOne({ user_id: player_id }, execute);
         if (!update_result.acknowledged) return {
             result: false,
             message: {
@@ -301,7 +298,7 @@ class bountyAccountManager {
     };
 
     async checkAccount() {
-        let member_data = await (await this.cursor_promise).findOne({ _id: this.member_id });
+        let member_data = await (await this.cursor_promise).findOne({ user_id: this.member_id });
 
         if (!member_data) {
             const create_status = await this._createAccount();
@@ -312,8 +309,9 @@ class bountyAccountManager {
     };
 
     async _createAccount() {
-        const default_member_data: MongoData = {
-            _id: new ObjectId(this.member_id),
+        const default_member_data: MongoDataInterface = {
+            _id: new ObjectId(),
+            user_id: this.member_id,
             stamina: {
                 regular: 3,
                 extra: 0
@@ -353,7 +351,6 @@ class BountyQuestionsManager extends CogExtension {
     };
 
     async slCmdHandler(interaction) {
-        if (!slCmdChecker(interaction)) return;
         if (!interaction.member.roles.cache.some(role => role.id === '743512491929239683')) return;
 
         switch (interaction.commandName) {
@@ -377,7 +374,8 @@ class BountyQuestionsManager extends CogExtension {
 
                     for (const file_name of file_names) {
                         const qns_data = {
-                            _id: file_name,
+                            _id: new ObjectId(),
+                            qns_id: file_name,
                             difficulty: diffi,
                             ans: '',
                             time_avail: 150
@@ -393,10 +391,10 @@ class BountyQuestionsManager extends CogExtension {
 };
 
 
-let BountyManager_act;
-let BountyQuestionsManager_act;
+let BountyManager_act: BountyManager;
+let BountyQuestionsManager_act: BountyQuestionsManager;
 
-function promoter(bot) {
+function promoter(bot: Client) {
     BountyManager_act = new BountyManager(bot);
     //BountyManager_act.slCmdRegister();
 
@@ -405,12 +403,17 @@ function promoter(bot) {
 };
 
 bot.on('interactionCreate', async (interaction) => {
-    await BountyManager_act.slCmdHandler(interaction);
-    await BountyManager_act.dropdownHandler(interaction);
+    console.log('int!');
+    if (!interactionChecker(interaction)) return;
+
+    if (interaction.isCommand()) {
+        console.log('cmdact!');
+        await BountyManager_act.slCmdHandler(interaction);
+        await BountyQuestionsManager_act.slCmdHandler(interaction);
+    } else if (interaction.isSelectMenu()) {
+        await BountyManager_act.dropdownHandler(interaction);
+    };
 });
-
-bot.on('interactionCreate', async (interaction) => BountyQuestionsManager_act.slCmdHandler(interaction));
-
 
 export {
     promoter

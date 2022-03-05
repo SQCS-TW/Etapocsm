@@ -1,12 +1,16 @@
-const { avail_cadre_choices } = require('../../core/cadre_config.js');
-const { Constants } = require('discord.js');
-const { CogExtension, WorkingGuildConfig } = require('../../core/cog_config.js');
-const { bot } = require('../../index.js');
-const { slCmdChecker } = require('./verify.js');
+import { avail_cadre_choices } from '../../core/cadre_config';
+import { Constants, Client, CommandInteraction, ApplicationCommandData } from 'discord.js';
+import { CogExtension, WorkingGuildConfig } from '../../core/cog_config';
+import { bot } from '../../index';
+import { interactionChecker } from './verify';
 
 class Cadre extends CogExtension {
+    constructor(bot: Client) {
+        super(bot);
+    };
+
     slCmdRegister() {
-        const cmd_register_list = [
+        const cmd_register_list: Array<ApplicationCommandData> = [
             {
                 name: 'ping',
                 description: 'Hit the bot!'
@@ -30,7 +34,6 @@ class Cadre extends CogExtension {
     };
 
     async slCmdHandler(interaction) {
-        if (!slCmdChecker(interaction)) return;
         if (!this.in_use) return;
 
         switch (interaction.commandName) {
@@ -73,14 +76,20 @@ class Cadre extends CogExtension {
 };
 
 
-let Cadre_act;
+let Cadre_act: Cadre;
 
-function promoter(bot) {
+function promoter(bot: Client) {
     Cadre_act = new Cadre(bot);
     //Cadre_act.slCmdRegister();
 };
 
-bot.on('interactionCreate', async (interaction) => Cadre_act.slCmdHandler(interaction));
+bot.on('interactionCreate', async (interaction) => {
+    if (!interactionChecker(interaction)) return;
+
+    if (interaction instanceof CommandInteraction) {
+        await Cadre_act.slCmdHandler(interaction);
+    };
+});
 
 module.exports = {
     promoter

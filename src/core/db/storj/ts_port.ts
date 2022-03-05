@@ -1,13 +1,19 @@
 /*
 
-    此檔案為利用 js 呼叫 py 的 js -> js 端口
+    此檔案為利用 ts 呼叫 py 的 ts -> ts 端口
 
 */
 
 const execSync = require("child_process").execSync;
 
 
-async function storjDownload(options) {
+interface StorjDownloadOptions {
+    bucket_name: string,
+    local_file_name: string,
+    db_file_name: string
+};
+
+async function storjDownload(options: StorjDownloadOptions) {
     /*
         options = {
             bucket_name: the bucket in storj where the target file is.
@@ -25,12 +31,18 @@ async function storjDownload(options) {
     return download_result;
 };
 
-async function getFolderSize(options) {
+interface GetFolderSizeInterface {
+    bucket_name: string,
+    prefix: string,
+    suffixes?: string
+};
+
+async function getFolderSize(options: GetFolderSizeInterface) {
     /*
         options = {
             bucket_name: the bucket in storj where the target folder is,
             prefix: the target folder's path,
-            suffixes: file types to include, seperated by '-'
+            suffixes?: file types to include, seperated by '-'
         }
     */
 
@@ -71,7 +83,7 @@ async function getFolderFiles(options) {
 };
 
 
-module.exports = {
+export {
     storjDownload,
     getFolderSize,
     getFolderFiles
