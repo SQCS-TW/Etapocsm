@@ -1,10 +1,15 @@
-const { CogExtension, WorkingGuildConfig } = require('../../core/cog_config.js');
-const { bot } = require('../../index.js');
-const { slCmdChecker, buttonChecker, dropdownChecker } = require('./verify.js');
-const { Mongo } = require('../../core/db/mongodb.js');
+import { CogExtension, WorkingGuildConfig } from '../../core/cog_config.js';
+import { bot } from '../../index.js';
+import { slCmdChecker, buttonChecker, dropdownChecker } from './verify.js';
+import { Mongo } from '../../core/db/mongodb.js';
+import { Client } from 'discord.js';
 
 
 class Test extends CogExtension {
+    constructor(bot) {
+        super(bot);
+    };
+
     slCmdRegister() {
         const cmd_register_list = [
             {
@@ -82,7 +87,7 @@ class Test extends CogExtension {
         }
     ];
 
-    butt_msg = 0;
+    butt_msg: any = 0;
 
     async buttonHandler(interaction) {
         if (!buttonChecker(interaction)) return;
@@ -153,7 +158,7 @@ class Test extends CogExtension {
         }
     ];
 
-    drop_msg = 0;
+    drop_msg: any = 0;
 
     async dropdownHandler(interaction) {
         if (!dropdownChecker(interaction)) return;
@@ -182,7 +187,7 @@ class Test extends CogExtension {
 
 let Test_act;
 
-function promoter(bot) {
+function promoter(bot: Client) {
     Test_act = new Test(bot);
     //Test_act.slCmdRegister();
 };
@@ -193,6 +198,6 @@ bot.on('interactionCreate', async (interaction) => {
     await Test_act.dropdownHandler(interaction);
 });
 
-module.exports = {
+export {
     promoter
 };

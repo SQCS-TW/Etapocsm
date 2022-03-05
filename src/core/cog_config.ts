@@ -1,4 +1,12 @@
+import { Client, Guild, ApplicationCommandData, InteractionReplyOptions } from "discord.js";
+
 class CogExtension {
+    bot: Client;
+    in_use: boolean;
+    check_failed_warning: object;
+    not_in_use_warning: InteractionReplyOptions;
+    error_gif: Array<string>
+    
     constructor(bot) {
         this.bot = bot;
         this.in_use = true;
@@ -22,12 +30,15 @@ class CogExtension {
 
 
 class MainGuildConfig {
-    constructor(bot) {
+    guildId: string;
+    guild: Guild;
+
+    constructor(bot: Client) {
         this.guildId = '743507979369709639';
         this.guild = bot.guilds.cache.get(this.guildId);
     };
 
-    slCmdCreater(cmd_register_list) {
+    slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
         // register slCmds in array: "cmd_register_list"
         let commands = this.guild.commands;
         for (const cmd of cmd_register_list) commands.create(cmd);
@@ -42,7 +53,10 @@ class MainGuildConfig {
 
 
 class WorkingGuildConfig {
-    constructor(bot) {
+    guildId: string;
+    guild: Guild;
+
+    constructor(bot: Client) {
         this.guildId = '790978307235512360';
         this.guild = bot.guilds.cache.get(this.guildId);
     };
@@ -62,7 +76,7 @@ class WorkingGuildConfig {
 
 
 
-module.exports = {
+export {
     CogExtension,
     MainGuildConfig,
     WorkingGuildConfig

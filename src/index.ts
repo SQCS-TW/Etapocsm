@@ -1,8 +1,8 @@
 require('dotenv').config();
 
-const fs = require('fs')
-const { Client, Intents } = require('discord.js');
-const { MainGuildConfig, WorkingGuildConfig } = require('./core/cog_config.js');
+import fs from 'fs';
+import { Client, Intents } from 'discord.js';
+import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config.js';
 
 
 const bot = new Client({
@@ -27,7 +27,7 @@ bot.on('ready', async () => {
     console.log('Cogs loaded!');
 });
 
-function recurLoadCogs(dir) {
+function recurLoadCogs(dir: string): void {
     // load "cogs" files with func: "promoter" under ./cogs/
     fs.readdir(dir, (err, files) => {
         files.forEach(file => {
@@ -41,7 +41,7 @@ function recurLoadCogs(dir) {
     });
 };
 
-async function resetSlCmd(bot) {
+async function resetSlCmd(bot): Promise<void> {
     // clear registered slash commands in every guild
     await (new MainGuildConfig(bot)).slCmdReset();
     await (new WorkingGuildConfig(bot)).slCmdReset();
@@ -49,6 +49,6 @@ async function resetSlCmd(bot) {
 
 bot.login(process.env.BOT_TOKEN);
 
-module.exports = {
+export {
     bot
 };

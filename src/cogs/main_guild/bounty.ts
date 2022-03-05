@@ -1,11 +1,17 @@
-const { CogExtension, MainGuildConfig } = require('../../core/cog_config.js');
-const { bot } = require('../../index.js');
-const { slCmdChecker, dropdownChecker } = require('./verify.js');
-const { Mongo } = require('../../core/db/mongodb.js');
-const { storjDownload, getFolderFiles } = require('../../core/db/storj/js_port.js');
-const fs = require('fs');
-const { timeAfterSecs, getRandomInt, verifyMenuApplication } = require('../../core/utils.js');
+import { CogExtension, MainGuildConfig } from'../../core/cog_config.js';
+import { bot } from '../../index.js';
+import { slCmdChecker, dropdownChecker } from './verify.js';
+import { Mongo } from '../../core/db/mongodb.js';
+import { storjDownload, getFolderFiles } from '../../core/db/storj/js_port.js';
+import fs from 'fs';
+import { timeAfterSecs, getRandomInt, verifyMenuApplication } from '../../core/utils.js';
+import { CommandInteraction, SelectMenuInteraction, InteractionReplyOptions } from 'discord.js'
+import { ObjectId, Collection } from 'mongodb';
 
+interface MongoData {
+    _id: ObjectId
+    [key: string]: any
+}
 
 class BountyManager extends CogExtension {
     slCmdRegister() {
@@ -19,7 +25,7 @@ class BountyManager extends CogExtension {
         (new MainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
-    async slCmdHandler(interaction) {
+    async slCmdHandler(interaction: CommandInteraction) {
         if (!slCmdChecker(interaction)) return;
         if (!this.in_use) return;
 
@@ -37,8 +43,7 @@ class BountyManager extends CogExtension {
 
                 if (user_data && user_data.active) {
                     await interaction.editReply({
-                        content: ':x:**【啟動錯誤】**你已經在回答問題中了！',
-                        ephemeral: true
+                        content: ':x:**【啟動錯誤】**你已經在回答問題中了！'
                     });
                     return;
                 };
@@ -56,25 +61,22 @@ class BountyManager extends CogExtension {
 
                 if (redundant_data) {
                     await interaction.editReply({
-                        content: ':x:**【申請錯誤】**請勿重複申請！',
-                        ephemeral: true
+                        content: ':x:**【申請錯誤】**請勿重複申請！'
                     });
                     return;
                 };
                 //
 
-                let account_status = await (new bountyAccountManager(interaction.member.id)).checkAccount();
+                let account_status = await (new bountyAccountManager(interaction.user.id)).checkAccount();
                 if (!account_status) {
                     await interaction.editReply({
-                        content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！',
-                        ephemeral: true
+                        content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！'
                     });
                     return;
                 };
 
                 await interaction.editReply({
-                    content: ':white_check_mark:**【帳號檢查完畢】**活動開始！',
-                    ephemeral: true
+                    content: ':white_check_mark:**【帳號檢查完畢】**活動開始！'
                 });
 
                 await interaction.followUp({
@@ -83,15 +85,14 @@ class BountyManager extends CogExtension {
                     ephemeral: true
                 });
 
-                const player_application = {
-                    _id: interaction.user.id,
+                const player_application: MongoData = {
+                    _id: new ObjectId(interaction.user.id),
                     type: 'choose_bounty_qns_difficulty',
                     due_time: (await timeAfterSecs(15))
                 };
 
                 const apply_result = await cursor.insertOne(player_application);
                 if (!apply_result.acknowledged) {
-                    await dropdown_msg.delete();
                     await interaction.followUp({
                         content: ':x:**【選單申請創建錯誤】**請洽總召！',
                         files: this.error_gif,
@@ -137,7 +138,7 @@ class BountyManager extends CogExtension {
         }
     ];
 
-    async dropdownHandler(interaction) {
+    async dropdownHandler(interaction: SelectMenuInteraction) {
         if (!dropdownChecker(interaction)) return;
         if (!this.in_use) return;
 
@@ -145,7 +146,7 @@ class BountyManager extends CogExtension {
         // currently use cmd-use channel for testing
         if (interaction.channel.id !== '743677861000380527') return;
 
-        switch (interaction.component.customId) {
+        switch (interaction.customId) {
             case 'choose_bounty_qns_difficulty': {
                 await interaction.deferReply({ ephemeral: true });
 
@@ -157,8 +158,7 @@ class BountyManager extends CogExtension {
                 if (!(await verifyMenuApplication(verify))) {
                     await interaction.editReply({
                         content: ':x:**【選單認證錯誤】**選單已經逾期；或是請勿重複選擇。',
-                        files: this.error_gif,
-                        ephemeral: true
+                        files: this.error_gif
                     });
                     return;
                 };
@@ -290,7 +290,10 @@ class BountyManager extends CogExtension {
 
 
 class bountyAccountManager {
-    constructor(member_id) {
+    member_id: string;
+    cursor_promise: Promise<Collection>;
+
+    constructor(member_id: string) {
         this.member_id = member_id;
 
         // use promise here due to non-async constructor
@@ -309,8 +312,8 @@ class bountyAccountManager {
     };
 
     async _createAccount() {
-        const default_member_data = {
-            _id: this.member_id,
+        const default_member_data: MongoData = {
+            _id: new ObjectId(this.member_id),
             stamina: {
                 regular: 3,
                 extra: 0
@@ -358,11 +361,11 @@ class BountyQuestionsManager extends CogExtension {
                 await interaction.deferReply();
 
                 for (const diffi of ['easy', 'medium', 'hard']) {
-                    const file_names = await getFolderFiles(
-                        bucket_name = 'bounty-questions-db',
-                        prefix = `${diffi}/`,
-                        suffixes = '.png-.jpg'
-                    );
+                    const file_names = await getFolderFiles({
+                        bucket_name: 'bounty-questions-db',
+                        prefix: `${diffi}/`,
+                        suffixes: '.png-.jpg'
+                    });
 
                     for (let i = 0; i < file_names.length; i++) {
                         file_names[i] = file_names[i]
@@ -409,6 +412,6 @@ bot.on('interactionCreate', async (interaction) => {
 bot.on('interactionCreate', async (interaction) => BountyQuestionsManager_act.slCmdHandler(interaction));
 
 
-module.exports = {
+export {
     promoter
 };
