@@ -44,7 +44,7 @@ async function checkOngoingPipeline() {
     };
 
     if (player_data.recent_due_time <= Date.now()) {
-        console.log('expired!: ', player_data.id);
+        // console.log('expired!: ', player_data.id);
     };
 };
 

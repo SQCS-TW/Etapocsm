@@ -338,78 +338,19 @@ class bountyAccountManager {
 };
 
 
-class BountyQuestionsManager extends CogExtension {
-    slCmdRegister() {
-        const cmd_register_list = [
-            {
-                name: 'activate',
-                description: '建立問題資料庫'
-            }
-        ];
-
-        (new MainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
-    };
-
-    async slCmdHandler(interaction) {
-        if (!interaction.member.roles.cache.some(role => role.id === '743512491929239683')) return;
-
-        switch (interaction.commandName) {
-            case 'activate': {
-                await interaction.deferReply();
-
-                for (const diffi of ['easy', 'medium', 'hard']) {
-                    const file_names = await getFolderFiles({
-                        bucket_name: 'bounty-questions-db',
-                        prefix: `${diffi}/`,
-                        suffixes: '.png-.jpg'
-                    });
-
-                    for (let i = 0; i < file_names.length; i++) {
-                        file_names[i] = file_names[i]
-                            .replace(".png", '')
-                            .replace(".jpg", '');
-                    };
-
-                    const cursor = await (new Mongo('Bounty')).getCur('Questions');
-
-                    for (const file_name of file_names) {
-                        const qns_data = {
-                            _id: new ObjectId(),
-                            qns_id: file_name,
-                            difficulty: diffi,
-                            ans: '',
-                            time_avail: 150
-                        };
-
-                        await cursor.insertOne(qns_data);
-                    };
-                };
-                await interaction.editReply(':white_check_mark: 問題資料庫已建立！');
-            };
-        };
-    };
-};
-
 
 let BountyManager_act: BountyManager;
-let BountyQuestionsManager_act: BountyQuestionsManager;
 
 function promoter(bot: Client) {
     BountyManager_act = new BountyManager(bot);
     //BountyManager_act.slCmdRegister();
-
-    BountyQuestionsManager_act = new BountyQuestionsManager(bot);
-    //BountyQuestionsManager_act.slCmdRegister();
 };
 
 bot.on('interactionCreate', async (interaction) => {
-    console.log('int!');
     if (!interactionChecker(interaction)) return;
 
     if (interaction.isCommand()) {
-        console.log('cmdact!');
         await BountyManager_act.slCmdHandler(interaction);
-        await BountyQuestionsManager_act.slCmdHandler(interaction);
     } else if (interaction.isSelectMenu()) {
         await BountyManager_act.dropdownHandler(interaction);
     };

@@ -15,8 +15,8 @@ const bot = new Client({
 bot.on('ready', async () => {
     console.log(`${bot.user.username} has logged in!`);
 
-    // await resetSlCmd(bot);
-    // console.log('Cogs reseted!');
+    await resetSlCmd(bot);
+    console.log('Cogs reseted!');
 
     // directly transforming recursive func: "recurLoadCogs" into async func 
     // will cause weird problems
@@ -46,7 +46,7 @@ function recurLoadCogs(dir: string): void {
 async function resetSlCmd(bot: Client): Promise<void> {
     // clear registered slash commands in every guild
     await (new MainGuildConfig(bot)).slCmdReset();
-    await (new WorkingGuildConfig(bot)).slCmdReset();
+    //await (new WorkingGuildConfig(bot)).slCmdReset();
 };
 
 bot.login(process.env.BOT_TOKEN);
