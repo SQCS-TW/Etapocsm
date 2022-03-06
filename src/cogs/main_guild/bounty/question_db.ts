@@ -1,8 +1,8 @@
-import { CogExtension, MainGuildConfig } from '../../core/cog_config';
-import { bot } from '../../index';
-import { interactionChecker } from './verify';
-import { Mongo } from '../../core/db/mongodb';
-import { getFolderFiles } from '../../core/db/storj/ts_port';
+import { CogExtension, MainGuildConfig } from '../../../core/cog_config';
+import { bot } from '../../../index';
+import { interactionChecker } from '../verify';
+import { Mongo } from '../../../core/db/mongodb';
+import { getFolderFiles } from '../../../core/db/storj/ts_port';
 import { Client, CommandInteraction, Constants, ApplicationCommandData } from 'discord.js'
 import { ObjectId } from 'mongodb';
 
@@ -56,7 +56,7 @@ class BountyQuestionsManager extends CogExtension {
     };
 
     async slCmdHandler(interaction: CommandInteraction) {
-        if (!interaction.memberPermissions.has('ADMINISTRATOR')) return;
+        if (!this.checkPerm(interaction, 'ADMINISTRATOR')) return;
 
         switch (interaction.commandName) {
             case 'activate': {

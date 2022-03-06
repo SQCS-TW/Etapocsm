@@ -1,50 +1,67 @@
-import { Client, Guild, ApplicationCommandData, InteractionReplyOptions } from "discord.js";
+import { Client, Guild, ApplicationCommandData, InteractionReplyOptions, Interaction, PermissionResolvable } from "discord.js";
 
 class CogExtension {
-    bot: Client;
-    in_use: boolean;
-    check_failed_warning: object;
-    not_in_use_warning: InteractionReplyOptions;
-    error_gif: Array<string>
+    protected bot: Client;
+    protected in_use: boolean;
+    protected check_failed_warning: InteractionReplyOptions;
+    protected not_in_use_warning: InteractionReplyOptions;
+    protected perm_warning: InteractionReplyOptions;
+    protected error_gif: Array<string>
     
     constructor(bot: Client) {
         this.bot = bot;
         this.in_use = true;
 
         this.check_failed_warning = {
-            content: '[Warning] This command is unavailable!',
+            content: ':x: 【使用錯誤】這個指令現在無法使用！',
             ephemeral: true
         };
 
         // an alternative for "load" and "unload" concept from discord.py
         // actual feature is not written yet
         this.not_in_use_warning = {
-            content: '[Warning] This cog is currently not in use!',
+            content: ':x: 【插件錯誤】這個插件現在無法使用！',
+            ephemeral: true
+        };
+
+        this.perm_warning = {
+            content: ':x: 【權限不足】你無法使用這個指令！',
             ephemeral: true
         };
 
         // file to send when sth goes wrong
         this.error_gif = ['./assets/gif/error.gif'];
     };
+
+    protected checkPerm(interaction: Interaction, perm: PermissionResolvable | Array<PermissionResolvable>) {
+        if (perm instanceof Array) {
+            perm.forEach((item) => {
+                if (!interaction.memberPermissions.has(item)) return false;
+            });
+        } else {
+            if (!interaction.memberPermissions.has(perm)) return false;
+        };
+        return true;
+    };
 };
 
 
 class MainGuildConfig {
-    guildId: string;
-    guild: Guild;
+    private guildId: string;
+    private guild: Guild;
 
     constructor(bot: Client) {
         this.guildId = '743507979369709639';
         this.guild = bot.guilds.cache.get(this.guildId);
     };
 
-    slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
+    public slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
         // register slCmds in array: "cmd_register_list"
         let commands = this.guild.commands;
         for (const cmd of cmd_register_list) commands.create(cmd);
     };
 
-    async slCmdReset() {
+    public async slCmdReset() {
         // reset slCmds registered in guild: "this.guild"
         let commands = this.guild.commands;
         commands.set([]);

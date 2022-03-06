@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import fs from 'fs';
-import { Mongo } from '../../core/db/mongodb';
+import { Mongo } from '../../../core/db/mongodb';
 import { Client } from 'discord.js'
 
 /*

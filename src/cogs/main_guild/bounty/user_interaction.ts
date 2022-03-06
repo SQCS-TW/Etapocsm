@@ -1,27 +1,57 @@
-import { CogExtension, MainGuildConfig } from '../../core/cog_config';
-import { bot } from '../../index';
-import { interactionChecker } from './verify';
-import { Mongo, MongoDataInterface } from '../../core/db/mongodb';
-import { storjDownload, getFolderFiles } from '../../core/db/storj/ts_port';
+import { CogExtension, MainGuildConfig } from '../../../core/cog_config';
+import { bot } from '../../../index';
+import { interactionChecker } from '../verify';
+import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
+import { storjDownload, getFolderFiles } from '../../../core/db/storj/ts_port';
 import fs from 'fs';
-import { timeAfterSecs, getRandomInt, verifyMenuApplication } from '../../core/utils';
-import { CommandInteraction, SelectMenuInteraction, ApplicationCommandData, Client } from 'discord.js'
-import { Collection, ObjectId } from 'mongodb';
+import { timeAfterSecs, getRandomInt, verifyMenuApplication, getAllSubsets, shuffle, arrayEquals, binomialCoefficient, cloneObj } from '../../../core/utils';
+import { CommandInteraction, SelectMenuInteraction, ApplicationCommandData, Client, Constants } from 'discord.js'
+import { ObjectId } from 'mongodb';
+import { bountyAccountManager } from './account'
 
 
 class BountyManager extends CogExtension {
-    slCmdRegister() {
+    private bountyAccountManager_act: bountyAccountManager;
+
+    constructor(bot: Client) {
+        super(bot);
+        this.bountyAccountManager_act = new bountyAccountManager();
+    };
+
+    public slCmdRegister() {
         const cmd_register_list: Array<ApplicationCommandData> = [
             {
                 name: 'activate_bounty',
                 description: '開始懸賞活動'
+            },
+            {
+                name: 'end_bounty',
+                description: '結束懸賞活動（回答問題）'
+            },
+            {
+                name: 'set_status',
+                description: '設定用戶狀態',
+                options: [
+                    {
+                        name: 'user_id',
+                        description: '用戶id',
+                        type: Constants.ApplicationCommandOptionTypes.STRING,
+                        required: true
+                    },
+                    {
+                        name: 'status',
+                        description: '新的用戶狀態',
+                        type: Constants.ApplicationCommandOptionTypes.BOOLEAN,
+                        required: true
+                    }
+                ]
             }
         ];
 
         (new MainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     };
 
-    async slCmdHandler(interaction: CommandInteraction) {
+    public async slCmdHandler(interaction: CommandInteraction) {
         if (!this.in_use) return;
 
         // only receive messages from the bounty-use channel
@@ -34,7 +64,7 @@ class BountyManager extends CogExtension {
 
                 // check if the user is already answering questions:
                 const account_cursor = await (new Mongo('Bounty')).getCur('Accounts');
-                const user_data = await account_cursor.findOne({ _id: interaction.user.id });
+                const user_data = await account_cursor.findOne({ user_id: interaction.user.id });
 
                 if (user_data && user_data.active) {
                     await interaction.editReply({
@@ -62,7 +92,7 @@ class BountyManager extends CogExtension {
                 };
                 //
 
-                let account_status = await (new bountyAccountManager(interaction.user.id)).checkAccount();
+                let account_status = await this.bountyAccountManager_act.checkAccount(interaction.user.id);
                 if (!account_status) {
                     await interaction.editReply({
                         content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！'
@@ -100,7 +130,111 @@ class BountyManager extends CogExtension {
 
                 break;
             };
+
+            case 'end_bounty': {
+                await interaction.deferReply({ ephemeral: true });
+
+                // check if the user is answering questions:
+                const account_cursor = await (new Mongo('Bounty')).getCur('Accounts');
+                const user_data = await account_cursor.findOne({ user_id: interaction.user.id });
+
+                if (!user_data) {
+                    await interaction.editReply({
+                        content: ':x:**【帳號錯誤】**你還沒啟動過活動！'
+                    });
+                    return;
+                };
+
+                if (!user_data.active) {
+                    await interaction.editReply({
+                        content: ':x:**【狀態錯誤】**你還沒啟動過活動！'
+                    });
+                    return;
+                };
+                //
+
+                const ongoing_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
+                const qns_cursor = await (new Mongo('Bounty')).getCur('Questions');
+
+                const ongoing_data = await ongoing_cursor.findOne({ user_id: interaction.user.id });
+                const qns_data = await qns_cursor.findOne({ qns_id: ongoing_data.qns_id });
+
+                const choices: Array<string> = await this.generateQuestionChoices(qns_data.choices, qns_data.ans);
+                
+                let ans_dropdown = [await cloneObj(this.bounty_choose_ans_dropdown[0])];
+
+                choices.forEach(item => {
+                    ans_dropdown[0].components[0].options.push({
+                        label: item,
+                        value: item
+                    });
+                });
+
+                await interaction.editReply({
+                    content: '請選擇答案（限時 1 分鐘）',
+                    components: ans_dropdown
+                });
+
+                const player_application: MongoDataInterface = {
+                    _id: new ObjectId(),
+                    user_id: interaction.user.id,
+                    type: 'choose_bounty_ans',
+                    due_time: (await timeAfterSecs(60))
+                };
+
+                const interaction_cursor = await (new Mongo('Interaction')).getCur('Pipeline');
+                const apply_result = await interaction_cursor.insertOne(player_application);
+                if (!apply_result.acknowledged) {
+                    await interaction.followUp({
+                        content: ':x:**【選單申請創建錯誤】**請洽總召！',
+                        files: this.error_gif,
+                        ephemeral: true
+                    });
+
+                    return;
+                };
+
+                break;
+            };
+
+            case 'set_status': {
+                if (!this.checkPerm(interaction, 'ADMINISTRATOR')) {
+                    return await interaction.reply(this.perm_warning);
+                };
+
+                await interaction.deferReply({ ephemeral: true });
+
+                const user_id: string = interaction.options.getString('user_id');
+                const new_status: boolean = interaction.options.getBoolean('status');
+
+                const set_result = await this.bountyAccountManager_act.setStatus(user_id, new_status);
+
+                await interaction.editReply(set_result.message);
+
+                break;
+            };
         };
+    };
+
+    private async generateQuestionChoices(qns_choices: Array<string>, qns_ans: Array<string>) {
+        // ex:
+        // qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
+        // qns_ans = ['A', 'C'];
+
+        let result: Array<any> = await getAllSubsets(qns_choices);
+        result = result.filter(async (item) => { return (item.length === qns_ans.length && !(await arrayEquals(item, qns_ans))) });
+        result = await shuffle(result);
+
+        const random_choices_count = Math.min(
+            Math.pow(2, qns_ans.length) + 2,
+            await binomialCoefficient(qns_choices.length, qns_ans.length)
+        ) - 1;
+
+        result = result.slice(0, random_choices_count);
+        result.push(qns_ans);
+        result = await shuffle(result);
+        result = result.map((item) => { return item.join(', ') });
+        return result;
     };
 
 
@@ -134,6 +268,23 @@ class BountyManager extends CogExtension {
         }
     ];
 
+    bounty_choose_ans_dropdown = [
+        {
+            type: 1,
+            components: [
+                {
+                    type: 3,
+                    placeholder: "選個答案吧！",
+                    custom_id: "choose_bounty_ans",
+                    options: [],
+                    min_values: 1,
+                    max_values: 1,
+                    disabled: false
+                }
+            ]
+        }
+    ];
+
     async dropdownHandler(interaction: SelectMenuInteraction) {
         if (!this.in_use) return;
 
@@ -147,7 +298,6 @@ class BountyManager extends CogExtension {
 
                 // check if there's exists such an application:
                 const verify = {
-                    _id: new ObjectId(),
                     user_id: interaction.user.id,
                     type: "choose_bounty_qns_difficulty"
                 };
@@ -199,10 +349,16 @@ class BountyManager extends CogExtension {
 
                 break;
             };
+
+            case 'choose_bounty_ans': {
+                //
+
+                break;
+            };
         };
     };
 
-    async downloadQnsPicture(diffi) {
+    async downloadQnsPicture(diffi: string) {
         const files = await getFolderFiles({
             bucket_name: 'bounty-questions-db',
             prefix: `${diffi}/`,
@@ -225,7 +381,7 @@ class BountyManager extends CogExtension {
         };
     };
 
-    async appendToPipeline(diffi, random_filename, player_id) {
+    private async appendToPipeline(diffi: string, random_filename: string, player_id: string) {
         const qns_cursor = await (new Mongo('Bounty')).getCur('Questions');
 
         const qns_id = random_filename
@@ -239,7 +395,8 @@ class BountyManager extends CogExtension {
             user_id: player_id,
             difficulty: diffi,
             qns_id: qns_id,
-            due_time: await timeAfterSecs(qns_data.time_avail)
+            due_time: await timeAfterSecs(qns_data.time_avail),
+            freeze: false
         };
 
         const pipeline_cursor = (new Mongo('Bounty')).getCur('OngoingPipeline');
@@ -261,16 +418,10 @@ class BountyManager extends CogExtension {
         };
     };
 
-    async activePayerStatus(player_id) {
-        const account_cursor = await (new Mongo('Bounty')).getCur('Accounts');
+    private async activePayerStatus(player_id: string) {
+        const set_result = await this.bountyAccountManager_act.setStatus(player_id, true);
 
-        const execute = {
-            $set: {
-                active: true
-            }
-        };
-        const update_result = await account_cursor.updateOne({ user_id: player_id }, execute);
-        if (!update_result.acknowledged) return {
+        if (!set_result.result) return {
             result: false,
             message: {
                 content: ':x:**【個人狀態啟動錯誤】**請洽總召！',
@@ -286,64 +437,11 @@ class BountyManager extends CogExtension {
 };
 
 
-class bountyAccountManager {
-    member_id: string;
-    cursor_promise: Promise<Collection>;
-
-    constructor(member_id: string) {
-        this.member_id = member_id;
-
-        // use promise here due to non-async constructor
-        this.cursor_promise = (new Mongo('Bounty')).getCur('Accounts');
-    };
-
-    async checkAccount() {
-        let member_data = await (await this.cursor_promise).findOne({ user_id: this.member_id });
-
-        if (!member_data) {
-            const create_status = await this._createAccount();
-            return create_status;
-        } else {
-            return true;
-        };
-    };
-
-    async _createAccount() {
-        const default_member_data: MongoDataInterface = {
-            _id: new ObjectId(),
-            user_id: this.member_id,
-            stamina: {
-                regular: 3,
-                extra: 0
-            },
-            active: false,
-            record: {
-                total_qns: {
-                    easy: 0,
-                    medium: 0,
-                    hard: 0
-                },
-                correct_qns: {
-                    easy: 0,
-                    medium: 0,
-                    hard: 0
-                }
-            }
-        };
-
-        let result = await (await this.cursor_promise).insertOne(default_member_data);
-
-        return result.acknowledged;
-    };
-};
-
-
-
 let BountyManager_act: BountyManager;
 
 function promoter(bot: Client) {
     BountyManager_act = new BountyManager(bot);
-    //BountyManager_act.slCmdRegister();
+    BountyManager_act.slCmdRegister();
 };
 
 bot.on('interactionCreate', async (interaction) => {
