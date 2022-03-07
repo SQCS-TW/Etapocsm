@@ -21,10 +21,23 @@ async function binomialCoefficient(m: number, n: number) {
     return numerator / denominator;
 };
 
-async function getAllSubsets(arr: Array<any>) {
-    return arr.reduce((subsets, value) => subsets.concat(
-        subsets.map(set => [value, ...set])
-    ), [[]]);
+async function getSubsetsWithCertainLength(arr: Array<any>, length: number) {
+    let modify = [...arr].map(item => [item]);
+    for (let i = 0; i < length - 1; i++) {
+        let new_arr = [];
+        [...modify].forEach(item => {
+            if (item.length === length) return;
+            let index = arr.indexOf(item[item.length - 1]);
+            let m_after = [...arr].slice(index + 1, arr.length + 1 - (length - i - 1));
+            m_after.forEach(it => {
+                let temp = [...item];
+                temp.push(it);
+                new_arr.push(temp);
+            });
+        });
+        if (i < length - 1) modify = [...new_arr];
+        if (i === length - 2) return new_arr;
+    };
 };
 
 async function shuffle(array: Array<any>) {
@@ -71,7 +84,7 @@ export {
     getRandomInt,
     verifyMenuApplication,
     factorial,
-    getAllSubsets,
+    getSubsetsWithCertainLength,
     shuffle,
     arrayEquals,
     binomialCoefficient

@@ -4,7 +4,7 @@ import { interactionChecker } from '../verify';
 import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
 import { storjDownload, getFolderFiles } from '../../../core/db/storj/ts_port';
 import fs from 'fs';
-import { timeAfterSecs, getRandomInt, verifyMenuApplication, getAllSubsets, shuffle, arrayEquals, binomialCoefficient, cloneObj } from '../../../core/utils';
+import { timeAfterSecs, getRandomInt, verifyMenuApplication, getSubsetsWithCertainLength, shuffle, arrayEquals, binomialCoefficient, cloneObj } from '../../../core/utils';
 import { CommandInteraction, SelectMenuInteraction, ApplicationCommandData, Client, Constants } from 'discord.js'
 import { ObjectId } from 'mongodb';
 import { bountyAccountManager } from './account'
@@ -160,7 +160,7 @@ class BountyManager extends CogExtension {
                 const qns_data = await qns_cursor.findOne({ qns_id: ongoing_data.qns_id });
 
                 const choices: Array<string> = await this.generateQuestionChoices(qns_data.choices, qns_data.ans);
-                
+
                 let ans_dropdown = [await cloneObj(this.bounty_choose_ans_dropdown[0])];
 
                 choices.forEach(item => {
@@ -221,7 +221,7 @@ class BountyManager extends CogExtension {
         // qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
         // qns_ans = ['A', 'C'];
 
-        let result: Array<any> = await getAllSubsets(qns_choices);
+        let result: Array<any> = await getSubsetsWithCertainLength(qns_choices, qns_ans.length);
         result = result.filter(async (item) => { return (item.length === qns_ans.length && !(await arrayEquals(item, qns_ans))) });
         result = await shuffle(result);
 
