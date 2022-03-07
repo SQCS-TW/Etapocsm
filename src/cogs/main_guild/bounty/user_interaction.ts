@@ -222,7 +222,7 @@ class BountyManager extends CogExtension {
         // qns_ans = ['A', 'C'];
 
         let result: Array<any> = await getSubsetsWithCertainLength(qns_choices, qns_ans.length);
-        result = result.filter(async (item) => { return (item.length === qns_ans.length && !(await arrayEquals(item, qns_ans))) });
+        result = result.filter(async (item) => { return (!(await arrayEquals(item, qns_ans))) });
         result = await shuffle(result);
 
         const random_choices_count = Math.min(
