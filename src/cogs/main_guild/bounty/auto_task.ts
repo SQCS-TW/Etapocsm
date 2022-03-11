@@ -1,7 +1,7 @@
 import cron from 'node-cron';
-import fs from 'fs';
-import { Mongo } from '../../../core/db/mongodb';
+import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
 import { Client } from 'discord.js'
+import { jsonOperator } from '../../../core/json';
 
 /*
     * --- day of week
@@ -16,49 +16,57 @@ import { Client } from 'discord.js'
 
 // }
 
+const jsonOp = new jsonOperator();
+
+interface pipelineCacheInterface {
+    user_id: string,
+    recent_due_time: number
+};
+
+const pl_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
+
+async function findNearestData() {
+    const nearest_due_data = (await pl_cursor.find({}).sort({ due_time: 1 }).limit(1).toArray())[0];
+    if (!nearest_due_data) return;
+
+    return {
+        user_id: nearest_due_data.user_id,
+        recent_due_time: nearest_due_data.due_time
+    };
+}
+
 async function checkOngoingPipeline() {
     const json_path = './cache/bounty/player_data.json'
-
-    const rawdata: string = String(fs.readFileSync(json_path));
-    const player_data = JSON.parse(rawdata);
+    const player_data: pipelineCacheInterface = await jsonOp.readFile(json_path);
 
     if (Object.keys(player_data).length === 0) {
-        console.log('act!');
-        const pl_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
+        const new_player_data: pipelineCacheInterface = await findNearestData();
+        if (!new_player_data) return;
 
-        // find the minimum due time
-        const nearest_due_data = (await pl_cursor.find({}).sort({ due_time: 1 }).limit(1).toArray())[0];
-
-        if (!nearest_due_data) return;
-
-        const player_data = {
-            user_id: nearest_due_data.user_id,
-            recent_due_time: nearest_due_data.due_time
-        };
-
-        console.log(player_data);
-        const write_data = JSON.stringify(player_data);
-        fs.writeFile(json_path, write_data, () => { });
-
+        await jsonOp.writeFile(json_path, new_player_data);
         return;
     };
 
     if (player_data.recent_due_time <= Date.now()) {
-        // console.log('expired!: ', player_data.id);
+        // clear the data
+        await jsonOp.writeFile(json_path, {});
     };
 };
 
-async function checkMenuApplications() {
-    const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
-    const data = await cursor.find({}).toArray();
+const inter_pl_cursor = await (new Mongo('Interaction')).getCur('Pipeline');
 
-    data.forEach(async (item) => {
-        if (item.due_time < Date.now()) {
-            await cursor.deleteOne({ user_id: item.user_id });
-            console.log('deleted:');
-            console.log(item);
-        };
-    });
+async function checkExpired(item: MongoDataInterface) {
+    return (item.due_time <= Date.now());
+};
+
+async function deleteItem(item: MongoDataInterface) {
+    await inter_pl_cursor.deleteOne({ user_id: item.user_id });
+    console.log('deleted: ', item);
+};
+
+async function checkMenuApplications() {
+    const data = await inter_pl_cursor.find({}).toArray();
+    data.filter(checkExpired).forEach(deleteItem);
 };
 
 // let BountyTaskManager_act;
@@ -73,6 +81,6 @@ function promoter(bot: Client) {
 
 
 
-module.exports = {
+export {
     promoter
 };

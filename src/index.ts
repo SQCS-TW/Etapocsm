@@ -1,11 +1,45 @@
 require('dotenv').config();
 
 import fs from 'fs';
-import { Client, Intents } from 'discord.js';
+import { Client, Intents, ClientOptions, Interaction } from 'discord.js';
 import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config';
 
 
-const bot = new Client({
+interface AllocaterSettingsInterface {
+    interaction: Interaction,
+    slCmdHandler?: Array<Function>,
+    buttonHandler?: Array<Function>,
+    dropdownHandler?: Array<Function>
+};
+
+class Etapocsm extends Client {
+    constructor(options: ClientOptions) {
+        super(options);
+    };
+
+    async interactionAllocater(allocater_settings: AllocaterSettingsInterface) {
+        const {
+            interaction,
+            slCmdHandler,
+            buttonHandler,
+            dropdownHandler
+        } = allocater_settings;
+
+        async function handleInteraction(handler: Function) {
+            await handler(interaction);
+        };
+
+        if (interaction.isCommand() && slCmdHandler) {
+            slCmdHandler.forEach(handleInteraction);
+        } else if (interaction.isButton() && buttonHandler) {
+            buttonHandler.forEach(handleInteraction);
+        } else if (interaction.isSelectMenu() && dropdownHandler) {
+            dropdownHandler.forEach(handleInteraction);
+        };
+    };
+};
+
+const bot = new Etapocsm({
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES

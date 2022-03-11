@@ -1,4 +1,11 @@
-import { Client, Guild, ApplicationCommandData, InteractionReplyOptions, Interaction, PermissionResolvable } from "discord.js";
+import {
+    Client,
+    Guild,
+    ApplicationCommandData,
+    InteractionReplyOptions,
+    Interaction,
+    PermissionResolvable
+} from "discord.js";
 
 class CogExtension {
     protected bot: Client;
@@ -7,7 +14,7 @@ class CogExtension {
     protected not_in_use_warning: InteractionReplyOptions;
     protected perm_warning: InteractionReplyOptions;
     protected error_gif: Array<string>
-    
+
     constructor(bot: Client) {
         this.bot = bot;
         this.in_use = true;
@@ -46,14 +53,9 @@ class CogExtension {
 };
 
 
-class MainGuildConfig {
-    private guildId: string;
-    private guild: Guild;
-
-    constructor(bot: Client) {
-        this.guildId = '743507979369709639';
-        this.guild = bot.guilds.cache.get(this.guildId);
-    };
+class BaseGuildConfig {
+    protected guildId: string;
+    protected guild: Guild;
 
     public slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
         // register slCmds in array: "cmd_register_list"
@@ -66,31 +68,25 @@ class MainGuildConfig {
         let commands = this.guild.commands;
         commands.set([]);
     };
-}
+};
 
 
-class WorkingGuildConfig {
-    guildId: string;
-    guild: Guild;
-
+class MainGuildConfig extends BaseGuildConfig {
     constructor(bot: Client) {
-        this.guildId = '790978307235512360';
+        super();
+        this.guildId = '743507979369709639';
         this.guild = bot.guilds.cache.get(this.guildId);
-    };
-
-    slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
-        // same as above
-        let commands = this.guild.commands;
-        for (const cmd of cmd_register_list) commands.create(cmd);
-    };
-
-    async slCmdReset() {
-        // same as above
-        let commands = this.guild.commands;
-        commands.set([]);
     };
 };
 
+
+class WorkingGuildConfig extends BaseGuildConfig {
+    constructor(bot: Client) {
+        super();
+        this.guildId = '790978307235512360';
+        this.guild = bot.guilds.cache.get(this.guildId);
+    };
+};
 
 
 export {

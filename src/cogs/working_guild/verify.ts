@@ -1,9 +1,9 @@
 import { Interaction } from "discord.js";
 
-const working_guild_id = '790978307235512360';
+const WORKING_GUILD_ID = '790978307235512360';
 
 function interactionChecker(interaction: Interaction) {
-    if (interaction.guildId !== working_guild_id) return false;
+    if (interaction.guildId !== WORKING_GUILD_ID) return false;
     return true;
 };
 

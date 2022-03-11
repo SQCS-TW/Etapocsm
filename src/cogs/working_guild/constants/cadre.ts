@@ -1,4 +1,4 @@
-const avail_cadre_choices = [
+const AVAIL_CADRE_CHOICES = [
     {
         name: '副召',
         value: '790978959411904532'
@@ -26,5 +26,5 @@ const avail_cadre_choices = [
 ]
 
 export {
-    avail_cadre_choices
+    AVAIL_CADRE_CHOICES
 };

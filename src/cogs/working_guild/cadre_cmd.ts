@@ -1,4 +1,4 @@
-import { avail_cadre_choices } from '../../core/cadre_config';
+import { AVAIL_CADRE_CHOICES } from './constants/cadre';
 import { Constants, Client, CommandInteraction, ApplicationCommandData } from 'discord.js';
 import { CogExtension, WorkingGuildConfig } from '../../core/cog_config';
 import { bot } from '../../index';
@@ -24,7 +24,7 @@ class Cadre extends CogExtension {
                         description: '你要獲取的幹部身分組',
                         type: Constants.ApplicationCommandOptionTypes.STRING,
                         required: true,
-                        choices: avail_cadre_choices
+                        choices: AVAIL_CADRE_CHOICES
                     }
                 ]
             }
@@ -86,9 +86,12 @@ function promoter(bot: Client) {
 bot.on('interactionCreate', async (interaction) => {
     if (!interactionChecker(interaction)) return;
 
-    if (interaction instanceof CommandInteraction) {
-        await Cadre_act.slCmdHandler(interaction);
-    };
+    await bot.interactionAllocater({
+        interaction: interaction,
+        slCmdHandler: [
+            Cadre_act.slCmdHandler
+        ]
+    });
 });
 
 module.exports = {

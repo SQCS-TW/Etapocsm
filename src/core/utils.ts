@@ -76,7 +76,8 @@ async function verifyMenuApplication(verify: VerifyMenuApplicationInterface) {
     } else {
         return false;
     };
-}
+};
+
 
 export {
     cloneObj,
@@ -88,4 +89,4 @@ export {
     shuffle,
     arrayEquals,
     binomialCoefficient
-}
+};

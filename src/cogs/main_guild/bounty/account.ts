@@ -10,18 +10,14 @@ class bountyAccountManager {
         this.cursor_promise = (new Mongo('Bounty')).getCur('Accounts');
     };
 
-    public async checkAccount(user_id: string) {
-        let member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
-
-        if (!member_data) {
-            const create_status = await this.createAccount(user_id);
-            return create_status;
-        } else {
-            return true;
-        };
+    public async checkAccountExistence(user_id: string) {
+        const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+        
+        if (member_data) return true;
+        return false;
     };
 
-    private async createAccount(user_id: string) {
+    public async createAccount(user_id: string) {
         const default_member_data: MongoDataInterface = {
             _id: new ObjectId(),
             user_id: user_id,
@@ -44,7 +40,7 @@ class bountyAccountManager {
             }
         };
 
-        let result = await (await this.cursor_promise).insertOne(default_member_data);
+        const result = await (await this.cursor_promise).insertOne(default_member_data);
 
         return result.acknowledged;
     };

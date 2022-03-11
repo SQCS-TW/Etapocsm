@@ -3,56 +3,14 @@ import { bot } from '../../../index';
 import { interactionChecker } from '../verify';
 import { Mongo } from '../../../core/db/mongodb';
 import { getFolderFiles } from '../../../core/db/storj/ts_port';
-import { Client, CommandInteraction, Constants, ApplicationCommandData } from 'discord.js'
+import { Client, CommandInteraction } from 'discord.js';
 import { ObjectId } from 'mongodb';
+import { SLCMD_REGISTER_LIST } from './constants/question_db';
 
 
 class BountyQuestionsManager extends CogExtension {
-    slCmdRegister() {
-        const cmd_register_list: Array<ApplicationCommandData> = [
-            {
-                name: 'activate',
-                description: '建立問題資料庫'
-            },
-            {
-                name: 'modify_choices',
-                description: '修改問題選項',
-                options: [
-                    {
-                        name: 'id',
-                        description: '問題id',
-                        type: Constants.ApplicationCommandOptionTypes.STRING,
-                        required: true
-                    },
-                    {
-                        name: 'choices',
-                        description: '問題所有選項（用;隔開）',
-                        type: Constants.ApplicationCommandOptionTypes.STRING,
-                        required: true
-                    }
-                ]
-            },
-            {
-                name: 'modify_answers',
-                description: '修改問題答案',
-                options: [
-                    {
-                        name: 'id',
-                        description: '問題id',
-                        type: Constants.ApplicationCommandOptionTypes.STRING,
-                        required: true
-                    },
-                    {
-                        name: 'ans',
-                        description: '問題所有答案（用;隔開）',
-                        type: Constants.ApplicationCommandOptionTypes.STRING,
-                        required: true
-                    }
-                ]
-            }
-        ];
-
-        (new MainGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
+    public slCmdRegister() {
+        (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
     };
 
     async slCmdHandler(interaction: CommandInteraction) {
@@ -146,9 +104,12 @@ function promoter(bot: Client) {
 bot.on('interactionCreate', async (interaction) => {
     if (!interactionChecker(interaction)) return;
 
-    if (interaction.isCommand()) {
-        await BountyQuestionsManager_act.slCmdHandler(interaction);
-    };
+    await bot.interactionAllocater({
+        interaction: interaction,
+        slCmdHandler: [
+            BountyQuestionsManager_act.slCmdHandler
+        ]
+    });
 });
 
 export {
