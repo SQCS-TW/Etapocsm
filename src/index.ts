@@ -14,12 +14,16 @@ import {
 
 import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config';
 
-interface AllocaterSettingsInterface {
+type InteractionManager = {
+    slCmdHandler?: (interaction: CommandInteraction) => Promise<void>,
+    buttonHandler?: (interaction: ButtonInteraction) => Promise<void>,
+    dropdownHandler?: (interaction: SelectMenuInteraction) => Promise<void>
+};
+
+type AllocaterSettingsInterface  = {
     interaction: Interaction,
-    slCmdHandler?: Array<(interaction: CommandInteraction) => Promise<void>>,
-    buttonHandler?: Array<(interaction: ButtonInteraction) => Promise<void>>,
-    dropdownHandler?: Array<(interaction: SelectMenuInteraction) => Promise<void>>
-}
+    interaction_managers: Array<InteractionManager>
+};
 
 class Etapocsm extends Client {
     constructor(options: ClientOptions) {
@@ -29,24 +33,18 @@ class Etapocsm extends Client {
     async interactionAllocater(allocater_settings: AllocaterSettingsInterface) {
         const {
             interaction,
-            slCmdHandler,
-            buttonHandler,
-            dropdownHandler
+            interaction_managers
         } = allocater_settings;
 
-        if (interaction.isCommand() && slCmdHandler) {
-            slCmdHandler.forEach(async (handler) => {
-                await handler(interaction);
-            });
-        } else if (interaction.isButton() && buttonHandler) {
-            buttonHandler.forEach(async (handler) => {
-                await handler(interaction);
-            });
-        } else if (interaction.isSelectMenu() && dropdownHandler) {
-            dropdownHandler.forEach(async (handler) => {
-                await handler(interaction);
-            });
-        }
+        interaction_managers.forEach(async (manager) => {
+            if (interaction.isCommand() && manager.slCmdHandler) {
+                await manager.slCmdHandler(interaction);
+            } else if (interaction.isButton() && manager.buttonHandler) {
+                await manager.buttonHandler(interaction);
+            } else if (interaction.isSelectMenu() && manager.dropdownHandler) {
+                await manager.dropdownHandler(interaction);
+            }
+        });
     }
 }
 
@@ -95,5 +93,6 @@ async function resetSlCmd(bot: Client): Promise<void> {
 bot.login(process.env.BOT_TOKEN);
 
 export {
-    bot
+    bot,
+    Etapocsm
 };

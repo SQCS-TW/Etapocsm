@@ -88,8 +88,8 @@ bot.on('interactionCreate', async (interaction) => {
 
     await bot.interactionAllocater({
         interaction: interaction,
-        slCmdHandler: [
-            Cadre_act.slCmdHandler
+        interaction_managers: [
+            Cadre_act
         ]
     });
 });

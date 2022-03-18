@@ -13,7 +13,7 @@ class CogExtension {
     protected check_failed_warning: InteractionReplyOptions;
     protected not_in_use_warning: InteractionReplyOptions;
     protected perm_warning: InteractionReplyOptions;
-    protected error_gif: Array<string>
+    protected error_gif: Array<string>;
 
     constructor(bot: Client) {
         this.bot = bot;
@@ -40,7 +40,7 @@ class CogExtension {
         this.error_gif = ['./assets/gif/error.gif'];
     }
 
-    protected checkPerm(interaction: Interaction, perm: PermissionResolvable | Array<PermissionResolvable>) {
+    protected checkPerm(interaction: Interaction, perm: PermissionResolvable | Array<PermissionResolvable>): boolean {
         if (perm instanceof Array) {
             perm.forEach((item) => {
                 if (!interaction.memberPermissions.has(item)) return false;
@@ -56,6 +56,12 @@ class CogExtension {
 class BaseGuildConfig {
     protected guildId: string;
     protected guild: Guild;
+
+    constructor(bot: Client, guildId: string) {
+        
+        this.guildId = guildId;
+        this.guild = bot.guilds.cache.get(this.guildId);
+    }
 
     public slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
         // register slCmds in array: "cmd_register_list"
@@ -73,18 +79,16 @@ class BaseGuildConfig {
 
 class MainGuildConfig extends BaseGuildConfig {
     constructor(bot: Client) {
-        super();
-        this.guildId = '743507979369709639';
-        this.guild = bot.guilds.cache.get(this.guildId);
+        const guildId = '743507979369709639';
+        super(bot, guildId);
     }
 }
 
 
 class WorkingGuildConfig extends BaseGuildConfig {
     constructor(bot: Client) {
-        super();
-        this.guildId = '790978307235512360';
-        this.guild = bot.guilds.cache.get(this.guildId);
+        const guildId = '790978307235512360';
+        super(bot, guildId);
     }
 }
 

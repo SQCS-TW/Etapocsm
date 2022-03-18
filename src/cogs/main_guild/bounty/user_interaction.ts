@@ -410,11 +410,8 @@ bot.on('interactionCreate', async (interaction) => {
 
     await bot.interactionAllocater({
         interaction: interaction,
-        slCmdHandler: [
-            BountyManager_act.slCmdHandler
-        ],
-        dropdownHandler: [
-            BountyManager_act.dropdownHandler
+        interaction_managers: [
+            BountyManager_act
         ]
     });
 });

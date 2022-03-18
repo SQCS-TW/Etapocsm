@@ -14,7 +14,7 @@ class BountyQuestionsManager extends CogExtension {
     }
 
     async slCmdHandler(interaction: CommandInteraction) {
-        if (!this.checkPerm(interaction, 'ADMINISTRATOR')) return;
+        if (!(super.checkPerm(interaction, 'ADMINISTRATOR'))) return;
 
         switch (interaction.commandName) {
             case 'activate': {
@@ -106,8 +106,8 @@ bot.on('interactionCreate', async (interaction) => {
 
     await bot.interactionAllocater({
         interaction: interaction,
-        slCmdHandler: [
-            BountyQuestionsManager_act.slCmdHandler
+        interaction_managers: [
+            BountyQuestionsManager_act
         ]
     });
 });

@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
+import { Collection } from 'mongodb';
 import { Client } from 'discord.js'
 import { jsonOperator } from '../../../core/json';
 
@@ -23,7 +24,15 @@ interface pipelineCacheInterface {
     recent_due_time: number
 }
 
-const pl_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
+let pl_cursor: Collection;
+let inter_pl_cursor: Collection;
+
+async function fetchPipelineCursors() {
+    pl_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
+    inter_pl_cursor = await (new Mongo('Interaction')).getCur('Pipeline');
+}
+
+fetchPipelineCursors();
 
 async function findNearestData() {
     const nearest_due_data = (await pl_cursor.find({}).sort({ due_time: 1 }).limit(1).toArray())[0];
@@ -53,8 +62,6 @@ async function checkOngoingPipeline() {
     }
 }
 
-const inter_pl_cursor = await (new Mongo('Interaction')).getCur('Pipeline');
-
 async function checkExpired(item: MongoDataInterface) {
     return (item.due_time <= Date.now());
 }
@@ -78,7 +85,6 @@ function promoter(bot: Client) {
     cron.schedule('*/5 * * * * *', checkMenuApplications);
     cron.schedule('*/5 * * * * *', checkOngoingPipeline);
 }
-
 
 
 export {
