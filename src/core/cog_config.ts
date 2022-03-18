@@ -38,7 +38,7 @@ class CogExtension {
 
         // file to send when sth goes wrong
         this.error_gif = ['./assets/gif/error.gif'];
-    };
+    }
 
     protected checkPerm(interaction: Interaction, perm: PermissionResolvable | Array<PermissionResolvable>) {
         if (perm instanceof Array) {
@@ -47,10 +47,10 @@ class CogExtension {
             });
         } else {
             if (!interaction.memberPermissions.has(perm)) return false;
-        };
+        }
         return true;
-    };
-};
+    }
+}
 
 
 class BaseGuildConfig {
@@ -59,16 +59,16 @@ class BaseGuildConfig {
 
     public slCmdCreater(cmd_register_list: Array<ApplicationCommandData>) {
         // register slCmds in array: "cmd_register_list"
-        let commands = this.guild.commands;
+        const commands = this.guild.commands;
         for (const cmd of cmd_register_list) commands.create(cmd);
-    };
+    }
 
     public async slCmdReset() {
         // reset slCmds registered in guild: "this.guild"
-        let commands = this.guild.commands;
+        const commands = this.guild.commands;
         commands.set([]);
-    };
-};
+    }
+}
 
 
 class MainGuildConfig extends BaseGuildConfig {
@@ -76,8 +76,8 @@ class MainGuildConfig extends BaseGuildConfig {
         super();
         this.guildId = '743507979369709639';
         this.guild = bot.guilds.cache.get(this.guildId);
-    };
-};
+    }
+}
 
 
 class WorkingGuildConfig extends BaseGuildConfig {
@@ -85,8 +85,8 @@ class WorkingGuildConfig extends BaseGuildConfig {
         super();
         this.guildId = '790978307235512360';
         this.guild = bot.guilds.cache.get(this.guildId);
-    };
-};
+    }
+}
 
 
 export {

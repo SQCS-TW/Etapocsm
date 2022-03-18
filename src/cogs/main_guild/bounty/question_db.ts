@@ -11,7 +11,7 @@ import { SLCMD_REGISTER_LIST } from './constants/question_db';
 class BountyQuestionsManager extends CogExtension {
     public slCmdRegister() {
         (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
-    };
+    }
 
     async slCmdHandler(interaction: CommandInteraction) {
         if (!this.checkPerm(interaction, 'ADMINISTRATOR')) return;
@@ -31,7 +31,7 @@ class BountyQuestionsManager extends CogExtension {
                         file_names[i] = file_names[i]
                             .replace(".png", '')
                             .replace(".jpg", '');
-                    };
+                    }
 
                     const cursor = await (new Mongo('Bounty')).getCur('Questions');
 
@@ -46,12 +46,12 @@ class BountyQuestionsManager extends CogExtension {
                         };
 
                         await cursor.insertOne(qns_data);
-                    };
-                };
+                    }
+                }
                 await interaction.editReply(':white_check_mark: 問題資料庫已建立！');
 
                 break;
-            };
+            }
 
             case 'modify_choices': {
                 await interaction.deferReply({ ephemeral: true });
@@ -70,7 +70,7 @@ class BountyQuestionsManager extends CogExtension {
                 await interaction.editReply(':white_check_mark: 問題選項已修改！');
 
                 break;
-            };
+            }
 
             case 'modify_answers': {
                 await interaction.deferReply({ ephemeral: true });
@@ -89,17 +89,17 @@ class BountyQuestionsManager extends CogExtension {
                 await interaction.editReply(':white_check_mark: 問題答案已修改！');
 
                 break;
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}
 
 let BountyQuestionsManager_act: BountyQuestionsManager;
 
 function promoter(bot: Client) {
     BountyQuestionsManager_act = new BountyQuestionsManager(bot);
     BountyQuestionsManager_act.slCmdRegister();
-};
+}
 
 bot.on('interactionCreate', async (interaction) => {
     if (!interactionChecker(interaction)) return;

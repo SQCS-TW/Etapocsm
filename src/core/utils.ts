@@ -12,41 +12,41 @@ async function factorial(num: number) {
     for (let i = 2; i <= num; i++)
         counter = counter * i;
     return counter;
-};
+}
 
 async function binomialCoefficient(m: number, n: number) {
     if (m <= n) return 1;
-    let numerator = await factorial(m);
-    let denominator = (await factorial(n)) * (await factorial(m - n));
+    const numerator = await factorial(m);
+    const denominator = (await factorial(n)) * (await factorial(m - n));
     return numerator / denominator;
-};
+}
 
 async function getSubsetsWithCertainLength(arr: Array<any>, length: number) {
     let modify = [...arr].map(item => [item]);
     for (let i = 0; i < length - 1; i++) {
-        let new_arr = [];
+        const new_arr = [];
         [...modify].forEach(item => {
             if (item.length === length) return;
-            let index = arr.indexOf(item[item.length - 1]);
-            let m_after = [...arr].slice(index + 1, arr.length + 1 - (length - i - 1));
+            const index = arr.indexOf(item[item.length - 1]);
+            const m_after = [...arr].slice(index + 1, arr.length + 1 - (length - i - 1));
             m_after.forEach(it => {
-                let temp = [...item];
+                const temp = [...item];
                 temp.push(it);
                 new_arr.push(temp);
             });
         });
         if (i < length - 1) modify = [...new_arr];
         if (i === length - 2) return new_arr;
-    };
-};
+    }
+}
 
 async function shuffle(array: Array<any>) {
     for (let i = array.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
-    };
+    }
     return array;
-};
+}
 
 async function arrayEquals(arr1: Array<any>, arr2: Array<any>) {
     if (arr1.length != arr2.length) return false;
@@ -56,15 +56,15 @@ async function arrayEquals(arr1: Array<any>, arr2: Array<any>) {
             if (!(await arrayEquals(arr1[i], arr2[i]))) return false;
         } else if (arr1[i] != arr2[i]) {
             return false;
-        };
-    };
+        }
+    }
     return true;
-};
+}
 
 interface VerifyMenuApplicationInterface {
     user_id: string
     type: string
-};
+}
 
 async function verifyMenuApplication(verify: VerifyMenuApplicationInterface) {
     const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
@@ -75,8 +75,8 @@ async function verifyMenuApplication(verify: VerifyMenuApplicationInterface) {
         return true;
     } else {
         return false;
-    };
-};
+    }
+}
 
 
 export {

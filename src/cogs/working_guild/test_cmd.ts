@@ -8,7 +8,7 @@ import { Client, CommandInteraction, ButtonInteraction, SelectMenuInteraction } 
 class Test extends CogExtension {
     constructor(bot) {
         super(bot);
-    };
+    }
 
     slCmdRegister() {
         const cmd_register_list = [
@@ -27,7 +27,7 @@ class Test extends CogExtension {
         ];
 
         (new WorkingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
-    };
+    }
 
     async slCmdHandler(interaction: CommandInteraction) {
         if (!this.in_use) return;
@@ -36,11 +36,11 @@ class Test extends CogExtension {
             case 'pong': {
                 const cursor = await (new Mongo('Bounty')).getCur('Accounts');
 
-                let data = await cursor.find({}).toArray();
+                const data = await cursor.find({}).toArray();
 
                 console.log(data);
                 break;
-            };
+            }
 
             case 'butt': {
                 this.butt_msg = await interaction.reply({
@@ -50,7 +50,7 @@ class Test extends CogExtension {
                 });
 
                 break;
-            };
+            }
 
             case 'dd': {
                 this.drop_msg = await interaction.reply({
@@ -60,9 +60,9 @@ class Test extends CogExtension {
                 });
 
                 break;
-            };
-        };
-    };
+            }
+        }
+    }
 
     butt_row = [
         {
@@ -107,7 +107,7 @@ class Test extends CogExtension {
                 await interaction.reply('you clicked me!');
 
                 break;
-            };
+            }
 
             case 'click_two': {
                 // let edit_butt = await clone(this.butt_row);
@@ -124,9 +124,9 @@ class Test extends CogExtension {
                 await interaction.reply('you clicked mei!');
 
                 break;
-            };
-        };
-    };
+            }
+        }
+    }
 
     drop_row = [
         {
@@ -176,10 +176,10 @@ class Test extends CogExtension {
                 await interaction.reply(`you clicked ${interaction.values}!`);
 
                 break;
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}
 
 
 let Test_act: Test;
@@ -187,7 +187,7 @@ let Test_act: Test;
 function promoter(bot: Client) {
     Test_act = new Test(bot);
     //Test_act.slCmdRegister();
-};
+}
 
 bot.on('interactionCreate', async (interaction) => {
     if (!interactionChecker(interaction)) return;
@@ -198,7 +198,7 @@ bot.on('interactionCreate', async (interaction) => {
         await Test_act.buttonHandler(interaction);
     } else if (interaction.isSelectMenu()) {
         await Test_act.dropdownHandler(interaction);
-    };
+    }
 });
 
 export {

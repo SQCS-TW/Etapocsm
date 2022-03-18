@@ -6,7 +6,7 @@ import { bountyAccountManager } from './account';
 import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
 import { storjDownload, getFolderFiles } from '../../../core/db/storj/ts_port';
 
-import { 
+import {
     CogExtension,
     MainGuildConfig
 } from '../../../core/cog_config';
@@ -22,7 +22,8 @@ import {
     cloneObj
 } from '../../../core/utils';
 
-import { CommandInteraction,
+import {
+    CommandInteraction,
     SelectMenuInteraction,
     Client
 } from 'discord.js'
@@ -40,11 +41,11 @@ class BountyManager extends CogExtension {
     constructor(bot: Client) {
         super(bot);
         this.bountyAccountManager_act = new bountyAccountManager();
-    };
+    }
 
     public slCmdRegister() {
         (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
-    };
+    }
 
     private async slCmd_activateBounty(interaction: CommandInteraction) {
         await interaction.deferReply({ ephemeral: true });
@@ -58,7 +59,7 @@ class BountyManager extends CogExtension {
                 content: ':x:**【啟動錯誤】**你已經在回答問題中了！'
             });
             return;
-        };
+        }
         //
 
         const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
@@ -76,7 +77,7 @@ class BountyManager extends CogExtension {
                 content: ':x:**【申請錯誤】**請勿重複申請！'
             });
             return;
-        };
+        }
         //
 
         const account_exists = await this.bountyAccountManager_act.checkAccountExistence(interaction.user.id);
@@ -87,8 +88,8 @@ class BountyManager extends CogExtension {
                     content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！'
                 });
                 return;
-            };
-        };
+            }
+        }
 
         await interaction.editReply({
             content: ':white_check_mark:**【帳號檢查完畢】**活動開始！'
@@ -116,8 +117,8 @@ class BountyManager extends CogExtension {
             });
 
             return;
-        };
-    };
+        }
+    }
 
     private async slCmd_endBounty(interaction: CommandInteraction) {
         await interaction.deferReply({ ephemeral: true });
@@ -131,14 +132,14 @@ class BountyManager extends CogExtension {
                 content: ':x:**【帳號錯誤】**你還沒啟動過活動！'
             });
             return;
-        };
+        }
 
         if (!user_data.active) {
             await interaction.editReply({
                 content: ':x:**【狀態錯誤】**你還沒啟動過活動！'
             });
             return;
-        };
+        }
         //
 
         const ongoing_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
@@ -149,7 +150,7 @@ class BountyManager extends CogExtension {
 
         const choices: Array<string> = await this.generateQuestionChoices(qns_data.choices, qns_data.ans);
 
-        let ans_dropdown = [await cloneObj(CHOOSE_BOUNTY_ANS_DROPDOWN[0])];
+        const ans_dropdown = [await cloneObj(CHOOSE_BOUNTY_ANS_DROPDOWN[0])];
 
         choices.forEach(item => {
             ans_dropdown[0].components[0].options.push({
@@ -180,13 +181,13 @@ class BountyManager extends CogExtension {
             });
 
             return;
-        };
-    };
+        }
+    }
 
     private async slCmd_setStatus(interaction: CommandInteraction) {
         if (!this.checkPerm(interaction, 'ADMINISTRATOR')) {
             return await interaction.reply(this.perm_warning);
-        };
+        }
 
         await interaction.deferReply({ ephemeral: true });
 
@@ -196,7 +197,7 @@ class BountyManager extends CogExtension {
         const set_result = await this.bountyAccountManager_act.setStatus(user_id, new_status);
 
         await interaction.editReply(set_result.message);
-    };
+    }
 
     public async slCmdHandler(interaction: CommandInteraction) {
         if (!this.in_use) return;
@@ -209,19 +210,19 @@ class BountyManager extends CogExtension {
             case 'activate_bounty': {
                 await this.slCmd_activateBounty(interaction);
                 break;
-            };
+            }
 
             case 'end_bounty': {
                 await this.slCmd_endBounty(interaction);
                 break;
-            };
+            }
 
             case 'set_status': {
                 await this.slCmd_setStatus(interaction);
                 break;
-            };
-        };
-    };
+            }
+        }
+    }
 
     private async dd_chooseBountyQnsDifficulty(interaction: SelectMenuInteraction) {
         await interaction.deferReply({ ephemeral: true });
@@ -237,7 +238,7 @@ class BountyManager extends CogExtension {
                 files: this.error_gif
             });
             return;
-        };
+        }
         //
 
         // fetch qns picture:
@@ -252,7 +253,7 @@ class BountyManager extends CogExtension {
                 ephemeral: true
             });
             return;
-        };
+        }
         //
 
         // send picture and delete local picture:
@@ -262,7 +263,7 @@ class BountyManager extends CogExtension {
             ephemeral: true
         });
 
-        fs.unlink(dl_result.local_file_name, () => { });
+        fs.unlink(dl_result.local_file_name, () => { return; });
         //
 
         const append_result = await this.appendToPipeline(diffi, dl_result.random_filename, interaction.user.id);
@@ -276,7 +277,7 @@ class BountyManager extends CogExtension {
             await interaction.followUp(active_result.message);
             return;
         }
-    };
+    }
 
     public async dropdownHandler(interaction: SelectMenuInteraction) {
         if (!this.in_use) return;
@@ -289,13 +290,13 @@ class BountyManager extends CogExtension {
             case 'choose_bounty_qns_difficulty': {
                 await this.dd_chooseBountyQnsDifficulty(interaction);
                 break;
-            };
+            }
 
             case 'choose_bounty_ans': {
                 break;
-            };
-        };
-    };
+            }
+        }
+    }
 
     private async generateQuestionChoices(qns_choices: Array<string>, qns_ans: Array<string>) {
         // ex:
@@ -316,7 +317,7 @@ class BountyManager extends CogExtension {
         result = await shuffle(result);
         result = result.map((item) => { return item.join(', ') });
         return result;
-    };
+    }
 
     private async downloadQnsPicture(diffi: string) {
         const files = await getFolderFiles({
@@ -328,7 +329,7 @@ class BountyManager extends CogExtension {
         const random_filename = files[await getRandomInt(files.length)];
         const local_file_name = `./assets/buffer/storj/${random_filename}`;
 
-        let result = await storjDownload({
+        const result = await storjDownload({
             bucket_name: 'bounty-questions-db',
             local_file_name: local_file_name,
             db_file_name: `${diffi}/${random_filename}`
@@ -339,7 +340,7 @@ class BountyManager extends CogExtension {
             random_filename: random_filename,
             local_file_name: local_file_name
         };
-    };
+    }
 
     private async appendToPipeline(diffi: string, random_filename: string, player_id: string) {
         const qns_cursor = await (new Mongo('Bounty')).getCur('Questions');
@@ -371,12 +372,12 @@ class BountyManager extends CogExtension {
                     ephemeral: true
                 }
             };
-        };
+        }
 
         return {
             result: true
         };
-    };
+    }
 
     private async activePayerStatus(player_id: string) {
         const set_result = await this.bountyAccountManager_act.setStatus(player_id, true);
@@ -393,8 +394,8 @@ class BountyManager extends CogExtension {
         return {
             result: true
         };
-    };
-};
+    }
+}
 
 
 let BountyManager_act: BountyManager;
@@ -402,7 +403,7 @@ let BountyManager_act: BountyManager;
 function promoter(bot: Client) {
     BountyManager_act = new BountyManager(bot);
     BountyManager_act.slCmdRegister();
-};
+}
 
 bot.on('interactionCreate', async (interaction) => {
     if (!interactionChecker(interaction)) return;

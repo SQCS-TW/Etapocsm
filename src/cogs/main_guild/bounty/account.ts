@@ -8,14 +8,14 @@ class bountyAccountManager {
     constructor() {
         // use promise here due to non-async constructor
         this.cursor_promise = (new Mongo('Bounty')).getCur('Accounts');
-    };
+    }
 
     public async checkAccountExistence(user_id: string) {
         const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
         
         if (member_data) return true;
         return false;
-    };
+    }
 
     public async createAccount(user_id: string) {
         const default_member_data: MongoDataInterface = {
@@ -43,7 +43,7 @@ class bountyAccountManager {
         const result = await (await this.cursor_promise).insertOne(default_member_data);
 
         return result.acknowledged;
-    };
+    }
 
     public async setStatus(user_id: string, status: boolean) {
         const cursor = await this.cursor_promise;
@@ -70,8 +70,8 @@ class bountyAccountManager {
             result: true,
             message: ':white_check_mark: 寫入成功'
         };
-    };
-};
+    }
+}
 
 export {
     bountyAccountManager

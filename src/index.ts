@@ -1,21 +1,30 @@
 require('dotenv').config();
 
 import fs from 'fs';
-import { Client, Intents, ClientOptions, Interaction } from 'discord.js';
-import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config';
 
+import {
+    Client,
+    Intents,
+    ClientOptions,
+    Interaction,
+    CommandInteraction,
+    SelectMenuInteraction,
+    ButtonInteraction
+} from 'discord.js';
+
+import { MainGuildConfig, WorkingGuildConfig } from './core/cog_config';
 
 interface AllocaterSettingsInterface {
     interaction: Interaction,
-    slCmdHandler?: Array<Function>,
-    buttonHandler?: Array<Function>,
-    dropdownHandler?: Array<Function>
-};
+    slCmdHandler?: Array<(interaction: CommandInteraction) => Promise<void>>,
+    buttonHandler?: Array<(interaction: ButtonInteraction) => Promise<void>>,
+    dropdownHandler?: Array<(interaction: SelectMenuInteraction) => Promise<void>>
+}
 
 class Etapocsm extends Client {
     constructor(options: ClientOptions) {
         super(options);
-    };
+    }
 
     async interactionAllocater(allocater_settings: AllocaterSettingsInterface) {
         const {
@@ -25,19 +34,21 @@ class Etapocsm extends Client {
             dropdownHandler
         } = allocater_settings;
 
-        async function handleInteraction(handler: Function) {
-            await handler(interaction);
-        };
-
         if (interaction.isCommand() && slCmdHandler) {
-            slCmdHandler.forEach(handleInteraction);
+            slCmdHandler.forEach(async (handler) => {
+                await handler(interaction);
+            });
         } else if (interaction.isButton() && buttonHandler) {
-            buttonHandler.forEach(handleInteraction);
+            buttonHandler.forEach(async (handler) => {
+                await handler(interaction);
+            });
         } else if (interaction.isSelectMenu() && dropdownHandler) {
-            dropdownHandler.forEach(handleInteraction);
-        };
-    };
-};
+            dropdownHandler.forEach(async (handler) => {
+                await handler(interaction);
+            });
+        }
+    }
+}
 
 const bot = new Etapocsm({
     intents: [
@@ -61,8 +72,6 @@ bot.on('ready', async () => {
     console.log('Cogs loaded!');
 });
 
-declare function require(name: string): any;
-
 function recurLoadCogs(dir: string): void {
     // load "cogs" files with func: "promoter" under ./cogs/
     fs.readdir(dir, (err, files) => {
@@ -75,13 +84,13 @@ function recurLoadCogs(dir: string): void {
             }
         });
     });
-};
+}
 
 async function resetSlCmd(bot: Client): Promise<void> {
     // clear registered slash commands in every guild
     await (new MainGuildConfig(bot)).slCmdReset();
     //await (new WorkingGuildConfig(bot)).slCmdReset();
-};
+}
 
 bot.login(process.env.BOT_TOKEN);
 

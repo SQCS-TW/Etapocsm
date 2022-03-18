@@ -11,7 +11,7 @@ interface StorjDownloadOptions {
     bucket_name: string,
     local_file_name: string,
     db_file_name: string
-};
+}
 
 async function storjDownload(options: StorjDownloadOptions) {
     /*
@@ -29,13 +29,13 @@ async function storjDownload(options: StorjDownloadOptions) {
 
     download_result = (download_result.trim() === 'true');
     return download_result;
-};
+}
 
 interface GetFolderSizeInterface {
     bucket_name: string,
     prefix: string,
     suffixes?: string
-};
+}
 
 async function getFolderSize(options: GetFolderSizeInterface) {
     /*
@@ -54,7 +54,7 @@ async function getFolderSize(options: GetFolderSizeInterface) {
 
     if (size === 'false') return false;
     return Number(size);
-};
+}
 
 async function getFolderFiles(options) {
     /*
@@ -71,16 +71,16 @@ async function getFolderFiles(options) {
     let filenames = execSync(command);
     filenames = filenames.toString('utf-8');
 
-    let filenames_array = filenames.split(', ');
+    const filenames_array = filenames.split(', ');
     for (let i = 0; i < filenames_array.length; i++) {
         filenames_array[i] = filenames_array[i]
             .replace("'", '')
             .replace("'", '')
             .replace("\r", '')
             .replace("\n", '');
-    };
+    }
     return filenames_array;
-};
+}
 
 
 export {

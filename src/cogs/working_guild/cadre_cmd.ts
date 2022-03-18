@@ -7,7 +7,7 @@ import { interactionChecker } from './verify';
 class Cadre extends CogExtension {
     constructor(bot: Client) {
         super(bot);
-    };
+    }
 
     slCmdRegister() {
         const cmd_register_list: Array<ApplicationCommandData> = [
@@ -31,7 +31,7 @@ class Cadre extends CogExtension {
         ];
 
         (new WorkingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
-    };
+    }
 
     async slCmdHandler(interaction) {
         if (!this.in_use) return;
@@ -43,7 +43,7 @@ class Cadre extends CogExtension {
                     ephemeral: false
                 });
                 break;
-            };
+            }
 
             case 'get_cadre_role': {
                 await interaction.deferReply();
@@ -57,7 +57,7 @@ class Cadre extends CogExtension {
                         ephemeral: true
                     });
                     return;
-                };
+                }
                 
                 // the id of the role that the user applies for
                 const role_id = interaction.options.getString('role');
@@ -70,10 +70,10 @@ class Cadre extends CogExtension {
                     ephemeral: true
                 });
                 break;
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}
 
 
 let Cadre_act: Cadre;
@@ -81,7 +81,7 @@ let Cadre_act: Cadre;
 function promoter(bot: Client) {
     Cadre_act = new Cadre(bot);
     //Cadre_act.slCmdRegister();
-};
+}
 
 bot.on('interactionCreate', async (interaction) => {
     if (!interactionChecker(interaction)) return;
