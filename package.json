@@ -5,8 +5,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "init_dir": "npx ts-node -T ./src/index.ts",
-    "init": "npx ts-node ./src/index.ts"
+    "init_dir": "npx ts-node -T ./main.ts",
+    "init": "npx ts-node ./main.ts"
   },
   "keywords": [],
   "author": "",

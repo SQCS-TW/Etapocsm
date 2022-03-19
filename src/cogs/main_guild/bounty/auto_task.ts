@@ -1,8 +1,8 @@
 import cron from 'node-cron';
 import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
 import { Collection } from 'mongodb';
-import { Client } from 'discord.js'
 import { jsonOperator } from '../../../core/json';
+import { Etapocsm } from '../../../../main';
 
 /*
     * --- day of week
@@ -78,12 +78,14 @@ async function checkMenuApplications() {
 
 // let BountyTaskManager_act;
 
-function promoter(bot: Client) {
+async function promoter(bot: Etapocsm) {
+    const cog_name = 'bounty_auto_task';
     // BountyTaskManager_act = new BountyTaskManager(bot);
 
     // do this every 5 seconds
     cron.schedule('*/5 * * * * *', checkMenuApplications);
     cron.schedule('*/5 * * * * *', checkOngoingPipeline);
+    return cog_name;
 }
 
 

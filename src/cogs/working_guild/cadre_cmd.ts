@@ -1,15 +1,15 @@
 import { AVAIL_CADRE_CHOICES } from './constants/cadre';
-import { Constants, Client, CommandInteraction, ApplicationCommandData } from 'discord.js';
+import { Constants, ApplicationCommandData, CommandInteraction, GuildMemberRoleManager } from 'discord.js';
 import { CogExtension, WorkingGuildConfig } from '../../core/cog_config';
-import { bot } from '../../index';
+import { bot, Etapocsm } from '../../../main';
 import { interactionChecker } from './verify';
 
 class Cadre extends CogExtension {
-    constructor(bot: Client) {
+    constructor(bot: Etapocsm) {
         super(bot);
     }
 
-    slCmdRegister() {
+    public async slCmdRegister() {
         const cmd_register_list: Array<ApplicationCommandData> = [
             {
                 name: 'ping',
@@ -33,13 +33,14 @@ class Cadre extends CogExtension {
         (new WorkingGuildConfig(this.bot)).slCmdCreater(cmd_register_list);
     }
 
-    async slCmdHandler(interaction) {
+    public async slCmdHandler(interaction: CommandInteraction) {
         if (!this.in_use) return;
 
         switch (interaction.commandName) {
             case 'ping': {
+                console.log('activated!', Date.now());
                 await interaction.reply({
-                    content: 'pong!',
+                    content: 'this is pong!',
                     ephemeral: false
                 });
                 break;
@@ -51,23 +52,23 @@ class Cadre extends CogExtension {
                 // the id of dc_role: "role-token"
                 const role_token_id = '791680285464199198';
 
-                if (!interaction.member.roles.cache.some(role => role.id === role_token_id)) {
+                if (interaction.member.roles instanceof GuildMemberRoleManager && !interaction.member.roles.cache.some(role => role.id === role_token_id)) {
                     await interaction.editReply({
-                        content: ':x:**【請求拒絕】**你沒有 `role-token` 身分組呦，詳情請洽總召。',
-                        ephemeral: true
+                        content: ':x:**【請求拒絕】**你沒有 `role-token` 身分組呦，詳情請洽總召。'
                     });
                     return;
                 }
-                
+
                 // the id of the role that the user applies for
                 const role_id = interaction.options.getString('role');
 
-                interaction.member.roles.add(role_id);
-                interaction.member.roles.remove(role_token_id);
+                if (interaction.member.roles instanceof GuildMemberRoleManager) {
+                    interaction.member.roles.add(role_id);
+                    interaction.member.roles.remove(role_token_id);
+                }
 
                 await interaction.editReply({
-                    content: ':white_check_mark:**【請求接受】**幹部身分組已給予，請察收！',
-                    ephemeral: true
+                    content: ':white_check_mark:**【請求接受】**幹部身分組已給予，請察收！'
                 });
                 break;
             }
@@ -78,9 +79,11 @@ class Cadre extends CogExtension {
 
 let Cadre_act: Cadre;
 
-function promoter(bot: Client) {
+async function promoter(bot: Etapocsm) {
+    const cog_name = 'cadre_cmd';
     Cadre_act = new Cadre(bot);
     //Cadre_act.slCmdRegister();
+    return cog_name;
 }
 
 bot.on('interactionCreate', async (interaction) => {

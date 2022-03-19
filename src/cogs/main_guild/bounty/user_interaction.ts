@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { ObjectId } from 'mongodb';
-import { bot } from '../../../index';
+import { bot, Etapocsm } from '../../../../main';
 import { interactionChecker } from '../verify';
 import { bountyAccountManager } from './account';
 import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
@@ -24,8 +24,7 @@ import {
 
 import {
     CommandInteraction,
-    SelectMenuInteraction,
-    Client
+    SelectMenuInteraction
 } from 'discord.js'
 
 import {
@@ -38,12 +37,12 @@ import {
 class BountyManager extends CogExtension {
     private bountyAccountManager_act: bountyAccountManager;
 
-    constructor(bot: Client) {
+    constructor(bot: Etapocsm) {
         super(bot);
         this.bountyAccountManager_act = new bountyAccountManager();
     }
 
-    public slCmdRegister() {
+    public async slCmdRegister() {
         (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
     }
 
@@ -400,9 +399,11 @@ class BountyManager extends CogExtension {
 
 let BountyManager_act: BountyManager;
 
-function promoter(bot: Client) {
+async function promoter(bot: Etapocsm): Promise<string> {
+    const cog_name = 'bounty_manager';
     BountyManager_act = new BountyManager(bot);
-    BountyManager_act.slCmdRegister();
+    //await BountyManager_act.slCmdRegister();
+    return cog_name;
 }
 
 bot.on('interactionCreate', async (interaction) => {

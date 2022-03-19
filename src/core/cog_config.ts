@@ -1,5 +1,6 @@
+import { Etapocsm } from '../../main';
+
 import {
-    Client,
     Guild,
     ApplicationCommandData,
     InteractionReplyOptions,
@@ -8,14 +9,14 @@ import {
 } from "discord.js";
 
 class CogExtension {
-    protected bot: Client;
+    protected bot: Etapocsm;
     protected in_use: boolean;
     protected check_failed_warning: InteractionReplyOptions;
     protected not_in_use_warning: InteractionReplyOptions;
     protected perm_warning: InteractionReplyOptions;
     protected error_gif: Array<string>;
 
-    constructor(bot: Client) {
+    constructor(bot: Etapocsm) {
         this.bot = bot;
         this.in_use = true;
 
@@ -57,8 +58,8 @@ class BaseGuildConfig {
     protected guildId: string;
     protected guild: Guild;
 
-    constructor(bot: Client, guildId: string) {
-        
+    constructor(bot: Etapocsm, guildId: string) {
+
         this.guildId = guildId;
         this.guild = bot.guilds.cache.get(this.guildId);
     }
@@ -78,7 +79,7 @@ class BaseGuildConfig {
 
 
 class MainGuildConfig extends BaseGuildConfig {
-    constructor(bot: Client) {
+    constructor(bot: Etapocsm) {
         const guildId = '743507979369709639';
         super(bot, guildId);
     }
@@ -86,7 +87,7 @@ class MainGuildConfig extends BaseGuildConfig {
 
 
 class WorkingGuildConfig extends BaseGuildConfig {
-    constructor(bot: Client) {
+    constructor(bot: Etapocsm) {
         const guildId = '790978307235512360';
         super(bot, guildId);
     }

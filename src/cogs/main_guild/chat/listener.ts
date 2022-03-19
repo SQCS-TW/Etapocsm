@@ -1,8 +1,8 @@
 import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
 import { Collection, ObjectId } from 'mongodb';
-import { bot } from '../../../index';
+import { bot, Etapocsm } from '../../../../main';
 import { interactionChecker } from '../verify';
-import { Client, Message, GuildMember } from 'discord.js'
+import { Message, GuildMember } from 'discord.js'
 
 import {
     CogExtension,
@@ -16,7 +16,7 @@ import {
 
 
 class ChatListener extends CogExtension {
-    constructor(bot: Client) {
+    constructor(bot: Etapocsm) {
         super(bot);
     }
 
@@ -33,14 +33,14 @@ class ChatListener extends CogExtension {
 
 let ChatListener_act: ChatListener;
 
-function promoter(bot: Client) {
+async function promoter(bot: Etapocsm) {
     ChatListener_act = new ChatListener(bot);
 }
 
-bot.on('messageCreate', async (message) => {
-    await ChatListener_act.messegeHandler(message);
-});
+// bot.on('messageCreate', async (message) => {
+//     await ChatListener_act.messegeHandler(message);
+// });
 
 export {
-    promoter
+    //promoter
 };

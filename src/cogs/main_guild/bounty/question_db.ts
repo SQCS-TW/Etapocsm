@@ -1,20 +1,20 @@
 import { CogExtension, MainGuildConfig } from '../../../core/cog_config';
-import { bot } from '../../../index';
+import { bot, Etapocsm } from '../../../../main';
 import { interactionChecker } from '../verify';
 import { Mongo } from '../../../core/db/mongodb';
 import { getFolderFiles } from '../../../core/db/storj/ts_port';
-import { Client, CommandInteraction } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 import { ObjectId } from 'mongodb';
 import { SLCMD_REGISTER_LIST } from './constants/question_db';
 
 
 class BountyQuestionsManager extends CogExtension {
-    public slCmdRegister() {
+    public async slCmdRegister() {
         (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
     }
 
     async slCmdHandler(interaction: CommandInteraction) {
-        if (!(super.checkPerm(interaction, 'ADMINISTRATOR'))) return;
+        if (!(this.checkPerm(interaction, 'ADMINISTRATOR'))) return;
 
         switch (interaction.commandName) {
             case 'activate': {
@@ -96,9 +96,11 @@ class BountyQuestionsManager extends CogExtension {
 
 let BountyQuestionsManager_act: BountyQuestionsManager;
 
-function promoter(bot: Client) {
+async function promoter(bot: Etapocsm): Promise<string> {
+    const cog_name = 'bounty_qns_manager';
     BountyQuestionsManager_act = new BountyQuestionsManager(bot);
-    BountyQuestionsManager_act.slCmdRegister();
+    //await BountyQuestionsManager_act.slCmdRegister();
+    return cog_name;
 }
 
 bot.on('interactionCreate', async (interaction) => {

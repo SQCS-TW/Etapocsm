@@ -1,8 +1,8 @@
 import { CogExtension, WorkingGuildConfig } from '../../core/cog_config';
-import { bot } from '../../index';
+import { bot, Etapocsm } from '../../../main';
 import { interactionChecker } from './verify';
 import { Mongo } from '../../core/db/mongodb';
-import { Client, CommandInteraction, ButtonInteraction, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, ButtonInteraction, SelectMenuInteraction } from 'discord.js';
 
 
 class Test extends CogExtension {
@@ -184,9 +184,11 @@ class Test extends CogExtension {
 
 let Test_act: Test;
 
-function promoter(bot: Client) {
+async function promoter(bot: Etapocsm): Promise<string> {
+    const cog_name = 'test_cmd';
     Test_act = new Test(bot);
     //Test_act.slCmdRegister();
+    return cog_name;
 }
 
 bot.on('interactionCreate', async (interaction) => {
