@@ -63,7 +63,7 @@ elif mode == 'getFolderFiles':
             suffixes=suffixes
         )
         filenames = [filename[len(prefix):] for filename in filenames]
-        print(str(filenames)[1:-1])  # ['e1', 'e2', ..., 'en'] -> 'e1', 'e2', ..., 'en'
+        print(', '.join(filenames))
 
     except:
         print('false')

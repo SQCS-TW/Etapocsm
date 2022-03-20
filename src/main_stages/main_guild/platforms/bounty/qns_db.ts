@@ -1,19 +1,17 @@
-import { CogExtension, MainGuildConfig } from '../../../core/cog_config';
-import { bot, Etapocsm } from '../../../../main';
-import { interactionChecker } from '../verify';
-import { Mongo } from '../../../core/db/mongodb';
-import { getFolderFiles } from '../../../core/db/storj/ts_port';
 import { CommandInteraction } from 'discord.js';
 import { ObjectId } from 'mongodb';
-import { SLCMD_REGISTER_LIST } from './constants/question_db';
+import { SLCMD_REGISTER_LIST } from './constants/qns_db';
+import { core, db } from '../../sc';
 
 
-class BountyQuestionsManager extends CogExtension {
-    public async slCmdRegister() {
-        (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
+class BountyQnsDBManager extends core.BaseManager {
+    constructor(father_platform: core.BasePlatform) {
+        super(father_platform);
+
+        this.slCmd_reg_list = SLCMD_REGISTER_LIST;
     }
 
-    async slCmdHandler(interaction: CommandInteraction) {
+    async slcmdHandler(interaction: CommandInteraction) {
         if (!(this.checkPerm(interaction, 'ADMINISTRATOR'))) return;
 
         switch (interaction.commandName) {
@@ -21,7 +19,7 @@ class BountyQuestionsManager extends CogExtension {
                 await interaction.deferReply({ ephemeral: true });
 
                 for (const diffi of ['easy', 'medium', 'hard']) {
-                    const file_names = await getFolderFiles({
+                    const file_names = await db.getFolderFiles({
                         bucket_name: 'bounty-questions-db',
                         prefix: `${diffi}/`,
                         suffixes: '.png-.jpg'
@@ -33,7 +31,7 @@ class BountyQuestionsManager extends CogExtension {
                             .replace(".jpg", '');
                     }
 
-                    const cursor = await (new Mongo('Bounty')).getCur('Questions');
+                    const cursor = await (new db.Mongo('Bounty')).getCur('Questions');
 
                     for (const file_name of file_names) {
                         const qns_data = {
@@ -59,7 +57,7 @@ class BountyQuestionsManager extends CogExtension {
                 const qns_id: string = interaction.options.getString('id');
                 const qns_choices: Array<string> = (interaction.options.getString('choices')).split(';');
 
-                const cursor = await (new Mongo('Bounty')).getCur('Questions');
+                const cursor = await (new db.Mongo('Bounty')).getCur('Questions');
 
                 const execute = {
                     $set: {
@@ -78,7 +76,7 @@ class BountyQuestionsManager extends CogExtension {
                 const qns_id: string = interaction.options.getString('id');
                 const qns_ans: Array<string> = (interaction.options.getString('ans')).split(';');
 
-                const cursor = await (new Mongo('Bounty')).getCur('Questions');
+                const cursor = await (new db.Mongo('Bounty')).getCur('Questions');
 
                 const execute = {
                     $set: {
@@ -94,26 +92,6 @@ class BountyQuestionsManager extends CogExtension {
     }
 }
 
-let BountyQuestionsManager_act: BountyQuestionsManager;
-
-async function promoter(bot: Etapocsm): Promise<string> {
-    const cog_name = 'bounty_qns_manager';
-    BountyQuestionsManager_act = new BountyQuestionsManager(bot);
-    //await BountyQuestionsManager_act.slCmdRegister();
-    return cog_name;
-}
-
-bot.on('interactionCreate', async (interaction) => {
-    if (!interactionChecker(interaction)) return;
-
-    await bot.interactionAllocater({
-        interaction: interaction,
-        interaction_managers: [
-            BountyQuestionsManager_act
-        ]
-    });
-});
-
 export {
-    promoter
+    BountyQnsDBManager
 };

@@ -13,6 +13,5 @@ const bot = new Etapocsm({
 bot.login(process.env.BOT_TOKEN);
 
 export {
-    bot,
     Etapocsm
 };

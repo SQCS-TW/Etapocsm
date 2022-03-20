@@ -1,26 +1,7 @@
 import fs from 'fs';
 import { ObjectId } from 'mongodb';
-import { bot, Etapocsm } from '../../../../main';
-import { interactionChecker } from '../verify';
-import { bountyAccountManager } from './account';
-import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
-import { storjDownload, getFolderFiles } from '../../../core/db/storj/ts_port';
 
-import {
-    CogExtension,
-    MainGuildConfig
-} from '../../../core/cog_config';
-
-import {
-    timeAfterSecs,
-    getRandomInt,
-    verifyMenuApplication,
-    getSubsetsWithCertainLength,
-    shuffle,
-    arrayEquals,
-    binomialCoefficient,
-    cloneObj
-} from '../../../core/utils';
+import { core, db } from '../../sc';
 
 import {
     CommandInteraction,
@@ -34,23 +15,21 @@ import {
 } from './constants/user_interaction';
 
 
-class BountyManager extends CogExtension {
-    private bountyAccountManager_act: bountyAccountManager;
+class BountyMainManager extends core.BaseManager {
+    private account_op: core.BountyAccountOperator;
 
-    constructor(bot: Etapocsm) {
-        super(bot);
-        this.bountyAccountManager_act = new bountyAccountManager();
-    }
+    constructor(father_platform: core.BasePlatform) {
+        super(father_platform);
 
-    public async slCmdRegister() {
-        (new MainGuildConfig(this.bot)).slCmdCreater(SLCMD_REGISTER_LIST);
+        this.account_op = new core.BountyAccountOperator();
+        this.slCmd_reg_list = SLCMD_REGISTER_LIST;
     }
 
     private async slCmd_activateBounty(interaction: CommandInteraction) {
         await interaction.deferReply({ ephemeral: true });
 
         // check if the user is already answering questions:
-        const account_cursor = await (new Mongo('Bounty')).getCur('Accounts');
+        const account_cursor = await (new db.Mongo('Bounty')).getCur('Accounts');
         const user_data = await account_cursor.findOne({ user_id: interaction.user.id });
 
         if (user_data && user_data.active) {
@@ -61,7 +40,7 @@ class BountyManager extends CogExtension {
         }
         //
 
-        const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
+        const cursor = await (new db.Mongo('Interaction')).getCur('Pipeline');
 
         // avoid redundant application
         const redundant_data = await cursor.findOne(
@@ -79,9 +58,9 @@ class BountyManager extends CogExtension {
         }
         //
 
-        const account_exists = await this.bountyAccountManager_act.checkAccountExistence(interaction.user.id);
+        const account_exists = await this.account_op.checkAccountExistence(interaction.user.id);
         if (!account_exists) {
-            const create_result = await this.bountyAccountManager_act.createAccount(interaction.user.id);
+            const create_result = await this.account_op.createAccount(interaction.user.id);
             if (!create_result) {
                 await interaction.editReply({
                     content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！'
@@ -100,11 +79,11 @@ class BountyManager extends CogExtension {
             ephemeral: true
         });
 
-        const player_application: MongoDataInterface = {
+        const player_application: db.MongoDataInterface = {
             _id: new ObjectId(),
             user_id: interaction.user.id,
             type: 'choose_bounty_qns_difficulty',
-            due_time: (await timeAfterSecs(15))
+            due_time: (await core.timeAfterSecs(15))
         };
 
         const apply_result = await cursor.insertOne(player_application);
@@ -123,7 +102,7 @@ class BountyManager extends CogExtension {
         await interaction.deferReply({ ephemeral: true });
 
         // check if the user is answering questions:
-        const account_cursor = await (new Mongo('Bounty')).getCur('Accounts');
+        const account_cursor = await (new db.Mongo('Bounty')).getCur('Accounts');
         const user_data = await account_cursor.findOne({ user_id: interaction.user.id });
 
         if (!user_data) {
@@ -141,15 +120,15 @@ class BountyManager extends CogExtension {
         }
         //
 
-        const ongoing_cursor = await (new Mongo('Bounty')).getCur('OngoingPipeline');
-        const qns_cursor = await (new Mongo('Bounty')).getCur('Questions');
+        const ongoing_cursor = await (new db.Mongo('Bounty')).getCur('OngoingPipeline');
+        const qns_cursor = await (new db.Mongo('Bounty')).getCur('Questions');
 
         const ongoing_data = await ongoing_cursor.findOne({ user_id: interaction.user.id });
         const qns_data = await qns_cursor.findOne({ qns_id: ongoing_data.qns_id });
 
         const choices: Array<string> = await this.generateQuestionChoices(qns_data.choices, qns_data.ans);
 
-        const ans_dropdown = [await cloneObj(CHOOSE_BOUNTY_ANS_DROPDOWN[0])];
+        const ans_dropdown = [await core.cloneObj(CHOOSE_BOUNTY_ANS_DROPDOWN[0])];
 
         choices.forEach(item => {
             ans_dropdown[0].components[0].options.push({
@@ -163,14 +142,14 @@ class BountyManager extends CogExtension {
             components: ans_dropdown
         });
 
-        const player_application: MongoDataInterface = {
+        const player_application: db.MongoDataInterface = {
             _id: new ObjectId(),
             user_id: interaction.user.id,
             type: 'choose_bounty_ans',
-            due_time: (await timeAfterSecs(60))
+            due_time: (await core.timeAfterSecs(60))
         };
 
-        const interaction_cursor = await (new Mongo('Interaction')).getCur('Pipeline');
+        const interaction_cursor = await (new db.Mongo('Interaction')).getCur('Pipeline');
         const apply_result = await interaction_cursor.insertOne(player_application);
         if (!apply_result.acknowledged) {
             await interaction.followUp({
@@ -185,7 +164,7 @@ class BountyManager extends CogExtension {
 
     private async slCmd_setStatus(interaction: CommandInteraction) {
         if (!this.checkPerm(interaction, 'ADMINISTRATOR')) {
-            return await interaction.reply(this.perm_warning);
+            return await interaction.reply(this.perm_error);
         }
 
         await interaction.deferReply({ ephemeral: true });
@@ -193,14 +172,12 @@ class BountyManager extends CogExtension {
         const user_id: string = interaction.options.getString('user_id');
         const new_status: boolean = interaction.options.getBoolean('status');
 
-        const set_result = await this.bountyAccountManager_act.setStatus(user_id, new_status);
+        const set_result = await this.account_op.setStatus(user_id, new_status);
 
         await interaction.editReply(set_result.message);
     }
 
-    public async slCmdHandler(interaction: CommandInteraction) {
-        if (!this.in_use) return;
-
+    public async slcmdHandler(interaction: CommandInteraction) {
         // only receive messages from the bounty-use channel
         // currently use cmd-use channel for testing
         if (interaction.channel.id !== '743677861000380527') return;
@@ -231,7 +208,7 @@ class BountyManager extends CogExtension {
             user_id: interaction.user.id,
             type: "choose_bounty_qns_difficulty"
         };
-        if (!(await verifyMenuApplication(verify))) {
+        if (!(await core.verifyMenuApplication(verify))) {
             await interaction.editReply({
                 content: ':x:**【選單認證錯誤】**選單已經逾期；或是請勿重複選擇。',
                 files: this.error_gif
@@ -279,8 +256,6 @@ class BountyManager extends CogExtension {
     }
 
     public async dropdownHandler(interaction: SelectMenuInteraction) {
-        if (!this.in_use) return;
-
         // only receive messages from the bounty-use channel
         // currently use cmd-use channel for testing
         if (interaction.channel.id !== '743677861000380527') return;
@@ -302,33 +277,33 @@ class BountyManager extends CogExtension {
         //     qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
         //     qns_ans = ['A', 'C'];
 
-        let result: Array<any> = await getSubsetsWithCertainLength(qns_choices, qns_ans.length);
-        result = result.filter(async (item) => { return (!(await arrayEquals(item, qns_ans))) });
-        result = await shuffle(result);
+        let result: Array<any> = await core.getSubsetsWithCertainLength(qns_choices, qns_ans.length);
+        result = result.filter(async (item) => { return (!(await core.arrayEquals(item, qns_ans))) });
+        result = await core.shuffle(result);
 
         const random_choices_count = Math.min(
             Math.pow(2, qns_ans.length) + 2,
-            await binomialCoefficient(qns_choices.length, qns_ans.length)
+            await core.binomialCoefficient(qns_choices.length, qns_ans.length)
         ) - 1;
 
         result = result.slice(0, random_choices_count);
         result.push(qns_ans);
-        result = await shuffle(result);
+        result = await core.shuffle(result);
         result = result.map((item) => { return item.join(', ') });
         return result;
     }
 
     private async downloadQnsPicture(diffi: string) {
-        const files = await getFolderFiles({
+        const files = await db.getFolderFiles({
             bucket_name: 'bounty-questions-db',
             prefix: `${diffi}/`,
             suffixes: '.png-.jpg'
         });
         console.log(files);
-        const random_filename = files[await getRandomInt(files.length)];
+        const random_filename = files[await core.getRandomInt(files.length)];
         const local_file_name = `./assets/buffer/storj/${random_filename}`;
 
-        const result = await storjDownload({
+        const result = await db.storjDownload({
             bucket_name: 'bounty-questions-db',
             local_file_name: local_file_name,
             db_file_name: `${diffi}/${random_filename}`
@@ -342,7 +317,7 @@ class BountyManager extends CogExtension {
     }
 
     private async appendToPipeline(diffi: string, random_filename: string, player_id: string) {
-        const qns_cursor = await (new Mongo('Bounty')).getCur('Questions');
+        const qns_cursor = await (new db.Mongo('Bounty')).getCur('Questions');
 
         const qns_id = random_filename
             .replace(".png", '')
@@ -355,11 +330,11 @@ class BountyManager extends CogExtension {
             user_id: player_id,
             difficulty: diffi,
             qns_id: qns_id,
-            due_time: await timeAfterSecs(qns_data.time_avail),
+            due_time: await core.timeAfterSecs(qns_data.time_avail),
             freeze: false
         };
 
-        const pipeline_cursor = (new Mongo('Bounty')).getCur('OngoingPipeline');
+        const pipeline_cursor = (new db.Mongo('Bounty')).getCur('OngoingPipeline');
         const ongoing_data_insert_result = await (await pipeline_cursor).insertOne(player_data);
 
         if (!ongoing_data_insert_result.acknowledged) {
@@ -379,7 +354,7 @@ class BountyManager extends CogExtension {
     }
 
     private async activePayerStatus(player_id: string) {
-        const set_result = await this.bountyAccountManager_act.setStatus(player_id, true);
+        const set_result = await this.account_op.setStatus(player_id, true);
 
         if (!set_result.result) return {
             result: false,
@@ -397,26 +372,6 @@ class BountyManager extends CogExtension {
 }
 
 
-let BountyManager_act: BountyManager;
-
-async function promoter(bot: Etapocsm): Promise<string> {
-    const cog_name = 'bounty_manager';
-    BountyManager_act = new BountyManager(bot);
-    //await BountyManager_act.slCmdRegister();
-    return cog_name;
-}
-
-bot.on('interactionCreate', async (interaction) => {
-    if (!interactionChecker(interaction)) return;
-
-    await bot.interactionAllocater({
-        interaction: interaction,
-        interaction_managers: [
-            BountyManager_act
-        ]
-    });
-});
-
 export {
-    promoter
+    BountyMainManager
 };

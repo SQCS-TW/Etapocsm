@@ -1,8 +1,8 @@
-import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
-import { Collection, ObjectId } from 'mongodb';
+import { Mongo } from '../db/reglist';
+import { Collection } from 'mongodb';
+import { getDefaultBountyAccount } from '../constants/reglist';
 
-
-class bountyAccountManager {
+class BountyAccountOperator {
     private cursor_promise: Promise<Collection>;
 
     constructor() {
@@ -12,34 +12,13 @@ class bountyAccountManager {
 
     public async checkAccountExistence(user_id: string) {
         const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
-        
+
         if (member_data) return true;
         return false;
     }
 
     public async createAccount(user_id: string) {
-        const default_member_data: MongoDataInterface = {
-            _id: new ObjectId(),
-            user_id: user_id,
-            stamina: {
-                regular: 3,
-                extra: 0
-            },
-            active: false,
-            record: {
-                total_qns: {
-                    easy: 0,
-                    medium: 0,
-                    hard: 0
-                },
-                correct_qns: {
-                    easy: 0,
-                    medium: 0,
-                    hard: 0
-                }
-            }
-        };
-
+        const default_member_data = await getDefaultBountyAccount(user_id)
         const result = await (await this.cursor_promise).insertOne(default_member_data);
 
         return result.acknowledged;
@@ -74,5 +53,5 @@ class bountyAccountManager {
 }
 
 export {
-    bountyAccountManager
+    BountyAccountOperator
 }

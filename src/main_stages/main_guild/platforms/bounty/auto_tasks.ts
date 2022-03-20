@@ -1,8 +1,7 @@
 import cron from 'node-cron';
-import { Mongo, MongoDataInterface } from '../../../core/db/mongodb';
+import { Mongo, MongoDataInterface } from '../../../../db/mongodb';
 import { Collection } from 'mongodb';
-import { jsonOperator } from '../../../core/json';
-import { Etapocsm } from '../../../../main';
+import { core } from '../../sc';
 
 /*
     * --- day of week
@@ -13,13 +12,9 @@ import { Etapocsm } from '../../../../main';
     * --- second (optional)
 */
 
-// class BountyTaskManager extends CogExtension {
+const jsonOp = new core.jsonOperator();
 
-// }
-
-const jsonOp = new jsonOperator();
-
-interface pipelineCacheInterface {
+type pipelineCache = {
     user_id: string,
     recent_due_time: number
 }
@@ -46,10 +41,10 @@ async function findNearestData() {
 
 async function checkOngoingPipeline() {
     const json_path = './cache/bounty/player_data.json'
-    const player_data: pipelineCacheInterface = await jsonOp.readFile(json_path);
+    const player_data: pipelineCache = await jsonOp.readFile(json_path);
 
     if (Object.keys(player_data).length === 0) {
-        const new_player_data: pipelineCacheInterface = await findNearestData();
+        const new_player_data: pipelineCache = await findNearestData();
         if (!new_player_data) return;
 
         await jsonOp.writeFile(json_path, new_player_data);
@@ -76,19 +71,17 @@ async function checkMenuApplications() {
     data.filter(checkExpired).forEach(deleteItem);
 }
 
-// let BountyTaskManager_act;
 
-async function promoter(bot: Etapocsm) {
-    const cog_name = 'bounty_auto_task';
-    // BountyTaskManager_act = new BountyTaskManager(bot);
-
-    // do this every 5 seconds
-    cron.schedule('*/5 * * * * *', checkMenuApplications);
-    cron.schedule('*/5 * * * * *', checkOngoingPipeline);
-    return cog_name;
+class BountyAutoTaskManager extends core.BaseManager {
+    constructor(father_platform: core.BasePlatform) {
+        super(father_platform);
+        // do this every 5 seconds
+        cron.schedule('*/5 * * * * *', checkMenuApplications);
+        cron.schedule('*/5 * * * * *', checkOngoingPipeline);
+    }
 }
 
 
 export {
-    promoter
+    BountyAutoTaskManager
 };

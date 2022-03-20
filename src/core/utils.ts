@@ -1,4 +1,4 @@
-import { Mongo } from './db/mongodb';
+import { Mongo } from '../db/reglist';
 
 
 const timeAfterSecs = async (seconds: number) => { return Date.now() + seconds * 1000; };
@@ -78,6 +78,12 @@ async function verifyMenuApplication(verify: VerifyMenuApplicationInterface) {
     }
 }
 
+async function isItemInArray<T>(item: T, arr: Array<T>) {
+    if (arr.indexOf(item) !== -1) {
+        return true;
+    } else return false;
+}
+
 
 export {
     cloneObj,
@@ -88,5 +94,6 @@ export {
     getSubsetsWithCertainLength,
     shuffle,
     arrayEquals,
-    binomialCoefficient
+    binomialCoefficient,
+    isItemInArray
 };
