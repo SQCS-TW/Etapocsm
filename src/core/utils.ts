@@ -61,12 +61,12 @@ async function arrayEquals(arr1: Array<any>, arr2: Array<any>) {
     return true;
 }
 
-interface VerifyMenuApplicationInterface {
+type MenuApplicationVerifyData = {
     user_id: string
     type: string
 }
 
-async function verifyMenuApplication(verify: VerifyMenuApplicationInterface) {
+async function verifyMenuApplication(verify: MenuApplicationVerifyData) {
     const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
     const user_application: any = cursor.findOne(verify);
 

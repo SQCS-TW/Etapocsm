@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { Mongo, MongoDataInterface } from '../../../../db/mongodb';
+import { Mongo, MongoData } from '../../../../db/mongodb';
 import { Collection } from 'mongodb';
 import { core } from '../../sc';
 
@@ -57,11 +57,11 @@ async function checkOngoingPipeline() {
     }
 }
 
-async function checkExpired(item: MongoDataInterface) {
+async function checkExpired(item: MongoData) {
     return (item.due_time <= Date.now());
 }
 
-async function deleteItem(item: MongoDataInterface) {
+async function deleteItem(item: MongoData) {
     await inter_pl_cursor.deleteOne({ user_id: item.user_id });
     console.log('deleted: ', item);
 }

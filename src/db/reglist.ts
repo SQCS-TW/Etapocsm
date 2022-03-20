@@ -1,6 +1,6 @@
 export {
     Mongo,
-    MongoDataInterface
+    MongoData
 } from './mongodb';
 
 export {

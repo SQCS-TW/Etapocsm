@@ -2,15 +2,15 @@
   "name": "etapocsm",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/index.ts",
+  "main": "./main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "init_dir": "npx ts-node -T ./main.ts",
     "init": "npx ts-node ./main.ts"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "@SQCS-TW",
+  "license": "MIT",
   "dependencies": {
     "child_process": "^1.0.2",
     "discord.js": "^13.6.0",

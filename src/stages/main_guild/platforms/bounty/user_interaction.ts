@@ -79,7 +79,7 @@ class BountyMainManager extends core.BaseManager {
             ephemeral: true
         });
 
-        const player_application: db.MongoDataInterface = {
+        const player_application: db.MongoData = {
             _id: new ObjectId(),
             user_id: interaction.user.id,
             type: 'choose_bounty_qns_difficulty',
@@ -142,7 +142,7 @@ class BountyMainManager extends core.BaseManager {
             components: ans_dropdown
         });
 
-        const player_application: db.MongoDataInterface = {
+        const player_application: db.MongoData = {
             _id: new ObjectId(),
             user_id: interaction.user.id,
             type: 'choose_bounty_ans',

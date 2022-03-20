@@ -1,5 +1,4 @@
 import { ButtonInteraction, CommandInteraction, SelectMenuInteraction } from 'discord.js';
-
 import { BaseStage } from './stage';
 import { BaseManager } from './manager';
 

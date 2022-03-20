@@ -1,7 +1,7 @@
-import { MongoDataInterface } from '../db/reglist';
+import { MongoData } from '../db/reglist';
 import { ObjectId } from 'mongodb';
 
-const getDefaultBountyAccount = async function (user_id: string): Promise<MongoDataInterface> {
+const getDefaultBountyAccount = async function (user_id: string): Promise<MongoData> {
     return {
         _id: new ObjectId(),
         user_id: user_id,

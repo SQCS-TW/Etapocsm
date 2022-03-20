@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+
 class jsonOperator {
     public async readFile(file_path: string) {
         const rawdata = String(fs.readFileSync(file_path));
@@ -12,6 +13,7 @@ class jsonOperator {
     }
 }
 
+
 export {
     jsonOperator
-}
+};

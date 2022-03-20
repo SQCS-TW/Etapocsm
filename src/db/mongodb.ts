@@ -8,36 +8,27 @@ const client = new MongoClient(uri);
 
 client.connect();
 
-interface MongoDataInterface {
+
+type MongoData = {
     _id: ObjectId
     [key: string]: any
 }
 
 class Mongo {
-    db: Db;
+    private db: Db;
 
     constructor(database: string) {
         this.db = client.db(database);
     }
 
-    async getCur(collection: string): Promise<Collection> {
+    public async getCur(collection: string): Promise<Collection> {
         // return the cursor of collection: "collection"
         return this.db.collection(collection);
     }
-
-    //transplanted from python
-    // def get_curs(self, collections: List[str]):
-    //     cursors: List[pymongo.cursor.CursorType] = [self.client[collection] for collection in collections]
-    //     return tuple(cursors)
-
-    // def get_all_curs(self):
-    //     cursors: List[pymongo.cursor.CursorType] = \
-    //         [self.client[collection] for collection in self.client.list_collection_names()]
-    //     return tuple(cursors)
 }
 
 
 export {
     Mongo,
-    MongoDataInterface
+    MongoData
 };
