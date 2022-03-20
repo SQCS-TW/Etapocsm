@@ -1,6 +1,6 @@
 # Etapocsm
 
-![JS](https://img.shields.io/badge/MADE%20WITH-JAVASCRIPT-yellow?style=for-the-badge)
+![JS](https://img.shields.io/badge/MADE%20WITH-TYPESCRIPT-blue?style=for-the-badge)
 ![PY](https://img.shields.io/badge/MIXED%20WITH-PYTHON-blue?style=for-the-badge)
 ![MIT](https://img.shields.io/badge/LICENSE-MIT-brightgreen?style=for-the-badge)
 ![HEART](https://img.shields.io/badge/MADE%20WITH-%F0%9F%92%96-red?style=for-the-badge)
