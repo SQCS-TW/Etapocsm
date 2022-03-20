@@ -1,6 +1,7 @@
 import { Client, ClientOptions } from 'discord.js';
 import { BaseStage } from './core/reglist';
-import { main_guild } from './main_stages/reglist';
+import { MainGuildStage } from './stages/reglist';
+
 
 class Etapocsm extends Client {
     private child_stages: Array<BaseStage>;
@@ -20,7 +21,7 @@ class Etapocsm extends Client {
 
     public async addChildStages(bot: Etapocsm) {
         this.child_stages = [
-            new main_guild.MainGuildStage(bot)
+            new MainGuildStage(bot)
         ]
 
         this.child_stages.forEach(async (stage: any) => {

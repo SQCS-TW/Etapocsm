@@ -1,11 +1,7 @@
-import { BaseStage } from '../../core/reglist';
-import { Etapocsm } from '../../../main';
-import { BountyPlatforms } from './platforms/reglist';
+import { BaseStage } from '../core/reglist';
+import { Etapocsm } from '../../main';
+import { platforms } from './main_guild/reglist';
 
-
-type FatherStages = {
-    [key: string]: BaseStage
-}
 
 class MainGuildStage extends BaseStage {
     constructor(bot: Etapocsm) {
@@ -15,7 +11,7 @@ class MainGuildStage extends BaseStage {
 
     public async addPlatforms(this_stage: BaseStage) {
         this.child_platforms = [
-            new BountyPlatforms(this_stage)
+            new platforms.BountyPlatforms(this_stage)
         ];
 
         this.child_platforms.forEach(async (platform: any) => {
