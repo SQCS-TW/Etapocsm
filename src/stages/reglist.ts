@@ -11,12 +11,9 @@ class MainGuildStage extends BaseStage {
 
     public async addPlatforms(this_stage: BaseStage) {
         this.child_platforms = [
-            new platforms.BountyPlatforms(this_stage)
+            new platforms.BountyPlatform(this_stage)
         ];
-
-        this.child_platforms.forEach(async (platform: any) => {
-            await platform.addManagers(platform);
-        });
+        await this.invokePlatforms();
     }
 }
 

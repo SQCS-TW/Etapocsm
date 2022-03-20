@@ -1,7 +1,7 @@
 import { core } from '../sc';
 import * as bounty from './bounty/reglist';
 
-class BountyPlatforms extends core.BasePlatform {
+class BountyPlatform extends core.BasePlatform {
     constructor(father_stage: core.BaseStage) {
         super(father_stage);
     }
@@ -16,5 +16,5 @@ class BountyPlatforms extends core.BasePlatform {
 }
 
 export {
-    BountyPlatforms
-}
+    BountyPlatform
+};

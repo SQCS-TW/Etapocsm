@@ -15,15 +15,18 @@ class Etapocsm extends Client {
         this.on('ready', async () => {
             console.log(`${this.user.username} has logged in!`);
 
-            await this.addChildStages(this);
+            await this.addStages(this);
         });
     }
 
-    public async addChildStages(bot: Etapocsm) {
+    public async addStages(bot: Etapocsm) {
         this.child_stages = [
             new MainGuildStage(bot)
         ]
+        await this.invokeStages();
+    }
 
+    private async invokeStages() {
         this.child_stages.forEach(async (stage: any) => {
             await stage.addPlatforms(stage);
         });

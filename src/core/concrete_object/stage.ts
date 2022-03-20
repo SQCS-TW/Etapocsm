@@ -7,6 +7,7 @@ class BaseStage {
     public bot: Etapocsm;
     public guild: Guild;
 
+    protected child_platforms_waitlist: Array<BasePlatform>;
     protected child_platforms: Array<BasePlatform>;
 
     constructor(bot: Etapocsm, guild_id: string) {
@@ -32,6 +33,12 @@ class BaseStage {
             } else if (interaction.isSelectMenu()) {
                 await platform.transferDropdown(interaction);
             }
+        });
+    }
+
+    protected async invokePlatforms() {
+        this.child_platforms.forEach(async (platform: any) => {
+            await platform.addManagers(platform);
         });
     }
 }
