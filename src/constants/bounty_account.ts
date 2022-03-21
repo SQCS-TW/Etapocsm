@@ -5,6 +5,7 @@ const getDefaultBountyAccount = async function (user_id: string): Promise<MongoD
     return {
         _id: new ObjectId(),
         user_id: user_id,
+        exp: 0,
         stamina: {
             regular: 3,
             extra: 0

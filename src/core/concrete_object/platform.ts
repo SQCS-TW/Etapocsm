@@ -1,6 +1,6 @@
-import { ButtonInteraction, CommandInteraction, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, SelectMenuInteraction, Message } from 'discord.js';
 import { BaseStage } from './stage';
-import { BaseManager } from './manager';
+import { BaseListener, BaseManager } from './manager';
 
 
 class BasePlatform {
@@ -10,7 +10,7 @@ class BasePlatform {
 
     public f_stage: BaseStage;
 
-    protected managers: Array<BaseManager>;
+    protected managers: Array<BaseManager | BaseListener>;
 
     constructor(father_stage: BaseStage) {
         this.f_stage = father_stage;
@@ -33,6 +33,12 @@ class BasePlatform {
     public async transferDropdown(interaction: SelectMenuInteraction) {
         this.managers.forEach(async (manager: any) => {
             if (manager.dropdownHandler) await manager.dropdownHandler(interaction);
+        });
+    }
+
+    public async transferMessage(msg: Message) {
+        this.managers.forEach(async (manager: any) => {
+            if (manager.messageHandler) await manager.messageHandler(msg);
         });
     }
 }

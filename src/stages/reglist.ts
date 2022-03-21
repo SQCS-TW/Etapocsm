@@ -1,6 +1,6 @@
 import { BaseStage } from '../core/reglist';
 import { Etapocsm } from '../../main';
-import { platforms } from './main_guild/reglist';
+import { main_guild_stage_platforms } from './main_guild/reglist';
 
 
 class MainGuildStage extends BaseStage {
@@ -10,10 +10,10 @@ class MainGuildStage extends BaseStage {
     }
 
     public async addPlatforms(this_stage: BaseStage) {
-        this.child_platforms = [
-            new platforms.BountyPlatform(this_stage)
-        ];
-        await this.invokePlatforms();
+        this.child_platforms = await this.invokePlatforms([
+            new main_guild_stage_platforms.BountyPlatform(this_stage),
+            new main_guild_stage_platforms.LvlSysPlatform(this_stage)
+        ]);
     }
 }
 

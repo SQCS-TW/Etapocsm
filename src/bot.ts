@@ -20,16 +20,16 @@ class Etapocsm extends Client {
     }
 
     public async addStages(bot: Etapocsm) {
-        this.child_stages = [
+        this.child_stages = await this.invokeStages([
             new MainGuildStage(bot)
-        ]
-        await this.invokeStages();
+        ]);
     }
 
-    private async invokeStages() {
-        this.child_stages.forEach(async (stage: any) => {
+    private async invokeStages(child_stages: Array<BaseStage>) {
+        child_stages.forEach(async (stage: any) => {
             await stage.addPlatforms(stage);
         });
+        return child_stages;
     }
 }
 

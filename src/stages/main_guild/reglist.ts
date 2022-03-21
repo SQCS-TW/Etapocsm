@@ -1,1 +1,1 @@
-export * as platforms from './platforms/reglist';
+export * as main_guild_stage_platforms from './platforms/reglist';

@@ -4,7 +4,8 @@ import {
     ApplicationCommandData,
     InteractionReplyOptions,
     Interaction,
-    PermissionResolvable
+    PermissionResolvable,
+    Message
 } from "discord.js";
 
 
@@ -55,7 +56,16 @@ class BaseManager {
     }
 }
 
+class BaseListener {
+    public f_platform: BasePlatform;
+
+    constructor(father_platform: BasePlatform) {
+        this.f_platform = father_platform;
+    }
+}
+
 
 export {
-    BaseManager
+    BaseManager,
+    BaseListener
 };
