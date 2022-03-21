@@ -1,14 +1,7 @@
 import { ApplicationCommandData, Constants } from 'discord.js';
 
-const SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
-    {
-        name: 'activate_bounty',
-        description: '開始懸賞活動'
-    },
-    {
-        name: 'end_bounty',
-        description: '結束懸賞活動（回答問題）'
-    },
+
+const ADMIN_SLCMD_LIST: Array<ApplicationCommandData> = [
     {
         name: 'set_status',
         description: '設定用戶狀態',
@@ -26,6 +19,20 @@ const SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
                 required: true
             }
         ]
+    }
+];
+
+const START_SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
+    {
+        name: 'activate_bounty',
+        description: '開始懸賞活動'
+    }
+];
+
+const END_SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
+    {
+        name: 'end_bounty',
+        description: '結束懸賞活動（回答問題）'
     }
 ];
 
@@ -77,7 +84,9 @@ const CHOOSE_BOUNTY_ANS_DROPDOWN = [
 ];
 
 export {
-    SLCMD_REGISTER_LIST,
+    ADMIN_SLCMD_LIST,
+    START_SLCMD_REGISTER_LIST,
+    END_SLCMD_REGISTER_LIST,
     CHOOSE_BOUNTY_DIFFICULTY_DROPDOWN,
     CHOOSE_BOUNTY_ANS_DROPDOWN
 };

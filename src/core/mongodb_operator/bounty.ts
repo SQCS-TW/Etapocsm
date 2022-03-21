@@ -9,7 +9,7 @@ class BountyAccountOperator extends BaseOperator {
 
     public async setStatus(user_id: string, status: boolean): Promise<OperatorResponse> {
         const check_result = await this.checkUserDataExistence(user_id);
-        if (!check_result.status) return check_result; 
+        if (!check_result.status) return check_result;
 
         const execute = {
             $set: {
@@ -26,6 +26,16 @@ class BountyAccountOperator extends BaseOperator {
         return {
             status: true,
             message: ':white_check_mark: 寫入成功'
+        };
+    }
+
+    public async isUserAnsweringQns(user_id: string): Promise<OperatorResponse> {
+        const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+        if (member_data.active) return {
+            status: true
+        };
+        return {
+            status: false
         };
     }
 }

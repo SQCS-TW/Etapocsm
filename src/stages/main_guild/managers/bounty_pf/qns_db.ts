@@ -8,7 +8,7 @@ class BountyQnsDBManager extends core.BaseManager {
     constructor(father_platform: core.BasePlatform) {
         super(father_platform);
 
-        this.slCmd_reg_list = SLCMD_REGISTER_LIST;
+        this.slcmd_reglist = SLCMD_REGISTER_LIST;
     }
 
     async slcmdHandler(interaction: CommandInteraction) {

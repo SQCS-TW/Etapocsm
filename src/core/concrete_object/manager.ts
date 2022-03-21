@@ -12,7 +12,7 @@ import {
 class BaseManager {
     public f_platform: BasePlatform;
 
-    protected slCmd_reg_list: Array<ApplicationCommandData>;
+    protected slcmd_reglist: Array<ApplicationCommandData>;
 
     protected cmd_error: InteractionReplyOptions;
     protected perm_error: InteractionReplyOptions;
@@ -35,7 +35,7 @@ class BaseManager {
 
     public async registerSlcmd(): Promise<void> {
         const commands_mng = this.f_platform.f_stage.guild.commands;
-        for (const slcmd of this.slCmd_reg_list) commands_mng.create(slcmd);
+        for (const slcmd of this.slcmd_reglist) commands_mng.create(slcmd);
     }
 
     public async resetAllSlcmd(): Promise<void> {

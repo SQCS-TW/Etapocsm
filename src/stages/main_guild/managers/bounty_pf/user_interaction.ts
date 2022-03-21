@@ -3,63 +3,50 @@ import { ObjectId } from 'mongodb';
 
 import { core, db } from '../../sc';
 
-import {
-    CommandInteraction,
-    SelectMenuInteraction
-} from 'discord.js'
+import { CommandInteraction, SelectMenuInteraction } from 'discord.js'
 
 import {
-    SLCMD_REGISTER_LIST,
+    START_SLCMD_REGISTER_LIST,
+    END_SLCMD_REGISTER_LIST,
     CHOOSE_BOUNTY_DIFFICULTY_DROPDOWN,
     CHOOSE_BOUNTY_ANS_DROPDOWN
 } from './constants/user_interaction';
 
 
-class BountyMainManager extends core.BaseManager {
-    private account_op: core.BountyAccountOperator;
+class BountyStartEventManager extends core.BaseManager {
+    private bounty_bounty_account_op: core.BountyAccountOperator;
+    private inter_appli_op: core.InteractionPipelineOperator;
 
     constructor(father_platform: core.BasePlatform) {
         super(father_platform);
 
-        this.account_op = new core.BountyAccountOperator();
-        this.slCmd_reg_list = SLCMD_REGISTER_LIST;
+        this.bounty_bounty_account_op = new core.BountyAccountOperator();
+        this.inter_appli_op = new core.InteractionPipelineOperator();
+
+        this.slcmd_reglist = START_SLCMD_REGISTER_LIST;
     }
 
-    private async slCmd_activateBounty(interaction: CommandInteraction) {
+    private async handleActivateBountyCase(interaction: CommandInteraction) {
         await interaction.deferReply({ ephemeral: true });
 
         // check if the user is already answering questions:
-        const account_cursor = await (new db.Mongo('Bounty')).getCur('Accounts');
-        const user_data = await account_cursor.findOne({ user_id: interaction.user.id });
+        let check_result = await this.bounty_bounty_account_op.checkUserDataExistence(interaction.user.id);
 
-        if (user_data && user_data.active) {
-            await interaction.editReply({
-                content: ':x:**【啟動錯誤】**你已經在回答問題中了！'
-            });
-            return;
-        }
-        //
-
-        const cursor = await (new db.Mongo('Interaction')).getCur('Pipeline');
-
-        // avoid redundant application
-        const redundant_data = await cursor.findOne(
-            {
-                user_id: interaction.user.id,
-                type: 'choose_bounty_qns_difficulty',
+        if (check_result.status) {
+            if (await this.bounty_bounty_account_op.isUserAnsweringQns(interaction.user.id)) {
+                return await interaction.editReply({
+                    content: ':x:**【啟動錯誤】**你已經在回答問題中了！'
+                });
             }
-        );
-
-        if (redundant_data) {
-            await interaction.editReply({
-                content: ':x:**【申請錯誤】**請勿重複申請！'
-            });
-            return;
+        } else {
+            const create_result = await this.bounty_bounty_account_op.createUserData(interaction.user.id);
+            if (!create_result) return await interaction.editReply(create_result.message);
         }
-        //
 
-        const check_result = await this.account_op.checkUserDataExistence(interaction.user.id, true);
-        if (!check_result.status) return await interaction.editReply(check_result.message);
+        check_result = await this.inter_appli_op.checkUserApplicationExistence(interaction.user.id, 'choose_bounty_qns_difficulty');
+        if (check_result.status) return await interaction.editReply({
+            content: ':x:**【申請錯誤】**請勿重複申請！'
+        });
 
         await interaction.editReply({
             content: ':white_check_mark:**【帳號檢查完畢】**活動開始！'
@@ -71,46 +58,40 @@ class BountyMainManager extends core.BaseManager {
             ephemeral: true
         });
 
-        const player_application: db.MongoData = {
-            _id: new ObjectId(),
-            user_id: interaction.user.id,
-            type: 'choose_bounty_qns_difficulty',
-            due_time: (await core.timeAfterSecs(15))
-        };
+        const player_appli = await this.inter_appli_op.createApplication(interaction.user.id, 'choose_bounty_qns_difficulty', 15);
 
-        const apply_result = await cursor.insertOne(player_application);
-        if (!apply_result.acknowledged) {
-            await interaction.followUp({
-                content: ':x:**【選單申請創建錯誤】**請洽總召！',
-                files: this.error_gif,
-                ephemeral: true
-            });
+        if (!player_appli.status) return await interaction.followUp({
+            content: ':x:**【選單申請創建錯誤】**請洽總召！',
+            files: this.error_gif,
+            ephemeral: true
+        });
+    }
+}
 
-            return;
-        }
+
+class BountyEndEventManager extends core.BaseManager {
+    private bounty_account_op: core.BountyAccountOperator;
+
+    constructor(father_platform: core.BasePlatform) {
+        super(father_platform);
+
+        this.bounty_account_op = new core.BountyAccountOperator();
+        this.slcmd_reglist = END_SLCMD_REGISTER_LIST;
     }
 
     private async slCmd_endBounty(interaction: CommandInteraction) {
         await interaction.deferReply({ ephemeral: true });
 
-        // check if the user is answering questions:
-        const account_cursor = await (new db.Mongo('Bounty')).getCur('Accounts');
-        const user_data = await account_cursor.findOne({ user_id: interaction.user.id });
+        let check_result = await this.bounty_account_op.checkUserDataExistence(interaction.user.id);
+        if (!check_result.status) return await interaction.editReply({
+            content: ':x:**【帳號錯誤】**你還沒啟動過活動！'
+        });
 
-        if (!user_data) {
-            await interaction.editReply({
-                content: ':x:**【帳號錯誤】**你還沒啟動過活動！'
-            });
-            return;
-        }
+        check_result = await this.bounty_account_op.isUserAnsweringQns(interaction.user.id);
 
-        if (!user_data.active) {
-            await interaction.editReply({
-                content: ':x:**【狀態錯誤】**你還沒啟動過活動！'
-            });
-            return;
-        }
-        //
+        if (!check_result.status) return await interaction.editReply({
+            content: ':x:**【狀態錯誤】**你還沒啟動過活動！'
+        });
 
         const ongoing_cursor = await (new db.Mongo('Bounty')).getCur('OngoingPipeline');
         const qns_cursor = await (new db.Mongo('Bounty')).getCur('Questions');
@@ -164,7 +145,7 @@ class BountyMainManager extends core.BaseManager {
         const user_id: string = interaction.options.getString('user_id');
         const new_status: boolean = interaction.options.getBoolean('status');
 
-        const set_result = await this.account_op.setStatus(user_id, new_status);
+        const set_result = await this.bounty_account_op.setStatus(user_id, new_status);
 
         await interaction.editReply(set_result.message);
     }
@@ -214,7 +195,7 @@ class BountyMainManager extends core.BaseManager {
         const diffi = interaction.values[0];
 
         const dl_result = await this.downloadQnsPicture(diffi);
-        if (!dl_result.result) {
+        if (!dl_result.status) {
             await interaction.followUp({
                 content: ':x:**【題目獲取錯誤】**請洽總召！',
                 files: this.error_gif,
@@ -302,7 +283,7 @@ class BountyMainManager extends core.BaseManager {
         });
 
         return {
-            result: result,
+            status: result,
             random_filename: random_filename,
             local_file_name: local_file_name
         };
@@ -331,7 +312,7 @@ class BountyMainManager extends core.BaseManager {
 
         if (!ongoing_data_insert_result.acknowledged) {
             return {
-                result: false,
+                status: false,
                 message: {
                     content: ':x:**【活動檔案建立錯誤】**請洽總召！',
                     files: this.error_gif,
@@ -346,7 +327,7 @@ class BountyMainManager extends core.BaseManager {
     }
 
     private async activePayerStatus(player_id: string) {
-        const set_result = await this.account_op.setStatus(player_id, true);
+        const set_result = await this.bounty_account_op.setStatus(player_id, true);
 
         if (!set_result.status) return {
             result: false,
