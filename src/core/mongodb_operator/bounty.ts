@@ -1,0 +1,35 @@
+import { getDefaultBountyAccount } from '../../constants/reglist';
+import { BaseOperator, OperatorResponse } from './base';
+
+class BountyAccountOperator extends BaseOperator {
+    constructor() {
+        super('Bounty', 'Accounts');
+        this.createDefaultDataFunction = getDefaultBountyAccount;
+    }
+
+    public async setStatus(user_id: string, status: boolean): Promise<OperatorResponse> {
+        const check_result = await this.checkUserDataExistence(user_id);
+        if (!check_result.status) return check_result; 
+
+        const execute = {
+            $set: {
+                active: status
+            }
+        };
+
+        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        if (!update_result.acknowledged) return {
+            status: false,
+            message: ':x: 寫入錯誤'
+        };
+
+        return {
+            status: true,
+            message: ':white_check_mark: 寫入成功'
+        };
+    }
+}
+
+export {
+    BountyAccountOperator
+};

@@ -58,16 +58,8 @@ class BountyMainManager extends core.BaseManager {
         }
         //
 
-        const account_exists = await this.account_op.checkAccountExistence(interaction.user.id);
-        if (!account_exists) {
-            const create_result = await this.account_op.createAccount(interaction.user.id);
-            if (!create_result) {
-                await interaction.editReply({
-                    content: ':x:**【帳號 創建/登入 錯誤】**請洽總召！'
-                });
-                return;
-            }
-        }
+        const check_result = await this.account_op.checkUserDataExistence(interaction.user.id, true);
+        if (!check_result.status) return await interaction.editReply(check_result.message);
 
         await interaction.editReply({
             content: ':white_check_mark:**【帳號檢查完畢】**活動開始！'
@@ -356,7 +348,7 @@ class BountyMainManager extends core.BaseManager {
     private async activePayerStatus(player_id: string) {
         const set_result = await this.account_op.setStatus(player_id, true);
 
-        if (!set_result.result) return {
+        if (!set_result.status) return {
             result: false,
             message: {
                 content: ':x:**【個人狀態啟動錯誤】**請洽總召！',
