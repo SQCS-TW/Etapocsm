@@ -4,13 +4,16 @@ import { getDefaultChatAccount } from '../../constants/reglist';
 
 class ChatAccountOperator extends BaseOperator {
     constructor() {
-        super('Chat', 'Accounts');
-        this.createDefaultDataFunction = getDefaultChatAccount;
+        super({
+            db: "Chat",
+            coll: "Accounts",
+            default_data_function: getDefaultChatAccount
+        });
     }
 
     public async clearCooldown(user_id: string): Promise<OperatorResponse> {
-        const check_result = await this.checkUserDataExistence(user_id);
-        if (!check_result.status) return check_result;
+        const check_result = await this.checkDataExistence({ user_id: user_id });
+        if (check_result.status === "M002") return check_result;
 
         const execute = {
             $set: {
@@ -20,19 +23,19 @@ class ChatAccountOperator extends BaseOperator {
 
         const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged) return {
-            status: false,
+            status: "M003",
             message: ':x:**【寫入錯誤】**'
         };
 
         return {
-            status: true,
+            status: "nM003",
             message: ':white_check_mark:**【寫入成功】**'
         };
     }
 
     public async isUserInCooldown(user_id: string): Promise<OperatorResponse> {
-        const check_result = await this.checkUserDataExistence(user_id);
-        if (!check_result.status) return check_result;
+        const check_result = await this.checkDataExistence({ user_id: user_id });
+        if (check_result.status === "M002") return check_result;
 
         const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
 
@@ -45,8 +48,8 @@ class ChatAccountOperator extends BaseOperator {
     }
 
     public async setCooldown(user_id: string, time: number): Promise<OperatorResponse> {
-        const check_result = await this.checkUserDataExistence(user_id);
-        if (!check_result.status) return check_result;
+        const check_result = await this.checkDataExistence({ user_id: user_id });
+        if (check_result.status === "M002") return check_result;
 
         const execute = {
             $set: {
@@ -56,19 +59,19 @@ class ChatAccountOperator extends BaseOperator {
 
         const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged) return {
-            status: false,
+            status: "M003",
             message: ':x: 寫入錯誤'
         };
 
         return {
-            status: true,
+            status: "nM003",
             message: ':white_check_mark: 寫入成功'
         };
     }
 
     public async addExp(user_id: string, exp: number): Promise<OperatorResponse> {
-        const check_result = await this.checkUserDataExistence(user_id);
-        if (!check_result.status) return check_result;
+        const check_result = await this.checkDataExistence({ user_id: user_id });
+        if (check_result.status === "M002") return check_result;
 
         const execute = {
             $inc: {
@@ -78,12 +81,12 @@ class ChatAccountOperator extends BaseOperator {
 
         const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged) return {
-            status: false,
+            status: "M003",
             message: ':x: 寫入錯誤'
         };
 
         return {
-            status: true,
+            status: "nM003",
             message: ':white_check_mark: 寫入成功'
         };
     }

@@ -3,10 +3,20 @@ import { Collection } from 'mongodb';
 
 
 type OperatorResponse = {
-    status: boolean,
+    status: boolean | string,
     message?: string
 }
 
+type DefaultDataPayload = {
+    user_id: string,
+    [key: string]: any
+}
+
+type OperatorConstructPayload = {
+    db: string,
+    coll: string,
+    default_data_function?: any
+}
 
 class BaseOperator {
     // use promise here due to non-async constructor
@@ -14,41 +24,43 @@ class BaseOperator {
 
     protected createDefaultDataFunction: any;
 
-    constructor(db: string, coll: string) {
+    constructor(payload: OperatorConstructPayload) {
         // use promise here due to non-async constructor
-        this.cursor_promise = (new Mongo(db)).getCur(coll);
+        this.cursor_promise = (new Mongo(payload.db)).getCur(payload.coll);
+
+        if (payload.default_data_function) {
+            this.createDefaultDataFunction = payload.default_data_function;
+        }
     }
 
-    public async checkUserDataExistence(user_id: string, auto_create_account = false): Promise<OperatorResponse> {
-        const user_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+    public async checkDataExistence(payload: DefaultDataPayload, auto_create_account = false): Promise<OperatorResponse> {
+        const user_data = await (await this.cursor_promise).findOne(payload);
 
         if (user_data) return {
-            status: true
+            status: "nM002"
         };
 
         if (auto_create_account) {
-            const result = await this.createUserData(user_id);
-            if (result.status) return {
-                status: true
-            };
+            const result = await this.createUserData(payload);
+            return result;
         }
 
         return {
-            status: false,
+            status: "M002",
             message: ':x:**【查詢錯誤】**找不到用戶資料'
         };
     }
 
-    public async createUserData(user_id: string) {
+    public async createUserData(payload: DefaultDataPayload) {
         try {
-            const default_data = await this.createDefaultDataFunction(user_id);
+            const default_data = await this.createDefaultDataFunction(payload);
 
             const result = await (await this.cursor_promise).insertOne(default_data);
             if (result.acknowledged) return {
-                status: true
+                status: "nM003"
             };
             return {
-                status: false,
+                status: "M003",
                 message: ':x:**【操作錯誤】**資料新增錯誤'
             };
         } catch (err) {
