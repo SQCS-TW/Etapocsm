@@ -2,12 +2,20 @@ import { Message } from 'discord.js';
 import { core } from '../../sc';
 
 
-class ChatListener extends core.BaseListener {
+class ChatListener extends core.BaseManager {
     private account_op: core.ChatAccountOperator;
     
-    constructor(father_platform: core.BasePlatform) {
-        super(father_platform);
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
         this.account_op = new core.ChatAccountOperator();
+
+        this.setupListener();
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('message', async (msg) => {
+            await this.messageHandler(msg);
+        });
     }
 
     public async messageHandler(msg: Message) {

@@ -1,10 +1,10 @@
 import { Client, ClientOptions } from 'discord.js';
-import { BaseStage } from './core/reglist';
-import { MainGuildStage } from './stages/reglist';
+import { BasePlatform } from './core/reglist';
+import { LvlSysPlatform } from './entities/platforms/reglist';
 
 
 class Etapocsm extends Client {
-    private child_stages: Array<BaseStage>;
+    private platforms: Array<BasePlatform>;
 
     constructor(options: ClientOptions) {
         super(options);
@@ -15,21 +15,30 @@ class Etapocsm extends Client {
         this.on('ready', async () => {
             console.log(`${this.user.username} has logged in!`);
 
-            await this.addStages(this);
+            // activate = add + invoke
+            await this.activatePlatforms(this);
         });
     }
 
-    public async addStages(bot: Etapocsm) {
-        this.child_stages = await this.invokeStages([
-            new MainGuildStage(bot)
-        ]);
+    public async activatePlatforms(this_bot: Etapocsm) {
+        await this.addPlatforms(this_bot);
+        await this.invokePlatforms();
     }
 
-    private async invokeStages(child_stages: Array<BaseStage>) {
-        child_stages.forEach(async (stage: any) => {
-            await stage.addPlatforms(stage);
-        });
-        return child_stages;
+    private async addPlatforms(this_bot: Etapocsm) {
+        this.platforms = [
+            new LvlSysPlatform(this_bot)
+        ]
+    }
+
+    private async invokePlatforms() {
+        try {
+            this.platforms.forEach(async (platform: any) => {
+                await platform.activateManagers(platform);
+            });
+        } catch (err) {
+            throw new Error(`Error when invoking plats.\n msg: ${err}`);
+        }
     }
 }
 

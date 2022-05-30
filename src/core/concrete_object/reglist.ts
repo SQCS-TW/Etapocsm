@@ -1,3 +1,2 @@
 export * from './manager';
 export * from './platform';
-export * from './stage';
