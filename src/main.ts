@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-import { Etapocsm } from './src/bot';
+import { Etapocsm } from './bot';
 import { Intents } from 'discord.js';
 
 const bot = new Etapocsm({

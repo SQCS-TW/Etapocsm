@@ -4,9 +4,9 @@
   "description": "",
   "main": "./main.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "init_dir": "npx ts-node -T ./main.ts",
-    "init": "npx ts-node ./main.ts"
+    "comp": "tsc",
+    "test": "node ./dist/main.js",
+    "build": "tsc && node ./dist/main.js"
   },
   "keywords": [],
   "author": "@SQCS-TW",

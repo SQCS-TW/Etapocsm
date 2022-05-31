@@ -19,6 +19,9 @@ class ChatListener extends core.BaseManager {
     }
 
     public async messageHandler(msg: Message) {
+        if (msg.author.bot) return;
+        if (msg.guildId !== "743507979369709639") return;
+
         const check_result = await this.account_op.isUserInCooldown(msg.member.id);
         if (check_result.status === 'M003') {
             return console.log('error creating user chat account', msg.member.id);

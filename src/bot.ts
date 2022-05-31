@@ -13,6 +13,8 @@ class Etapocsm extends Client {
 
     private setupListener() {
         this.on('ready', async () => {
+            if (!this.user) throw new Error('Client is null.');
+            
             console.log(`${this.user.username} has logged in!`);
 
             // activate = add + invoke
