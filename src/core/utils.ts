@@ -5,7 +5,7 @@ const timeAfterSecs = async (seconds: number) => { return Date.now() + seconds *
 
 const cloneObj = async (obj: object) => { return JSON.parse(JSON.stringify(obj)); };
 
-const getRandomInt = async (max: number) => { return Math.floor(Math.random() * max); };
+const getRandomInt = async (max: number) => { return Math.floor(Math.random() * (max + 1)); };
 
 async function factorial(num: number) {
     let counter = 1;

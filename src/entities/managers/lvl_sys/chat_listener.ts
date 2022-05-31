@@ -26,7 +26,8 @@ class ChatListener extends core.BaseManager {
 
         if (check_result.status === true) return;
 
-        const REWARD_EXP = await core.getRandomInt(2) + 1;
+        const REWARD_EXP = await core.getRandomInt(2);
+        console.log(REWARD_EXP);
         let set_result = await this.account_op.addExp(msg.member.id, REWARD_EXP);
         if (set_result.status === 'M003') {
             console.log('error giving user exp', msg.member.id, REWARD_EXP);
