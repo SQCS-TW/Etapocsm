@@ -1,10 +1,11 @@
 import { MongoData } from '../db/reglist';
 import { ObjectId } from 'mongodb';
+import * as core from '../core/reglist';
 
-const getDefaultBountyAccount = async function (user_id: string): Promise<MongoData> {
+const getDefaultBountyAccount = async function (payload: core.DefaultDataPayload): Promise<MongoData> {
     return {
         _id: new ObjectId(),
-        user_id: user_id,
+        user_id: payload.user_id,
         exp: 0,
         stamina: {
             regular: 3,

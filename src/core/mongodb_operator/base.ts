@@ -72,5 +72,7 @@ class BaseOperator {
 
 export {
     BaseOperator,
-    OperatorResponse
+    OperatorResponse,
+    DefaultDataPayload,
+    OperatorConstructPayload
 };

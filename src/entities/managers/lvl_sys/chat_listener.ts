@@ -13,15 +13,15 @@ class ChatListener extends core.BaseManager {
     }
 
     private setupListener() {
-        this.f_platform.f_bot.on('message', async (msg) => {
+        this.f_platform.f_bot.on('messageCreate', async (msg) => {
             await this.messageHandler(msg);
         });
     }
 
     public async messageHandler(msg: Message) {
         const check_result = await this.account_op.isUserInCooldown(msg.member.id);
-        if (check_result.status === 'M002') {
-            return console.log('error finding user chat account', msg.member.id);
+        if (check_result.status === 'M003') {
+            return console.log('error creating user chat account', msg.member.id);
         }
 
         if (check_result.status === true) return;

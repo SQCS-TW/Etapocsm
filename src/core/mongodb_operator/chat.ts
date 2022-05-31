@@ -1,5 +1,6 @@
 import { BaseOperator, OperatorResponse } from './base';
 import { getDefaultChatAccount } from '../../constants/reglist';
+import { isItemInArray } from '../../core/reglist';
 
 
 class ChatAccountOperator extends BaseOperator {
@@ -13,7 +14,7 @@ class ChatAccountOperator extends BaseOperator {
 
     public async clearCooldown(user_id: string): Promise<OperatorResponse> {
         const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (check_result.status === "M002") return check_result;
+        if (isItemInArray) return check_result;
 
         const execute = {
             $set: {
@@ -34,8 +35,14 @@ class ChatAccountOperator extends BaseOperator {
     }
 
     public async isUserInCooldown(user_id: string): Promise<OperatorResponse> {
-        const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (check_result.status === "M002") return check_result;
+        const check_result = await this.checkDataExistence({ user_id: user_id }, true);
+        if (check_result.status === 'M003') {
+            return check_result;
+        } else if (check_result.status === 'nM003') {
+            return {
+                status: false
+            }
+        }
 
         const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
 
