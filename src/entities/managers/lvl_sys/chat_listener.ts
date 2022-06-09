@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { core } from '../../sc';
+import { core } from '../../shortcut';
 
 
 class ChatListener extends core.BaseManager {

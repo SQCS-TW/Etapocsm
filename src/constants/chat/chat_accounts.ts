@@ -1,6 +1,6 @@
-import { MongoData } from '../db/reglist';
+import { MongoData } from '../../db/reglist';
 import { ObjectId } from 'mongodb';
-import * as core from '../core/reglist';
+import * as core from '../../core/reglist';
 
 const getDefaultChatAccount = async function (payload: core.DefaultDataPayload): Promise<MongoData> {
     return {

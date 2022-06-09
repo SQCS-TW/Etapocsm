@@ -1,6 +1,6 @@
-import { BaseOperator, OperatorResponse } from './base';
-import { getDefaultChatAccount } from '../../constants/reglist';
-import { isItemInArray } from '../../core/reglist';
+import { BaseOperator, OperatorResponse } from '../base';
+import { getDefaultChatAccount } from '../../../constants/reglist';
+import { isItemInArray } from '../../reglist';
 
 
 class ChatAccountOperator extends BaseOperator {

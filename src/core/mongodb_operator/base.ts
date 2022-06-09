@@ -20,7 +20,7 @@ type OperatorConstructPayload = {
 
 class BaseOperator {
     // use promise here due to non-async constructor
-    protected cursor_promise: Promise<Collection>;
+    public cursor_promise: Promise<Collection>;
 
     protected createDefaultDataFunction: any;
 

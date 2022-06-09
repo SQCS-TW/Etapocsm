@@ -1,4 +1,4 @@
-import { core } from '../sc';
+import { core } from '../shortcut';
 import { Etapocsm } from '../../bot';
 import { ChatListener } from '../managers/lvl_sys/reglist';
 
