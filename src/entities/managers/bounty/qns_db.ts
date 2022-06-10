@@ -1,16 +1,19 @@
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, ApplicationCommandData } from 'discord.js';
 import { ObjectId } from 'mongodb';
-import { SLCMD_REGISTER_LIST } from './slcmd/qns_db';
+import { REGISTER_LIST } from './slcmd/qns_db';
 import { core, db } from '../../shortcut';
 
 
 class BountyQnsDBManager extends core.BaseManager {
     private qns_op: any;
     public f_platform: core.BasePlatform;
+    public SLCMD_REGISTER_LIST: Array<ApplicationCommandData>;
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
         this.qns_op = new core.ChatAccountOperator();
+
+        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
 
         this.setupListener();
     }

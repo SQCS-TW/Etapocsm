@@ -10,9 +10,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LvlSysPlatform = void 0;
-const sc_1 = require("../sc");
+const shortcut_1 = require("../shortcut");
 const reglist_1 = require("../managers/lvl_sys/reglist");
-class LvlSysPlatform extends sc_1.core.BasePlatform {
+class LvlSysPlatform extends shortcut_1.core.BasePlatform {
     constructor(f_bot) {
         super(f_bot);
     }

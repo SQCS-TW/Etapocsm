@@ -10,11 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatListener = void 0;
-const sc_1 = require("../../sc");
-class ChatListener extends sc_1.core.BaseManager {
+const shortcut_1 = require("../../shortcut");
+class ChatListener extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
-        this.account_op = new sc_1.core.ChatAccountOperator();
+        this.account_op = new shortcut_1.core.ChatAccountOperator();
         this.setupListener();
     }
     setupListener() {
@@ -34,14 +34,14 @@ class ChatListener extends sc_1.core.BaseManager {
             }
             if (check_result.status === true)
                 return;
-            const REWARD_EXP = yield sc_1.core.getRandomInt(2);
+            const REWARD_EXP = yield shortcut_1.core.getRandomInt(2);
             console.log(REWARD_EXP);
             let set_result = yield this.account_op.addExp(msg.member.id, REWARD_EXP);
             if (set_result.status === 'M003') {
                 console.log('error giving user exp', msg.member.id, REWARD_EXP);
                 return;
             }
-            const COOLDOWN = yield sc_1.core.timeAfterSecs(60);
+            const COOLDOWN = yield shortcut_1.core.timeAfterSecs(60);
             set_result = yield this.account_op.setCooldown(msg.member.id, COOLDOWN);
             if (set_result.status === 'M003') {
                 console.log('error setting cooldown', msg.member.id, COOLDOWN);

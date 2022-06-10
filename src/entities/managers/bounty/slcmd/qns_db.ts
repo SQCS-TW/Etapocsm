@@ -1,6 +1,6 @@
 import { Constants, ApplicationCommandData } from 'discord.js';
 
-const SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
+const REGISTER_LIST: Array<ApplicationCommandData> = [
     {
         name: 'create-bounty-qns',
         description: '新增懸賞問題',
@@ -8,7 +8,7 @@ const SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
             {
                 name: 'difficulty',
                 description: '難度',
-                type: Constants.ApplicationCommandOptionTypes.INTEGER,
+                type: Constants.ApplicationCommandOptionTypes.STRING,
                 required: true,
                 choices: [
                     {
@@ -78,5 +78,5 @@ const SLCMD_REGISTER_LIST: Array<ApplicationCommandData> = [
 ];
 
 export {
-    SLCMD_REGISTER_LIST
+    REGISTER_LIST
 }
