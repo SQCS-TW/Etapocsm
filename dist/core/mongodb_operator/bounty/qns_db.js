@@ -16,7 +16,7 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
     constructor() {
         super({
             db: "Bounty",
-            coll: "QnsInfo",
+            coll: "Questions",
             default_data_function: reglist_1.getDefaultBountyQnsInfo
         });
     }

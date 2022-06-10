@@ -5,7 +5,7 @@
 """
 
 import sys
-from storj import download_file, list_objects
+from storj import download_file, list_objects, upload_file
 
 # argv: start from 1
 
@@ -26,6 +26,22 @@ if mode == 'download_file':
 
     except:
         print('false')
+
+elif mode == 'upload_file':
+    bucket_name = sys.argv[2]
+    local_path = sys.argv[3]
+    upload_path = sys.argv[4]
+
+    try:
+        upload_file(
+            bucket_name=bucket_name,
+            local_path=local_path,
+            storj_path=upload_path
+        )
+        print('true')
+
+    except Exception as e:
+        print(f'false, {e}')
 
 elif mode == 'getFolderSize':
     bucket_name = sys.argv[2]

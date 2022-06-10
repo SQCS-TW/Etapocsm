@@ -14,7 +14,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFolderFiles = exports.getFolderSize = exports.storjDownload = void 0;
+exports.storjGetFolderFiles = exports.storjGetFolderSize = exports.storjUpload = exports.storjDownload = void 0;
 const child_process_1 = require("child_process");
 function storjDownload(options) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -31,12 +31,29 @@ function storjDownload(options) {
     });
 }
 exports.storjDownload = storjDownload;
-function getFolderSize(options) {
+function storjUpload(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        /*
+            bucket_name: the bucket in storj where the target file is.
+            local_file_name: a full relative path of the file, including suffix.
+            db_file_name: a full path of the target file in the bucket.
+        */
+        console.log(options);
+        const command = `python ./src/db/storj/py_port.py upload_file ${options.bucket_name} ${options.local_file_name} ${options.db_file_name}`;
+        let upload_result = (0, child_process_1.execSync)(command);
+        upload_result = upload_result.toString("utf-8");
+        console.log('upload result:', upload_result);
+        upload_result = (upload_result.trim() === 'true');
+        return upload_result;
+    });
+}
+exports.storjUpload = storjUpload;
+function storjGetFolderSize(options) {
     return __awaiter(this, void 0, void 0, function* () {
         /*
             bucket_name: the bucket in storj where the target folder is,
             prefix: the target folder's path,
-            suffixes?: file types to include, seperated by '-'
+            suffixes?: file types to include, separated by '-'
         */
         let command = `python ./src/db/storj/py_port.py getFolderSize ${options.bucket_name} ${options.prefix}`;
         if (options.suffixes)
@@ -48,13 +65,13 @@ function getFolderSize(options) {
         return Number(size);
     });
 }
-exports.getFolderSize = getFolderSize;
-function getFolderFiles(options) {
+exports.storjGetFolderSize = storjGetFolderSize;
+function storjGetFolderFiles(options) {
     return __awaiter(this, void 0, void 0, function* () {
         /*
             bucket_name: the bucket in storj where the target folder is,
             prefix: the target folder's path,
-            suffixes: file types to include, seperated by '-'
+            suffixes: file types to include, separated by '-'
         */
         let command = `python ./src/db/storj/py_port.py getFolderFiles ${options.bucket_name} ${options.prefix}`;
         if (options.suffixes)
@@ -70,4 +87,4 @@ function getFolderFiles(options) {
         return filenames_array;
     });
 }
-exports.getFolderFiles = getFolderFiles;
+exports.storjGetFolderFiles = storjGetFolderFiles;

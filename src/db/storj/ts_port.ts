@@ -6,13 +6,13 @@
 
 import { execSync } from 'child_process';
 
-type StorjDownloadOptions = {
+type StorjDown_UploadOptions = {
     bucket_name: string,
     local_file_name: string,
     db_file_name: string
 }
 
-async function storjDownload(options: StorjDownloadOptions) {
+async function storjDownload(options: StorjDown_UploadOptions) {
     /*
         bucket_name: the bucket in storj where the target file is.
         local_file_name: a full relative path of the file, including suffix.
@@ -28,17 +28,37 @@ async function storjDownload(options: StorjDownloadOptions) {
     return download_result;
 }
 
+async function storjUpload(options: StorjDown_UploadOptions) {
+    /*
+        bucket_name: the bucket in storj where the target file is.
+        local_file_name: a full relative path of the file, including suffix.
+        db_file_name: a full path of the target file in the bucket.
+    */
+
+    console.log(options);
+
+    const command = `python ./src/db/storj/py_port.py upload_file ${options.bucket_name} ${options.local_file_name} ${options.db_file_name}`;
+
+    let upload_result: any = execSync(command);
+    upload_result = upload_result.toString("utf-8");
+
+    console.log('upload result:', upload_result);
+
+    upload_result = (upload_result.trim() === 'true');
+    return upload_result;
+}
+
 type GetFolderSizeOptions = {
     bucket_name: string,
     prefix: string,
     suffixes?: string
 }
 
-async function getFolderSize(options: GetFolderSizeOptions) {
+async function storjGetFolderSize(options: GetFolderSizeOptions) {
     /*
         bucket_name: the bucket in storj where the target folder is,
         prefix: the target folder's path,
-        suffixes?: file types to include, seperated by '-'
+        suffixes?: file types to include, separated by '-'
     */
 
     let command = `python ./src/db/storj/py_port.py getFolderSize ${options.bucket_name} ${options.prefix}`;
@@ -57,11 +77,11 @@ type getFolderFilesOptions = {
     suffixes?: string
 }
 
-async function getFolderFiles(options: getFolderFilesOptions) {
+async function storjGetFolderFiles(options: getFolderFilesOptions) {
     /*
         bucket_name: the bucket in storj where the target folder is,
         prefix: the target folder's path,
-        suffixes: file types to include, seperated by '-'
+        suffixes: file types to include, separated by '-'
     */
 
     let command = `python ./src/db/storj/py_port.py getFolderFiles ${options.bucket_name} ${options.prefix}`;
@@ -82,6 +102,7 @@ async function getFolderFiles(options: getFolderFilesOptions) {
 
 export {
     storjDownload,
-    getFolderSize,
-    getFolderFiles
+    storjUpload,
+    storjGetFolderSize,
+    storjGetFolderFiles
 };

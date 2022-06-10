@@ -8,7 +8,6 @@ type OperatorResponse = {
 }
 
 type DefaultDataPayload = {
-    user_id: string,
     [key: string]: any
 }
 
@@ -41,17 +40,17 @@ class BaseOperator {
         };
 
         if (auto_create_account) {
-            const result = await this.createUserData(payload);
+            const result = await this.createDefaultData(payload);
             return result;
         }
 
         return {
             status: "M002",
-            message: ':x:**【查詢錯誤】**找不到用戶資料'
+            message: ':x:**【查詢錯誤】**找不到資料'
         };
     }
 
-    public async createUserData(payload: DefaultDataPayload) {
+    public async createDefaultData(payload: DefaultDataPayload) {
         try {
             const default_data = await this.createDefaultDataFunction(payload);
 

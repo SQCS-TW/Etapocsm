@@ -27,16 +27,16 @@ class BaseOperator {
                     status: "nM002"
                 };
             if (auto_create_account) {
-                const result = yield this.createUserData(payload);
+                const result = yield this.createDefaultData(payload);
                 return result;
             }
             return {
                 status: "M002",
-                message: ':x:**【查詢錯誤】**找不到用戶資料'
+                message: ':x:**【查詢錯誤】**找不到資料'
             };
         });
     }
-    createUserData(payload) {
+    createDefaultData(payload) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const default_data = yield this.createDefaultDataFunction(payload);

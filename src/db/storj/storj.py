@@ -30,6 +30,14 @@ def download_file(bucket_name: str, local_path: str, storj_path: str):
         # close the download stream
         download.close()
 
+def upload_file(bucket_name: str, local_path: str, storj_path: str):
+    with open(local_path, 'r+b') as file_handle:
+        # get upload handle to specified bucket and upload file path
+        upload = project.upload_object(bucket_name, storj_path)
+        # upload file on storj
+        upload.write_file(file_handle)
+        # commit the upload
+        upload.commit()
 
 def list_objects(bucket_name: str, prefix: str = '', suffixes: list = []):
     # "prefix": a certain path
