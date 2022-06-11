@@ -17,7 +17,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
-        //this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        // this.SLCMD_REGISTER_LIST = REGISTER_LIST;
         this.setupListener();
     }
     setupListener() {
@@ -106,6 +106,21 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     const qns_number = inner_values.qns_number;
                     const new_max_choices = inner_values.new_max_choices;
                     const update_result = yield this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
+                    if (update_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
+                        return yield interaction.editReply('目標問題不存在！');
+                    if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+                        return yield interaction.editReply('更改錯誤！');
+                    else
+                        return yield interaction.editReply('更改完成！');
+                }
+                case 'edit-bounty-qns-answers': {
+                    yield interaction.deferReply();
+                    // get input data
+                    const inner_values = yield EBQA_functions.getInputData(interaction);
+                    const diffi = inner_values.diffi;
+                    const qns_number = inner_values.qns_number;
+                    const new_answers = inner_values.new_answers;
+                    const update_result = yield this.qns_op.setCorrectAns(diffi, qns_number, new_answers);
                     if (update_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                         return yield interaction.editReply('目標問題不存在！');
                     if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
@@ -275,5 +290,21 @@ const EBQMC_functions = {
                 new_max_choices: interaction.options.getInteger('new-max-choices')
             };
         });
-    },
+    }
+};
+const EBQA_functions = {
+    getInputData(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_answers = interaction.options.getString('new-answers').split(";");
+            // a -> A; b -> B; ...
+            for (let i = 0; i < new_answers.length; i++) {
+                new_answers[i] = new_answers[i].toUpperCase();
+            }
+            return {
+                diffi: interaction.options.getString('difficulty'),
+                qns_number: interaction.options.getInteger('number'),
+                new_answers: new_answers
+            };
+        });
+    }
 };

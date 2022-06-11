@@ -49,17 +49,23 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
             };
         });
     }
-    setCorrectAns(user_id, new_correct_ans) {
+    setCorrectAns(diffi, qns_number, new_answers) {
         return __awaiter(this, void 0, void 0, function* () {
-            const check_result = yield this.checkDataExistence({ user_id: user_id });
+            const check_result = yield this.checkDataExistence({
+                difficulty: diffi,
+                number: qns_number
+            });
             if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const execute = {
                 $set: {
-                    correct_ans: new_correct_ans
+                    correct_ans: new_answers
                 }
             };
-            const update_result = yield (yield this.cursor_promise).updateOne({ user_id: user_id }, execute);
+            const update_result = yield (yield this.cursor_promise).updateOne({
+                difficulty: diffi,
+                number: qns_number
+            }, execute);
             if (!update_result.acknowledged)
                 return {
                     status: reglist_2.StatusCode.WRITE_DATA_ERROR,

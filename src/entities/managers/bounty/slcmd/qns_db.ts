@@ -108,7 +108,7 @@ export const REGISTER_LIST: Array<ApplicationCommandData> = [
                 required: true
             },
             {
-                name: 'new-answerers',
+                name: 'new-answers',
                 description: '新的所有答案（用;隔開）',
                 type: Constants.ApplicationCommandOptionTypes.STRING,
                 required: true

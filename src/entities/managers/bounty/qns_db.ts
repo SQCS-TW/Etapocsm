@@ -14,7 +14,7 @@ export class BountyQnsDBManager extends core.BaseManager {
         super(f_platform);
         this.qns_op = new core.BountyQnsDBOperator();
 
-        //this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        // this.SLCMD_REGISTER_LIST = REGISTER_LIST;
 
         this.setupListener();
     }
@@ -112,6 +112,22 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const new_max_choices: number = inner_values.new_max_choices;
 
                 const update_result = await this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
+                if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
+                
+                if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
+                else return await interaction.editReply('更改完成！');
+            }
+
+            case 'edit-bounty-qns-answers': {
+                await interaction.deferReply();
+
+                // get input data
+                const inner_values = await EBQA_functions.getInputData(interaction);
+                const diffi: string = inner_values.diffi;
+                const qns_number: number = inner_values.qns_number;
+                const new_answers: string[] = inner_values.new_answers;
+
+                const update_result = await this.qns_op.setCorrectAns(diffi, qns_number, new_answers);
                 if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
                 
                 if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
@@ -286,5 +302,22 @@ const EBQMC_functions = {
             qns_number: interaction.options.getInteger('number'),
             new_max_choices: interaction.options.getInteger('new-max-choices')
         }
-    },
+    }
+}
+
+const EBQA_functions = {
+    async getInputData(interaction) {
+        const new_answers: string[] = interaction.options.getString('new-answers').split(";");
+
+        // a -> A; b -> B; ...
+        for (let i = 0; i < new_answers.length; i++) {
+            new_answers[i] = new_answers[i].toUpperCase();
+        }
+
+        return {
+            diffi: interaction.options.getString('difficulty'),
+            qns_number: interaction.options.getInteger('number'),
+            new_answers: new_answers
+        }
+    }
 }
