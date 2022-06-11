@@ -41,17 +41,19 @@ function getSubsetsWithCertainLength(arr, length) {
         let modify = [...arr].map(item => [item]);
         for (let i = 0; i < length - 1; i++) {
             const new_arr = [];
-            [...modify].forEach(item => {
+            for (let j = 0; j < [...modify].length; j++) {
+                const item = [...modify][j];
                 if (item.length === length)
                     return;
                 const index = arr.indexOf(item[item.length - 1]);
                 const m_after = [...arr].slice(index + 1, arr.length + 1 - (length - i - 1));
-                m_after.forEach(it => {
+                for (let k = 0; k < m_after.length; k++) {
+                    const it = m_after[k];
                     const temp = [...item];
                     temp.push(it);
                     new_arr.push(temp);
-                });
-            });
+                }
+            }
             if (i < length - 1)
                 modify = [...new_arr];
             if (i === length - 2)

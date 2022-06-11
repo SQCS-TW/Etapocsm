@@ -25,10 +25,11 @@ class BaseManager {
     checkPerm(interaction, perm) {
         return __awaiter(this, void 0, void 0, function* () {
             if (perm instanceof Array) {
-                perm.forEach((item) => {
+                for (let i = 0; i < perm.length; i++) {
+                    const item = perm[i];
                     if (!interaction.memberPermissions.has(item))
                         return false;
-                });
+                }
             }
             else {
                 if (!interaction.memberPermissions.has(perm))

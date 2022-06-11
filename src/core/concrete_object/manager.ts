@@ -3,7 +3,8 @@ import { BasePlatform } from './platform';
 import {
     InteractionReplyOptions,
     Interaction,
-    PermissionResolvable
+    PermissionResolvable,
+    ApplicationCommandData
 } from "discord.js";
 
 
@@ -13,6 +14,8 @@ export class BaseManager {
     protected cmd_error: InteractionReplyOptions;
     protected perm_error: InteractionReplyOptions;
     protected error_gif: Array<string>;
+
+    public SLCMD_REGISTER_LIST?: Array<ApplicationCommandData>;
 
     constructor(f_platform: BasePlatform) {
         this.f_platform = f_platform;
@@ -31,9 +34,10 @@ export class BaseManager {
 
     protected async checkPerm(interaction: Interaction, perm: PermissionResolvable | Array<PermissionResolvable>): Promise<boolean> {
         if (perm instanceof Array) {
-            perm.forEach((item) => {
+            for (let i = 0; i < perm.length; i++) {
+                const item = perm[i];
                 if (!interaction.memberPermissions.has(item)) return false;
-            });
+            }
         } else {
             if (!interaction.memberPermissions.has(perm)) return false;
         }

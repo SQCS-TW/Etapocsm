@@ -46,9 +46,10 @@ class Etapocsm extends discord_js_1.Client {
     invokePlatforms() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                this.platforms.forEach((platform) => __awaiter(this, void 0, void 0, function* () {
-                    yield platform.activateManagers(platform);
-                }));
+                for (let i = 0; i < this.platforms.length; i++) {
+                    const pf = this.platforms[i];
+                    yield pf.activateManagers(pf);
+                }
             }
             catch (err) {
                 throw new Error(`Error when invoking plats.\n msg: ${err}`);
@@ -58,16 +59,18 @@ class Etapocsm extends discord_js_1.Client {
     registerSlcmd() {
         return __awaiter(this, void 0, void 0, function* () {
             const slcmd_register_list = [];
-            this.platforms.forEach((pf) => {
-                pf.managers.forEach((mg) => {
-                    if (!mg.SLCMD_REGISTER_LIST)
-                        return;
-                    mg.SLCMD_REGISTER_LIST.forEach((slcmd) => {
+            for (let i = 0; i < this.platforms.length; i++) {
+                const pf = this.platforms[i];
+                for (let j = 0; j < pf.managers.length; j++) {
+                    const mng = pf.managers[j];
+                    if (!mng.SLCMD_REGISTER_LIST)
+                        continue;
+                    for (let k = 0; k < mng.SLCMD_REGISTER_LIST.length; k++) {
+                        const slcmd = mng.SLCMD_REGISTER_LIST[k];
                         slcmd_register_list.push(slcmd);
-                    });
-                });
-            });
-            console.log(slcmd_register_list);
+                    }
+                }
+            }
             const rest = new rest_1.REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
             // await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] })
             if (slcmd_register_list.length !== 0) {

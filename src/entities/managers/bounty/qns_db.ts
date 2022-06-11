@@ -1,4 +1,4 @@
-import { CommandInteraction, ApplicationCommandData } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 import { REGISTER_LIST } from './slcmd/qns_db';
 import { core, db } from '../../shortcut';
 import { ObjectId } from 'mongodb';
@@ -7,8 +7,6 @@ import { unlink } from 'fs';
 
 export class BountyQnsDBManager extends core.BaseManager {
     private qns_op: core.BountyQnsDBOperator;
-    public f_platform: core.BasePlatform;
-    public SLCMD_REGISTER_LIST: Array<ApplicationCommandData>;
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
