@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.REGISTER_LIST = void 0;
 const discord_js_1 = require("discord.js");
-const REGISTER_LIST = [
+exports.REGISTER_LIST = [
     {
         name: 'create-bounty-qns',
         description: '新增懸賞問題',
@@ -78,4 +78,3 @@ const REGISTER_LIST = [
         ]
     }
 ];
-exports.REGISTER_LIST = REGISTER_LIST;

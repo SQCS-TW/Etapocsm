@@ -1,6 +1,6 @@
 import { Constants, ApplicationCommandData } from 'discord.js';
 
-const REGISTER_LIST: Array<ApplicationCommandData> = [
+export const REGISTER_LIST: Array<ApplicationCommandData> = [
     {
         name: 'create-bounty-qns',
         description: '新增懸賞問題',
@@ -76,7 +76,3 @@ const REGISTER_LIST: Array<ApplicationCommandData> = [
         ]
     }
 ];
-
-export {
-    REGISTER_LIST
-}

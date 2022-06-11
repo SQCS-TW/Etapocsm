@@ -9,12 +9,12 @@ const client = new MongoClient(uri);
 client.connect();
 
 
-type MongoData = {
+export type MongoData = {
     _id: ObjectId
     [key: string]: any
 }
 
-class Mongo {
+export class Mongo {
     private db: Db;
 
     constructor(database: string) {
@@ -26,9 +26,3 @@ class Mongo {
         return this.db.collection(collection);
     }
 }
-
-
-export {
-    Mongo,
-    MongoData
-};

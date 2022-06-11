@@ -12,7 +12,7 @@ type StorjDown_UploadOptions = {
     db_file_name: string
 }
 
-async function storjDownload(options: StorjDown_UploadOptions) {
+export async function storjDownload(options: StorjDown_UploadOptions) {
     /*
         bucket_name: the bucket in storj where the target file is.
         local_file_name: a full relative path of the file, including suffix.
@@ -28,7 +28,7 @@ async function storjDownload(options: StorjDown_UploadOptions) {
     return download_result;
 }
 
-async function storjUpload(options: StorjDown_UploadOptions) {
+export async function storjUpload(options: StorjDown_UploadOptions) {
     /*
         bucket_name: the bucket in storj where the target file is.
         local_file_name: a full relative path of the file, including suffix.
@@ -54,7 +54,7 @@ type GetFolderSizeOptions = {
     suffixes?: string
 }
 
-async function storjGetFolderSize(options: GetFolderSizeOptions) {
+export async function storjGetFolderSize(options: GetFolderSizeOptions) {
     /*
         bucket_name: the bucket in storj where the target folder is,
         prefix: the target folder's path,
@@ -77,7 +77,7 @@ type getFolderFilesOptions = {
     suffixes?: string
 }
 
-async function storjGetFolderFiles(options: getFolderFilesOptions) {
+export async function storjGetFolderFiles(options: getFolderFilesOptions) {
     /*
         bucket_name: the bucket in storj where the target folder is,
         prefix: the target folder's path,
@@ -98,11 +98,3 @@ async function storjGetFolderFiles(options: getFolderFilesOptions) {
     }
     return filenames_array;
 }
-
-
-export {
-    storjDownload,
-    storjUpload,
-    storjGetFolderSize,
-    storjGetFolderFiles
-};

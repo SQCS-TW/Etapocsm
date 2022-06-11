@@ -2,9 +2,7 @@
 //     BountyAutoTaskManager
 // } from './auto_tasks';
 
-export {
-    BountyQnsDBManager
-} from './qns_db';
+export * from './qns_db';
 
 // export {
 //     BountyMainManager

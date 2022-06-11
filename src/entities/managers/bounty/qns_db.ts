@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 import { unlink } from 'fs';
 
 
-class BountyQnsDBManager extends core.BaseManager {
+export class BountyQnsDBManager extends core.BaseManager {
     private qns_op: core.BountyQnsDBOperator;
     public f_platform: core.BasePlatform;
     public SLCMD_REGISTER_LIST: Array<ApplicationCommandData>;
@@ -83,7 +83,7 @@ class BountyQnsDBManager extends core.BaseManager {
                     max_choices: max_choices,
                     correct_ans: correct_ans
                 });
-                if (create_result.status === 'M002') return await interaction.followUp('error creating qns info');
+                if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.followUp('error creating qns info');
                 else await interaction.followUp('問題資料已建立！');
 
                 // update storj cache
@@ -225,7 +225,3 @@ const CBQ_functions = {
         return upload_status;
     }
 }
-
-export {
-    BountyQnsDBManager
-};

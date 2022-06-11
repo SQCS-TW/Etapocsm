@@ -2,7 +2,7 @@ import { core } from '../shortcut';
 import { Etapocsm } from '../../bot';
 import { BountyQnsDBManager } from '../managers/bounty/reglist';
 
-class BountyPlatform extends core.BasePlatform {
+export class BountyPlatform extends core.BasePlatform {
     constructor(f_bot: Etapocsm) {
         super(f_bot);
     }
@@ -17,7 +17,3 @@ class BountyPlatform extends core.BasePlatform {
         ]
     }
 }
-
-export {
-    BountyPlatform
-};

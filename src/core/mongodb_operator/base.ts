@@ -1,23 +1,24 @@
 import { Mongo } from '../../db/reglist';
 import { Collection } from 'mongodb';
+import { StatusCode } from '../../db/reglist';
 
 
-type OperatorResponse = {
+export type OperatorResponse = {
     status: boolean | string,
     message?: string
 }
 
-type DefaultDataPayload = {
+export type DefaultDataPayload = {
     [key: string]: any
 }
 
-type OperatorConstructPayload = {
+export type OperatorConstructPayload = {
     db: string,
     coll: string,
     default_data_function?: any
 }
 
-class BaseOperator {
+export class BaseOperator {
     // use promise here due to non-async constructor
     public cursor_promise: Promise<Collection>;
 
@@ -36,7 +37,7 @@ class BaseOperator {
         const user_data = await (await this.cursor_promise).findOne(payload);
 
         if (user_data) return {
-            status: "nM002"
+            status: StatusCode.DATA_FOUND
         };
 
         if (auto_create_account) {
@@ -45,7 +46,7 @@ class BaseOperator {
         }
 
         return {
-            status: "M002",
+            status: StatusCode.DATA_NOT_FOUND,
             message: ':x:**【查詢錯誤】**找不到資料'
         };
     }
@@ -56,10 +57,10 @@ class BaseOperator {
 
             const result = await (await this.cursor_promise).insertOne(default_data);
             if (result.acknowledged) return {
-                status: "nM003"
+                status: StatusCode.WRITE_DATA_SUCCESS
             };
             return {
-                status: "M003",
+                status: StatusCode.WRITE_DATA_ERROR,
                 message: ':x:**【操作錯誤】**資料新增錯誤'
             };
         } catch (err) {
@@ -67,11 +68,3 @@ class BaseOperator {
         }
     }
 }
-
-
-export {
-    BaseOperator,
-    OperatorResponse,
-    DefaultDataPayload,
-    OperatorConstructPayload
-};

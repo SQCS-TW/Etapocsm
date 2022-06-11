@@ -1,7 +1,8 @@
 import { getDefaultUserOngoingData } from '../../../constants/reglist';
 import { BaseOperator, OperatorResponse } from '../base';
+import { StatusCode } from '../../../db/reglist';
 
-class BountyUserOngoingInfoOperator extends BaseOperator {
+export class BountyUserOngoingInfoOperator extends BaseOperator {
     constructor() {
         super({
             db: "Bounty",
@@ -12,7 +13,7 @@ class BountyUserOngoingInfoOperator extends BaseOperator {
 
     public async setStatus(user_id: string, new_status: boolean): Promise<OperatorResponse> {
         const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (check_result.status === "M002") return check_result;
+        if (check_result.status === StatusCode.DATA_NOT_FOUND) return check_result;
 
         const execute = {
             $set: {
@@ -22,18 +23,18 @@ class BountyUserOngoingInfoOperator extends BaseOperator {
 
         const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged) return {
-            status: "M003",
+            status: StatusCode.WRITE_DATA_ERROR,
             message: ':x: 寫入錯誤'
         };
         return {
-            status: "nM003",
+            status: StatusCode.WRITE_DATA_SUCCESS,
             message: ':white_check_mark: 寫入成功'
         };
     }
 
     public async isUserAnsweringQns(user_id: string): Promise<OperatorResponse> {
         const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (check_result.status === "M002") return check_result;
+        if (check_result.status === StatusCode.DATA_NOT_FOUND) return check_result;
 
         const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
 
@@ -47,7 +48,7 @@ class BountyUserOngoingInfoOperator extends BaseOperator {
 
     public async increaseStamina(user_id: string, delta: number, type: 'regular' | 'extra'): Promise<OperatorResponse> {
         const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (check_result.status === "M002") return check_result;
+        if (check_result.status === StatusCode.DATA_NOT_FOUND) return check_result;
 
         const user_data = await (await this.cursor_promise).findOne({ user_id: user_id });
         const old_stamina = user_data.stamina;
@@ -75,16 +76,13 @@ class BountyUserOngoingInfoOperator extends BaseOperator {
 
         const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged) return {
-            status: "M003",
+            status: StatusCode.WRITE_DATA_ERROR,
             message: ':x: 寫入錯誤'
         };
         return {
-            status: "nM003",
+            status: StatusCode.WRITE_DATA_SUCCESS,
             message: ':white_check_mark: 寫入成功'
         };
     }
 }
 
-export {
-    BountyUserOngoingInfoOperator
-};

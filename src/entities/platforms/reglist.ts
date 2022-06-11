@@ -1,2 +1,2 @@
-export { LvlSysPlatform } from './lvl_sys';
-export { BountyPlatform } from './bounty'
+export * from './lvl_sys';
+export * from './bounty'

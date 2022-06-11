@@ -1,12 +1,12 @@
 import { Client, ClientOptions } from 'discord.js';
 import { BasePlatform } from './core/reglist';
 import { LvlSysPlatform, BountyPlatform } from './entities/platforms/reglist';
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
+import { REST } from '@discordjs/rest';
+import { Routes } from 'discord-api-types/v9';
 import { core } from './entities/shortcut';
 
 
-class Etapocsm extends Client {
+export class Etapocsm extends Client {
     private platforms: Array<BasePlatform>;
 
     constructor(options: ClientOptions) {
@@ -70,7 +70,3 @@ class Etapocsm extends Client {
         }
     }
 }
-
-export {
-    Etapocsm
-};

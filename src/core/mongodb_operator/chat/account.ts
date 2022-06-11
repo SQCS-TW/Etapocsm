@@ -3,7 +3,7 @@ import { getDefaultChatAccount } from '../../../constants/reglist';
 import { isItemInArray } from '../../reglist';
 
 
-class ChatAccountOperator extends BaseOperator {
+export class ChatAccountOperator extends BaseOperator {
     constructor() {
         super({
             db: "Chat",
@@ -98,7 +98,3 @@ class ChatAccountOperator extends BaseOperator {
         };
     }
 }
-
-export {
-    ChatAccountOperator
-};

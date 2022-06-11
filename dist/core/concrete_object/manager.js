@@ -22,15 +22,6 @@ class BaseManager {
         // file to send when sth goes wrong
         this.error_gif = ['./assets/gif/error.gif'];
     }
-    // public async registerSlcmd(): Promise<void> {
-    //     const commands_mng = this.f_platform.f_stage.guild.commands;
-    //     for (const slcmd of this.slcmd_reglist) commands_mng.create(slcmd);
-    // }
-    // public async resetAllSlcmd(): Promise<void> {
-    //     // reset slCmds registered in guild: "this.guild"
-    //     const commands_mng = this.f_platform.f_stage.guild.commands;
-    //     commands_mng.set([]);
-    // }
     checkPerm(interaction, perm) {
         return __awaiter(this, void 0, void 0, function* () {
             if (perm instanceof Array) {

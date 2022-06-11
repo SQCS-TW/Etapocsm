@@ -1,14 +1,13 @@
 import { BasePlatform } from './platform';
 
 import {
-    ApplicationCommandData,
     InteractionReplyOptions,
     Interaction,
     PermissionResolvable
 } from "discord.js";
 
 
-class BaseManager {
+export class BaseManager {
     public f_platform: BasePlatform;
 
     protected cmd_error: InteractionReplyOptions;
@@ -30,17 +29,6 @@ class BaseManager {
         this.error_gif = ['./assets/gif/error.gif'];
     }
 
-    // public async registerSlcmd(): Promise<void> {
-    //     const commands_mng = this.f_platform.f_stage.guild.commands;
-    //     for (const slcmd of this.slcmd_reglist) commands_mng.create(slcmd);
-    // }
-
-    // public async resetAllSlcmd(): Promise<void> {
-    //     // reset slCmds registered in guild: "this.guild"
-    //     const commands_mng = this.f_platform.f_stage.guild.commands;
-    //     commands_mng.set([]);
-    // }
-
     protected async checkPerm(interaction: Interaction, perm: PermissionResolvable | Array<PermissionResolvable>): Promise<boolean> {
         if (perm instanceof Array) {
             perm.forEach((item) => {
@@ -52,7 +40,3 @@ class BaseManager {
         return true;
     }
 }
-
-export {
-    BaseManager
-};
