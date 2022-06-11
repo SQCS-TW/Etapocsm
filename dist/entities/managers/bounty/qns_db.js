@@ -32,11 +32,12 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
         return __awaiter(this, void 0, void 0, function* () {
             switch (interaction.commandName) {
                 case 'create-bounty-qns': {
-                    yield interaction.deferReply({ ephemeral: true });
+                    yield interaction.deferReply();
                     // get input data
-                    const diffi = interaction.options.getString('difficulty');
-                    const max_choices = interaction.options.getInteger('max-choices');
-                    const correct_ans = interaction.options.getString('correct-ans').split(";");
+                    const inner_values = yield CBQ_functions.getInputData(interaction);
+                    const diffi = inner_values.diffi;
+                    const max_choices = inner_values.max_choices;
+                    const correct_ans = inner_values.correct_ans;
                     // create operator
                     const db_cache_operator = new shortcut_1.core.BaseOperator({
                         db: 'Bounty',
@@ -44,69 +45,20 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     });
                     // check cache
                     // if not exist -> create cache
-                    // else -> fix cache (?)
-                    const exist_cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-                    console.log('exist cache', exist_cache);
-                    if (!exist_cache) {
-                        console.log('cache not found');
-                        const create_cache = yield this.createQnsInfoCache();
-                        console.log('create cache', create_cache);
-                        const create_result = yield (yield db_cache_operator.cursor_promise).insertOne(create_cache);
-                        if (!create_result.acknowledged)
-                            return yield interaction.editReply('error creating cache');
-                        else
-                            console.log('success creating cache');
-                    }
-                    else {
-                        console.log('cache found');
-                        const fixed_cache = yield this.createQnsInfoCache();
-                        console.log('fixed cache', fixed_cache);
-                        const execute = {
-                            $set: {
-                                easy: fixed_cache.easy,
-                                medium: fixed_cache.medium,
-                                hard: fixed_cache.hard
-                            }
-                        };
-                        const result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, execute);
-                        if (!result.acknowledged)
-                            return yield interaction.editReply('error fixing cache');
-                        else
-                            console.log('success fixing cache');
-                    }
+                    yield CBQ_functions.checkAndAutoCreateCache(interaction, db_cache_operator.cursor_promise);
                     // refresh cache
                     const refresh_cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-                    // update current diffi cache
-                    console.log('refresh_cache', refresh_cache);
-                    console.log('diffi', diffi);
-                    const qns_and_update_data = yield this.getQnsNumber(refresh_cache, diffi);
-                    console.log('qns_and_update_data', qns_and_update_data);
-                    const update_result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
-                    if (!update_result.acknowledged)
-                        return yield interaction.editReply('error updating cache');
-                    else
-                        console.log('success updating cache');
-                    //
-                    //
-                    const create_result = yield this.qns_op.createDefaultData({
-                        difficulty: diffi,
-                        qns_number: qns_and_update_data.qns_number,
-                        max_choices: max_choices,
-                        correct_ans: correct_ans
-                    });
-                    if (create_result.status === 'M002')
-                        return yield interaction.editReply('error creating qns info');
-                    else
-                        console.log('success creating qns info');
-                    //
+                    // update current diffi cache --> update when finished upload pic
+                    const qns_and_update_data = yield CBQ_functions.getQnsNumber(refresh_cache, diffi);
+                    // get the picture that will be uploaded to storj
                     let collected;
                     try {
-                        yield interaction.editReply('請上傳問題圖片（限時30秒）');
+                        yield interaction.editReply('請上傳問題圖片（限時60秒）');
                         const filter = m => m.author.id === interaction.user.id;
                         collected = yield interaction.channel.awaitMessages({
                             filter: filter,
                             max: 1,
-                            time: 30000,
+                            time: 60000,
                             errors: ['time']
                         });
                     }
@@ -114,24 +66,53 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('上傳圖片過時');
                     }
                     const pic_url = collected.first().attachments.first().url;
-                    const get = require('async-get-file');
-                    const options = {
-                        directory: "./cache/qns_pic_dl/",
-                        filename: `${qns_and_update_data.qns_number}.png`
-                    };
-                    yield get(pic_url, options);
-                    const upload_status = yield shortcut_1.db.storjUpload({
-                        bucket_name: 'bounty-questions-db',
-                        local_file_name: `./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`,
-                        db_file_name: `${diffi}/${qns_and_update_data.qns_number}.png`
-                    });
+                    const upload_status = yield CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
                     if (upload_status)
                         yield interaction.followUp('圖片已上傳！');
-                    (0, fs_1.unlink)(`./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`, () => { return; });
+                    else
+                        return yield interaction.followUp('圖片上傳錯誤');
+                    // create qns info in mdb
+                    const create_result = yield this.qns_op.createDefaultData({
+                        difficulty: diffi,
+                        qns_number: qns_and_update_data.qns_number,
+                        max_choices: max_choices,
+                        correct_ans: correct_ans
+                    });
+                    if (create_result.status === 'M002')
+                        return yield interaction.followUp('error creating qns info');
+                    else
+                        yield interaction.followUp('問題資料已建立！');
+                    // update storj cache
+                    const update_result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
+                    if (!update_result.acknowledged)
+                        return yield interaction.followUp('error updating cache');
                 }
             }
         });
     }
+}
+exports.BountyQnsDBManager = BountyQnsDBManager;
+const CBQ_functions = {
+    getInputData(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                diffi: interaction.options.getString('difficulty'),
+                max_choices: interaction.options.getInteger('max-choices'),
+                correct_ans: interaction.options.getString('correct-ans').split(";")
+            };
+        });
+    },
+    checkAndAutoCreateCache(interaction, cursor_promise) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const exist_cache = yield (yield cursor_promise).findOne({ type: 'cache' });
+            if (!exist_cache) {
+                const create_cache = yield CBQ_functions.createQnsInfoCache();
+                const create_result = yield (yield cursor_promise).insertOne(create_cache);
+                if (!create_result.acknowledged)
+                    return yield interaction.editReply('error creating cache');
+            }
+        });
+    },
     createQnsInfoCache() {
         return __awaiter(this, void 0, void 0, function* () {
             const new_cache = {
@@ -168,11 +149,10 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     max_number: max_number,
                     skipped_numbers: skipped_numbers
                 };
-                console.log('new cache', new_cache);
             }
             return new_cache;
         });
-    }
+    },
     checkMissingNumber(arr) {
         return __awaiter(this, void 0, void 0, function* () {
             let curr_num = 0;
@@ -187,7 +167,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             }
             return missing;
         });
-    }
+    },
     getQnsNumber(cache, diffi) {
         return __awaiter(this, void 0, void 0, function* () {
             let qns_number;
@@ -216,6 +196,22 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 execute: execute
             };
         });
+    },
+    downloadAndUploadPic(pic_url, diffi, qns_number) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const get = require('async-get-file');
+            const options = {
+                directory: "./cache/qns_pic_dl/",
+                filename: `${qns_number}.png`
+            };
+            yield get(pic_url, options);
+            const upload_status = yield shortcut_1.db.storjUpload({
+                bucket_name: 'bounty-questions-db',
+                local_file_name: `./cache/qns_pic_dl/${qns_number}.png`,
+                db_file_name: `${diffi}/${qns_number}.png`
+            });
+            (0, fs_1.unlink)(`./cache/qns_pic_dl/${qns_number}.png`, () => { return; });
+            return upload_status;
+        });
     }
-}
-exports.BountyQnsDBManager = BountyQnsDBManager;
+};

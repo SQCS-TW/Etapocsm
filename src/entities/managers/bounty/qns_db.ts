@@ -30,12 +30,13 @@ class BountyQnsDBManager extends core.BaseManager {
 
         switch (interaction.commandName) {
             case 'create-bounty-qns': {
-                await interaction.deferReply({ ephemeral: true });
+                await interaction.deferReply();
 
                 // get input data
-                const diffi = interaction.options.getString('difficulty');
-                const max_choices = interaction.options.getInteger('max-choices');
-                const correct_ans: Array<string> = interaction.options.getString('correct-ans').split(";");
+                const inner_values = await CBQ_functions.getInputData(interaction);
+                const diffi: string = inner_values.diffi;
+                const max_choices: number = inner_values.max_choices;
+                const correct_ans: string[] = inner_values.correct_ans;
                 
                 // create operator
                 const db_cache_operator = new core.BaseOperator({
@@ -45,91 +46,77 @@ class BountyQnsDBManager extends core.BaseManager {
 
                 // check cache
                 // if not exist -> create cache
-                const exist_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-
-                if (!exist_cache) {
-                    const create_cache = await this.createQnsInfoCache();
-
-                    const create_result = await (await db_cache_operator.cursor_promise).insertOne(create_cache);
-                    if (!create_result.acknowledged) return await interaction.editReply('error creating cache');
-                } else {
-                    // console.log('cache found');
-
-                    // const fixed_cache = await this.createQnsInfoCache();
-                    // console.log('fixed cache', fixed_cache);
-
-                    // const execute = {
-                    //     $set: {
-                    //         easy: fixed_cache.easy,
-                    //         medium: fixed_cache.medium,
-                    //         hard: fixed_cache.hard
-                    //     }
-                    // }
-
-                    // const result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, execute);
-                    // if (!result.acknowledged) return await interaction.editReply('error fixing cache');
-                    // else console.log('success fixing cache');
-                }
+                await CBQ_functions.checkAndAutoCreateCache(interaction, db_cache_operator.cursor_promise);
                 
                 // refresh cache
                 const refresh_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
 
-                // update current diffi cache
-                const qns_and_update_data = await this.getQnsNumber(refresh_cache, diffi);
+                // update current diffi cache --> update when finished upload pic
+                const qns_and_update_data = await CBQ_functions.getQnsNumber(refresh_cache, diffi);
 
-                const update_result: any = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
-                if (!update_result.acknowledged) return await interaction.editReply('error updating cache');
-                //
-
-                //
-                const create_result = await this.qns_op.createDefaultData({
-                    difficulty: diffi,
-                    qns_number: qns_and_update_data.qns_number,
-                    max_choices: max_choices,
-                    correct_ans: correct_ans
-                });
-                if (create_result.status === 'M002') return await interaction.editReply('error creating qns info');
-                //
-
+                // get the picture that will be uploaded to storj
                 let collected;
                 try {
-                    await interaction.editReply('請上傳問題圖片（限時30秒）');
+                    await interaction.editReply('請上傳問題圖片（限時60秒）');
                     const filter = m => m.author.id === interaction.user.id;
 
                     collected = await interaction.channel.awaitMessages({
                         filter: filter,
                         max: 1,
-                        time: 30000,
+                        time: 60000,
                         errors: ['time']
                     });
                 } catch {
                     return await interaction.editReply('上傳圖片過時');
                 }
 
-
                 const pic_url = collected.first().attachments.first().url;
-
-                const get = require('async-get-file');
-
-                const options = {
-                    directory: "./cache/qns_pic_dl/",
-                    filename: `${qns_and_update_data.qns_number}.png`
-                };
-
-                await get(pic_url, options);
+                const upload_status = await CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
                 
-                const upload_status = await db.storjUpload({
-                    bucket_name: 'bounty-questions-db',
-                    local_file_name: `./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`,
-                    db_file_name: `${diffi}/${qns_and_update_data.qns_number}.png`
-                });
                 if (upload_status) await interaction.followUp('圖片已上傳！');
-                unlink(`./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`, () => { return; });
+                else return await interaction.followUp('圖片上傳錯誤');
+
+                // create qns info in mdb
+                const create_result = await this.qns_op.createDefaultData({
+                    difficulty: diffi,
+                    qns_number: qns_and_update_data.qns_number,
+                    max_choices: max_choices,
+                    correct_ans: correct_ans
+                });
+                if (create_result.status === 'M002') return await interaction.followUp('error creating qns info');
+                else await interaction.followUp('問題資料已建立！');
+
+                // update storj cache
+                const update_result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
+                if (!update_result.acknowledged) return await interaction.followUp('error updating cache');
             }
         }
     }
 
-    private async createQnsInfoCache() {
+    
+}
+
+const CBQ_functions = {
+    async getInputData(interaction) {
+        return {
+            diffi: interaction.options.getString('difficulty'),
+            max_choices: interaction.options.getInteger('max-choices'),
+            correct_ans: interaction.options.getString('correct-ans').split(";")
+        }
+    },
+
+    async checkAndAutoCreateCache(interaction, cursor_promise) {
+        const exist_cache = await (await cursor_promise).findOne({ type: 'cache' });
+
+        if (!exist_cache) {
+            const create_cache = await CBQ_functions.createQnsInfoCache();
+
+            const create_result = await (await cursor_promise).insertOne(create_cache);
+            if (!create_result.acknowledged) return await interaction.editReply('error creating cache');
+        }
+    },
+
+    async createQnsInfoCache() {
         const new_cache = {
             _id: new ObjectId(),
             type: 'cache',
@@ -174,9 +161,9 @@ class BountyQnsDBManager extends core.BaseManager {
         }
 
         return new_cache;
-    }
+    },
 
-    private async checkMissingNumber(arr: Array<number>) {
+    async checkMissingNumber(arr: Array<number>) {
         let curr_num = 0;
         let ind = 0;
         const missing = [];
@@ -187,9 +174,9 @@ class BountyQnsDBManager extends core.BaseManager {
             curr_num++;
         }
         return missing;
-    }
+    },
 
-    private async getQnsNumber(cache: object, diffi: string) {
+    async getQnsNumber(cache: object, diffi: string) {
         let qns_number: number;
         let execute: object;
         const diffi_info = cache[diffi];
@@ -217,6 +204,25 @@ class BountyQnsDBManager extends core.BaseManager {
             qns_number: qns_number,
             execute: execute
         };
+    },
+
+    async downloadAndUploadPic(pic_url: string, diffi: string, qns_number: number) {
+        const get = require('async-get-file');
+
+        const options = {
+            directory: "./cache/qns_pic_dl/",
+            filename: `${qns_number}.png`
+        };
+        await get(pic_url, options);
+        
+        const upload_status = await db.storjUpload({
+            bucket_name: 'bounty-questions-db',
+            local_file_name: `./cache/qns_pic_dl/${qns_number}.png`,
+            db_file_name: `${diffi}/${qns_number}.png`
+        });
+        unlink(`./cache/qns_pic_dl/${qns_number}.png`, () => { return; });
+
+        return upload_status;
     }
 }
 
