@@ -11,8 +11,11 @@ export class BountyQnsDBOperator extends BaseOperator {
         });
     }
 
-    public async setMaxChoices(user_id: string, new_max_choices: number): Promise<OperatorResponse> {
-        const check_result = await this.checkDataExistence({ user_id: user_id });
+    public async setMaxChoices(diffi: string, qns_number: number, new_max_choices: number): Promise<OperatorResponse> {
+        const check_result = await this.checkDataExistence({
+            difficulty: diffi,
+            number: qns_number
+        });
         if (check_result.status === StatusCode.DATA_NOT_FOUND) return check_result;
 
         const execute = {
@@ -21,7 +24,10 @@ export class BountyQnsDBOperator extends BaseOperator {
             }
         }
 
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor_promise).updateOne({
+            difficulty: diffi,
+            number: qns_number
+        }, execute);
         if (!update_result.acknowledged) return {
             status: StatusCode.WRITE_DATA_ERROR,
             message: ':x: 寫入錯誤'

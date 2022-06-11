@@ -70,21 +70,28 @@ export class BountyQnsDBManager extends core.BaseManager {
                     return await interaction.editReply('上傳圖片過時');
                 }
 
-                const pic_url = collected.first().attachments.first().url;
+                const pic = collected.first().attachments.first();
+                if (!pic) return await interaction.followUp('此並非圖片格式，請重新執行指令');
+
+                const pic_url = pic.url;
                 const upload_status = await CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
                 
                 if (upload_status) await interaction.followUp('圖片已上傳！');
                 else return await interaction.followUp('圖片上傳錯誤');
 
                 // create qns info in mdb
-                const create_result = await this.qns_op.createDefaultData({
+                const create_params = {
                     difficulty: diffi,
                     qns_number: qns_and_update_data.qns_number,
                     max_choices: max_choices,
                     correct_ans: correct_ans
-                });
+                }
+                const create_result = await this.qns_op.createDefaultData(create_params);
                 if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.followUp('error creating qns info');
-                else await interaction.followUp('問題資料已建立！');
+                else {
+                    await interaction.followUp('問題資料已建立！');
+                    await interaction.channel.send(JSON.stringify(create_params, null, "\t"));
+                }
 
                 const mani_log_create_result = await CBQ_functions.createManipulationLog(interaction, Date.now(), diffi, qns_and_update_data.qns_number);
                 if (!mani_log_create_result) return await interaction.followUp('error creating mani logs');
@@ -92,19 +99,41 @@ export class BountyQnsDBManager extends core.BaseManager {
                 // update storj cache
                 const update_result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
                 if (!update_result.acknowledged) return await interaction.followUp('error updating cache');
+                else return;
+            }
+
+            case 'edit-bounty-qns-max-choices': {
+                await interaction.deferReply();
+
+                // get input data
+                const inner_values = await EBQMC_functions.getInputData(interaction);
+                const diffi: string = inner_values.diffi;
+                const qns_number: number = inner_values.qns_number;
+                const new_max_choices: number = inner_values.new_max_choices;
+
+                const update_result = await this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
+                if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
+                
+                if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
+                else return await interaction.editReply('更改完成！');
             }
         }
     }
-
-    
 }
 
 const CBQ_functions = {
-    async getInputData(interaction) {
+    async getInputData(interaction: CommandInteraction) {
+        const correct_ans: string[] = interaction.options.getString('correct-ans').split(";");
+
+        // a -> A; b -> B; ...
+        for (let i = 0; i < correct_ans.length; i++) {
+            correct_ans[i] = correct_ans[i].toUpperCase();
+        }
+
         return {
             diffi: interaction.options.getString('difficulty'),
             max_choices: interaction.options.getInteger('max-choices'),
-            correct_ans: interaction.options.getString('correct-ans').split(";")
+            correct_ans: correct_ans
         }
     },
 
@@ -248,4 +277,14 @@ const CBQ_functions = {
         const create_result = await (await logs_operator.cursor_promise).insertOne(mani_info);
         return create_result.acknowledged;
     }
+}
+
+const EBQMC_functions = {
+    async getInputData(interaction) {
+        return {
+            diffi: interaction.options.getString('difficulty'),
+            qns_number: interaction.options.getInteger('number'),
+            new_max_choices: interaction.options.getInteger('new-max-choices')
+        }
+    },
 }

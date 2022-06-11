@@ -21,9 +21,12 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
             default_data_function: reglist_1.getDefaultBountyQnsInfo
         });
     }
-    setMaxChoices(user_id, new_max_choices) {
+    setMaxChoices(diffi, qns_number, new_max_choices) {
         return __awaiter(this, void 0, void 0, function* () {
-            const check_result = yield this.checkDataExistence({ user_id: user_id });
+            const check_result = yield this.checkDataExistence({
+                difficulty: diffi,
+                number: qns_number
+            });
             if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const execute = {
@@ -31,7 +34,10 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
                     max_choices: new_max_choices
                 }
             };
-            const update_result = yield (yield this.cursor_promise).updateOne({ user_id: user_id }, execute);
+            const update_result = yield (yield this.cursor_promise).updateOne({
+                difficulty: diffi,
+                number: qns_number
+            }, execute);
             if (!update_result.acknowledged)
                 return {
                     status: reglist_2.StatusCode.WRITE_DATA_ERROR,

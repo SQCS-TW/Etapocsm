@@ -65,23 +65,29 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     catch (_a) {
                         return yield interaction.editReply('上傳圖片過時');
                     }
-                    const pic_url = collected.first().attachments.first().url;
+                    const pic = collected.first().attachments.first();
+                    if (!pic)
+                        return yield interaction.followUp('此並非圖片格式，請重新執行指令');
+                    const pic_url = pic.url;
                     const upload_status = yield CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
                     if (upload_status)
                         yield interaction.followUp('圖片已上傳！');
                     else
                         return yield interaction.followUp('圖片上傳錯誤');
                     // create qns info in mdb
-                    const create_result = yield this.qns_op.createDefaultData({
+                    const create_params = {
                         difficulty: diffi,
                         qns_number: qns_and_update_data.qns_number,
                         max_choices: max_choices,
                         correct_ans: correct_ans
-                    });
+                    };
+                    const create_result = yield this.qns_op.createDefaultData(create_params);
                     if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                         return yield interaction.followUp('error creating qns info');
-                    else
+                    else {
                         yield interaction.followUp('問題資料已建立！');
+                        yield interaction.channel.send(JSON.stringify(create_params, null, "\t"));
+                    }
                     const mani_log_create_result = yield CBQ_functions.createManipulationLog(interaction, Date.now(), diffi, qns_and_update_data.qns_number);
                     if (!mani_log_create_result)
                         return yield interaction.followUp('error creating mani logs');
@@ -89,6 +95,23 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     const update_result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
                     if (!update_result.acknowledged)
                         return yield interaction.followUp('error updating cache');
+                    else
+                        return;
+                }
+                case 'edit-bounty-qns-max-choices': {
+                    yield interaction.deferReply();
+                    // get input data
+                    const inner_values = yield EBQMC_functions.getInputData(interaction);
+                    const diffi = inner_values.diffi;
+                    const qns_number = inner_values.qns_number;
+                    const new_max_choices = inner_values.new_max_choices;
+                    const update_result = yield this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
+                    if (update_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
+                        return yield interaction.editReply('目標問題不存在！');
+                    if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+                        return yield interaction.editReply('更改錯誤！');
+                    else
+                        return yield interaction.editReply('更改完成！');
                 }
             }
         });
@@ -98,10 +121,15 @@ exports.BountyQnsDBManager = BountyQnsDBManager;
 const CBQ_functions = {
     getInputData(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
+            const correct_ans = interaction.options.getString('correct-ans').split(";");
+            // a -> A; b -> B; ...
+            for (let i = 0; i < correct_ans.length; i++) {
+                correct_ans[i] = correct_ans[i].toUpperCase();
+            }
             return {
                 diffi: interaction.options.getString('difficulty'),
                 max_choices: interaction.options.getInteger('max-choices'),
-                correct_ans: interaction.options.getString('correct-ans').split(";")
+                correct_ans: correct_ans
             };
         });
     },
@@ -237,4 +265,15 @@ const CBQ_functions = {
             return create_result.acknowledged;
         });
     }
+};
+const EBQMC_functions = {
+    getInputData(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                diffi: interaction.options.getString('difficulty'),
+                qns_number: interaction.options.getInteger('number'),
+                new_max_choices: interaction.options.getInteger('new-max-choices')
+            };
+        });
+    },
 };

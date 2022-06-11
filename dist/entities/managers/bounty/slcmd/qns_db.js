@@ -42,17 +42,37 @@ exports.REGISTER_LIST = [
         ]
     },
     {
-        name: 'edit-qns-max-choices',
+        name: 'edit-bounty-qns-max-choices',
         description: '修改問題的總選項個數',
         options: [
             {
-                name: '_id',
-                description: '問題 _id',
+                name: 'difficulty',
+                description: '要修改問題的難度',
                 type: discord_js_1.Constants.ApplicationCommandOptionTypes.STRING,
+                required: true,
+                choices: [
+                    {
+                        name: '簡單',
+                        value: 'easy'
+                    },
+                    {
+                        name: '普通',
+                        value: 'medium'
+                    },
+                    {
+                        name: '困難',
+                        value: 'hard'
+                    }
+                ]
+            },
+            {
+                name: 'number',
+                description: '要修改問題的編號',
+                type: discord_js_1.Constants.ApplicationCommandOptionTypes.INTEGER,
                 required: true
             },
             {
-                name: 'max-choices',
+                name: 'new-max-choices',
                 description: '新的總選項個數',
                 type: discord_js_1.Constants.ApplicationCommandOptionTypes.INTEGER,
                 required: true
@@ -60,18 +80,38 @@ exports.REGISTER_LIST = [
         ]
     },
     {
-        name: 'modify_answers',
+        name: 'edit-bounty-qns-answers',
         description: '修改問題答案',
         options: [
             {
-                name: '_id',
-                description: '問題 _id',
+                name: 'difficulty',
+                description: '要修改問題的難度',
                 type: discord_js_1.Constants.ApplicationCommandOptionTypes.STRING,
+                required: true,
+                choices: [
+                    {
+                        name: '簡單',
+                        value: 'easy'
+                    },
+                    {
+                        name: '普通',
+                        value: 'medium'
+                    },
+                    {
+                        name: '困難',
+                        value: 'hard'
+                    }
+                ]
+            },
+            {
+                name: 'number',
+                description: '要修改問題的編號',
+                type: discord_js_1.Constants.ApplicationCommandOptionTypes.INTEGER,
                 required: true
             },
             {
-                name: 'ans',
-                description: '問題所有答案（用;隔開）',
+                name: 'new-answerers',
+                description: '新的所有答案（用;隔開）',
                 type: discord_js_1.Constants.ApplicationCommandOptionTypes.STRING,
                 required: true
             }
