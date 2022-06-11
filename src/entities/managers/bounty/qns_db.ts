@@ -86,6 +86,9 @@ export class BountyQnsDBManager extends core.BaseManager {
                 if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.followUp('error creating qns info');
                 else await interaction.followUp('問題資料已建立！');
 
+                const mani_log_create_result = await CBQ_functions.createManipulationLog(interaction, Date.now(), diffi, qns_and_update_data.qns_number);
+                if (!mani_log_create_result) return await interaction.followUp('error creating mani logs');
+
                 // update storj cache
                 const update_result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
                 if (!update_result.acknowledged) return await interaction.followUp('error updating cache');
@@ -223,5 +226,26 @@ const CBQ_functions = {
         unlink(`./cache/qns_pic_dl/${qns_number}.png`, () => { return; });
 
         return upload_status;
+    },
+
+    async createManipulationLog(interaction: CommandInteraction, finish_time: number, difficulty: string, qns_number: number) {
+        const logs_operator = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'AdminLogs'
+        });
+
+        const mani_info = {
+            _id: new ObjectId(),
+            type: 'create-qns',
+            accessor: interaction.user.id,
+            finish_time: finish_time,
+            qns_info: {
+                difficulty: difficulty,
+                qns_number: qns_number
+            }
+        };
+
+        const create_result = await (await logs_operator.cursor_promise).insertOne(mani_info);
+        return create_result.acknowledged;
     }
 }

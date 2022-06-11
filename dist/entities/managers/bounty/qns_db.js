@@ -82,6 +82,9 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                         return yield interaction.followUp('error creating qns info');
                     else
                         yield interaction.followUp('問題資料已建立！');
+                    const mani_log_create_result = yield CBQ_functions.createManipulationLog(interaction, Date.now(), diffi, qns_and_update_data.qns_number);
+                    if (!mani_log_create_result)
+                        return yield interaction.followUp('error creating mani logs');
                     // update storj cache
                     const update_result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
                     if (!update_result.acknowledged)
@@ -212,6 +215,26 @@ const CBQ_functions = {
             });
             (0, fs_1.unlink)(`./cache/qns_pic_dl/${qns_number}.png`, () => { return; });
             return upload_status;
+        });
+    },
+    createManipulationLog(interaction, finish_time, difficulty, qns_number) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const logs_operator = new shortcut_1.core.BaseOperator({
+                db: 'Bounty',
+                coll: 'AdminLogs'
+            });
+            const mani_info = {
+                _id: new mongodb_1.ObjectId(),
+                type: 'create-qns',
+                accessor: interaction.user.id,
+                finish_time: finish_time,
+                qns_info: {
+                    difficulty: difficulty,
+                    qns_number: qns_number
+                }
+            };
+            const create_result = yield (yield logs_operator.cursor_promise).insertOne(mani_info);
+            return create_result.acknowledged;
         });
     }
 };
