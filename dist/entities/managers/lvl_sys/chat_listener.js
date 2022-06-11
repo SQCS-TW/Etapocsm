@@ -29,7 +29,7 @@ class ChatListener extends shortcut_1.core.BaseManager {
             if (msg.guildId !== "743507979369709639")
                 return;
             const check_result = yield this.account_op.isUserInCooldown(msg.member.id);
-            if (check_result.status === 'M003') {
+            if (check_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
                 return console.log('error creating user chat account', msg.member.id);
             }
             if (check_result.status === true)
@@ -37,13 +37,13 @@ class ChatListener extends shortcut_1.core.BaseManager {
             const REWARD_EXP = yield shortcut_1.core.getRandomInt(2);
             console.log(REWARD_EXP);
             let set_result = yield this.account_op.addExp(msg.member.id, REWARD_EXP);
-            if (set_result.status === 'M003') {
+            if (set_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
                 console.log('error giving user exp', msg.member.id, REWARD_EXP);
                 return;
             }
             const COOLDOWN = yield shortcut_1.core.timeAfterSecs(60);
             set_result = yield this.account_op.setCooldown(msg.member.id, COOLDOWN);
-            if (set_result.status === 'M003') {
+            if (set_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
                 console.log('error setting cooldown', msg.member.id, COOLDOWN);
                 return;
             }

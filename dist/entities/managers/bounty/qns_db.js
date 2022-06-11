@@ -78,7 +78,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                         max_choices: max_choices,
                         correct_ans: correct_ans
                     });
-                    if (create_result.status === 'M002')
+                    if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                         return yield interaction.followUp('error creating qns info');
                     else
                         yield interaction.followUp('問題資料已建立！');

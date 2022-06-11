@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseOperator = void 0;
 const reglist_1 = require("../../db/reglist");
+const reglist_2 = require("../../db/reglist");
 class BaseOperator {
     constructor(payload) {
         // use promise here due to non-async constructor
@@ -24,14 +25,14 @@ class BaseOperator {
             const user_data = yield (yield this.cursor_promise).findOne(payload);
             if (user_data)
                 return {
-                    status: "nM002"
+                    status: reglist_2.StatusCode.DATA_FOUND
                 };
             if (auto_create_account) {
                 const result = yield this.createDefaultData(payload);
                 return result;
             }
             return {
-                status: "M002",
+                status: reglist_2.StatusCode.DATA_NOT_FOUND,
                 message: ':x:**【查詢錯誤】**找不到資料'
             };
         });
@@ -43,10 +44,10 @@ class BaseOperator {
                 const result = yield (yield this.cursor_promise).insertOne(default_data);
                 if (result.acknowledged)
                     return {
-                        status: "nM003"
+                        status: reglist_2.StatusCode.WRITE_DATA_SUCCESS
                     };
                 return {
-                    status: "M003",
+                    status: reglist_2.StatusCode.WRITE_DATA_ERROR,
                     message: ':x:**【操作錯誤】**資料新增錯誤'
                 };
             }

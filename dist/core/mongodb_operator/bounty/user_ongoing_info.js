@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyUserOngoingInfoOperator = void 0;
 const reglist_1 = require("../../../constants/reglist");
 const base_1 = require("../base");
+const reglist_2 = require("../../../db/reglist");
 class BountyUserOngoingInfoOperator extends base_1.BaseOperator {
     constructor() {
         super({
@@ -23,7 +24,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseOperator {
     setStatus(user_id, new_status) {
         return __awaiter(this, void 0, void 0, function* () {
             const check_result = yield this.checkDataExistence({ user_id: user_id });
-            if (check_result.status === "M002")
+            if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const execute = {
                 $set: {
@@ -33,11 +34,11 @@ class BountyUserOngoingInfoOperator extends base_1.BaseOperator {
             const update_result = yield (yield this.cursor_promise).updateOne({ user_id: user_id }, execute);
             if (!update_result.acknowledged)
                 return {
-                    status: "M003",
+                    status: reglist_2.StatusCode.WRITE_DATA_ERROR,
                     message: ':x: 寫入錯誤'
                 };
             return {
-                status: "nM003",
+                status: reglist_2.StatusCode.WRITE_DATA_SUCCESS,
                 message: ':white_check_mark: 寫入成功'
             };
         });
@@ -45,7 +46,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseOperator {
     isUserAnsweringQns(user_id) {
         return __awaiter(this, void 0, void 0, function* () {
             const check_result = yield this.checkDataExistence({ user_id: user_id });
-            if (check_result.status === "M002")
+            if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const member_data = yield (yield this.cursor_promise).findOne({ user_id: user_id });
             if (member_data.status)
@@ -60,7 +61,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseOperator {
     increaseStamina(user_id, delta, type) {
         return __awaiter(this, void 0, void 0, function* () {
             const check_result = yield this.checkDataExistence({ user_id: user_id });
-            if (check_result.status === "M002")
+            if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const user_data = yield (yield this.cursor_promise).findOne({ user_id: user_id });
             const old_stamina = user_data.stamina;
@@ -88,11 +89,11 @@ class BountyUserOngoingInfoOperator extends base_1.BaseOperator {
             const update_result = yield (yield this.cursor_promise).updateOne({ user_id: user_id }, execute);
             if (!update_result.acknowledged)
                 return {
-                    status: "M003",
+                    status: reglist_2.StatusCode.WRITE_DATA_ERROR,
                     message: ':x: 寫入錯誤'
                 };
             return {
-                status: "nM003",
+                status: reglist_2.StatusCode.WRITE_DATA_SUCCESS,
                 message: ':white_check_mark: 寫入成功'
             };
         });

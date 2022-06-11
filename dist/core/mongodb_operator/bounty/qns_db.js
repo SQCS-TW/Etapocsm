@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyQnsDBOperator = void 0;
 const reglist_1 = require("../../../constants/reglist");
 const base_1 = require("../base");
+const reglist_2 = require("../../../db/reglist");
 class BountyQnsDBOperator extends base_1.BaseOperator {
     constructor() {
         super({
@@ -23,7 +24,7 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
     setMaxChoices(user_id, new_max_choices) {
         return __awaiter(this, void 0, void 0, function* () {
             const check_result = yield this.checkDataExistence({ user_id: user_id });
-            if (check_result.status === "M002")
+            if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const execute = {
                 $set: {
@@ -33,11 +34,11 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
             const update_result = yield (yield this.cursor_promise).updateOne({ user_id: user_id }, execute);
             if (!update_result.acknowledged)
                 return {
-                    status: "M003",
+                    status: reglist_2.StatusCode.WRITE_DATA_ERROR,
                     message: ':x: 寫入錯誤'
                 };
             return {
-                status: "nM003",
+                status: reglist_2.StatusCode.WRITE_DATA_SUCCESS,
                 message: ':white_check_mark: 寫入成功'
             };
         });
@@ -45,7 +46,7 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
     setCorrectAns(user_id, new_correct_ans) {
         return __awaiter(this, void 0, void 0, function* () {
             const check_result = yield this.checkDataExistence({ user_id: user_id });
-            if (check_result.status === "M002")
+            if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
                 return check_result;
             const execute = {
                 $set: {
@@ -55,11 +56,11 @@ class BountyQnsDBOperator extends base_1.BaseOperator {
             const update_result = yield (yield this.cursor_promise).updateOne({ user_id: user_id }, execute);
             if (!update_result.acknowledged)
                 return {
-                    status: "M003",
+                    status: reglist_2.StatusCode.WRITE_DATA_ERROR,
                     message: ':x: 寫入錯誤'
                 };
             return {
-                status: "nM003",
+                status: reglist_2.StatusCode.WRITE_DATA_SUCCESS,
                 message: ':white_check_mark: 寫入成功'
             };
         });
