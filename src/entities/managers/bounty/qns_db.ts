@@ -32,59 +32,63 @@ class BountyQnsDBManager extends core.BaseManager {
             case 'create-bounty-qns': {
                 await interaction.deferReply({ ephemeral: true });
 
-                // input-data-pre-process
+                // get input data
                 const diffi = interaction.options.getString('difficulty');
                 const max_choices = interaction.options.getInteger('max-choices');
                 const correct_ans: Array<string> = interaction.options.getString('correct-ans').split(";");
-                //
-
+                
+                // create operator
                 const db_cache_operator = new core.BaseOperator({
                     db: 'Bounty',
                     coll: 'StorjQnsDBCache'
                 });
 
-                let cache: any = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+                // check cache
+                // if not exist -> create cache
+                const exist_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
 
-                if (cache.length === 0) {
-                    console.log('cache not found');
-                    const new_cache = await this.createQnsInfoCache();
+                if (!exist_cache) {
+                    const create_cache = await this.createQnsInfoCache();
 
-                    const result = await (await db_cache_operator.cursor_promise).insertOne(new_cache);
-                    if (!result.acknowledged) return await interaction.editReply('error setting cache');
+                    const create_result = await (await db_cache_operator.cursor_promise).insertOne(create_cache);
+                    if (!create_result.acknowledged) return await interaction.editReply('error creating cache');
                 } else {
-                    const fixed_cache = await this.createQnsInfoCache();
+                    // console.log('cache found');
 
-                    const execute = {
-                        $set: {
-                            easy: fixed_cache.easy,
-                            medium: fixed_cache.medium,
-                            hard: fixed_cache.hard
-                        }
-                    }
-                    const result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, execute);
-                    if (!result.acknowledged) return await interaction.editReply('error fixing cache');
+                    // const fixed_cache = await this.createQnsInfoCache();
+                    // console.log('fixed cache', fixed_cache);
+
+                    // const execute = {
+                    //     $set: {
+                    //         easy: fixed_cache.easy,
+                    //         medium: fixed_cache.medium,
+                    //         hard: fixed_cache.hard
+                    //     }
+                    // }
+
+                    // const result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, execute);
+                    // if (!result.acknowledged) return await interaction.editReply('error fixing cache');
+                    // else console.log('success fixing cache');
                 }
                 
                 // refresh cache
-                cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+                const refresh_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
 
-                //
-                console.log('cache', cache);
-                console.log(cache[diffi]);
-                const qns_and_update_data = await this.getQnsNumber(cache, diffi);
+                // update current diffi cache
+                const qns_and_update_data = await this.getQnsNumber(refresh_cache, diffi);
 
-                let result: any = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
-                if (!result.acknowledged) return await interaction.editReply('error updating cache');
+                const update_result: any = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
+                if (!update_result.acknowledged) return await interaction.editReply('error updating cache');
                 //
 
                 //
-                result = await this.qns_op.createDefaultData({
+                const create_result = await this.qns_op.createDefaultData({
                     difficulty: diffi,
                     qns_number: qns_and_update_data.qns_number,
                     max_choices: max_choices,
                     correct_ans: correct_ans
                 });
-                if (result.status === 'M002') return await interaction.editReply('error creating qns info');
+                if (create_result.status === 'M002') return await interaction.editReply('error creating qns info');
                 //
 
                 let collected;
@@ -105,27 +109,22 @@ class BountyQnsDBManager extends core.BaseManager {
 
                 const pic_url = collected.first().attachments.first().url;
 
-                const download = require('download-file');
+                const get = require('async-get-file');
 
                 const options = {
                     directory: "./cache/qns_pic_dl/",
                     filename: `${qns_and_update_data.qns_number}.png`
                 };
 
-                const download_pic = new Promise((resolve) => {
-                    download(pic_url, options);
-                    resolve('ok!');
-                });
-
-                await download_pic;
+                await get(pic_url, options);
                 
                 const upload_status = await db.storjUpload({
                     bucket_name: 'bounty-questions-db',
                     local_file_name: `./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`,
                     db_file_name: `${diffi}/${qns_and_update_data.qns_number}.png`
-                })
+                });
                 if (upload_status) await interaction.followUp('圖片已上傳！');
-                unlink(`./cache/qns_pic_dl/temp.png`, () => { return; });
+                unlink(`./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`, () => { return; });
             }
         }
     }
@@ -134,20 +133,26 @@ class BountyQnsDBManager extends core.BaseManager {
         const new_cache = {
             _id: new ObjectId(),
             type: 'cache',
-            easy: null,
-            medium: null,
-            hard: null
+            easy: undefined,
+            medium: undefined,
+            hard: undefined
         };
 
-        ['easy', 'medium', 'hard'].forEach(async (diffi) => {
+        const diffi_list = ['easy', 'medium', 'hard'];
+
+        for (let i = 0; i < diffi_list.length; i++) {
+            const diffi = diffi_list[i];
+
             const file_names = await db.storjGetFolderFiles({
                 bucket_name: 'bounty-questions-db',
                 prefix: `${diffi}/`,
                 suffixes: '.png'
             });
 
-            let max_number = null;
-            let skipped_numbers = null;
+            console.log('file names', file_names);
+
+            let max_number = undefined;
+            let skipped_numbers = undefined;
 
             if (file_names.length === 1 && file_names[0] === '') {
                 max_number = -1;
@@ -166,7 +171,7 @@ class BountyQnsDBManager extends core.BaseManager {
                 max_number: max_number,
                 skipped_numbers: skipped_numbers
             }
-        })
+        }
 
         return new_cache;
     }

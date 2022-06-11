@@ -33,25 +33,34 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             switch (interaction.commandName) {
                 case 'create-bounty-qns': {
                     yield interaction.deferReply({ ephemeral: true });
-                    // input-data-pre-process
+                    // get input data
                     const diffi = interaction.options.getString('difficulty');
                     const max_choices = interaction.options.getInteger('max-choices');
                     const correct_ans = interaction.options.getString('correct-ans').split(";");
-                    //
+                    // create operator
                     const db_cache_operator = new shortcut_1.core.BaseOperator({
                         db: 'Bounty',
                         coll: 'StorjQnsDBCache'
                     });
-                    let cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-                    if (cache.length === 0) {
+                    // check cache
+                    // if not exist -> create cache
+                    // else -> fix cache (?)
+                    const exist_cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+                    console.log('exist cache', exist_cache);
+                    if (!exist_cache) {
                         console.log('cache not found');
-                        const new_cache = yield this.createQnsInfoCache();
-                        const result = yield (yield db_cache_operator.cursor_promise).insertOne(new_cache);
-                        if (!result.acknowledged)
-                            return yield interaction.editReply('error setting cache');
+                        const create_cache = yield this.createQnsInfoCache();
+                        console.log('create cache', create_cache);
+                        const create_result = yield (yield db_cache_operator.cursor_promise).insertOne(create_cache);
+                        if (!create_result.acknowledged)
+                            return yield interaction.editReply('error creating cache');
+                        else
+                            console.log('success creating cache');
                     }
                     else {
+                        console.log('cache found');
                         const fixed_cache = yield this.createQnsInfoCache();
+                        console.log('fixed cache', fixed_cache);
                         const execute = {
                             $set: {
                                 easy: fixed_cache.easy,
@@ -62,26 +71,33 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                         const result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, execute);
                         if (!result.acknowledged)
                             return yield interaction.editReply('error fixing cache');
+                        else
+                            console.log('success fixing cache');
                     }
                     // refresh cache
-                    cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-                    //
-                    console.log('cache', cache);
-                    console.log(cache[diffi]);
-                    const qns_and_update_data = yield this.getQnsNumber(cache, diffi);
-                    let result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
-                    if (!result.acknowledged)
+                    const refresh_cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+                    // update current diffi cache
+                    console.log('refresh_cache', refresh_cache);
+                    console.log('diffi', diffi);
+                    const qns_and_update_data = yield this.getQnsNumber(refresh_cache, diffi);
+                    console.log('qns_and_update_data', qns_and_update_data);
+                    const update_result = yield (yield db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
+                    if (!update_result.acknowledged)
                         return yield interaction.editReply('error updating cache');
+                    else
+                        console.log('success updating cache');
                     //
                     //
-                    result = yield this.qns_op.createDefaultData({
+                    const create_result = yield this.qns_op.createDefaultData({
                         difficulty: diffi,
                         qns_number: qns_and_update_data.qns_number,
                         max_choices: max_choices,
                         correct_ans: correct_ans
                     });
-                    if (result.status === 'M002')
+                    if (create_result.status === 'M002')
                         return yield interaction.editReply('error creating qns info');
+                    else
+                        console.log('success creating qns info');
                     //
                     let collected;
                     try {
@@ -98,16 +114,12 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('上傳圖片過時');
                     }
                     const pic_url = collected.first().attachments.first().url;
-                    const download = require('download-file');
+                    const get = require('async-get-file');
                     const options = {
                         directory: "./cache/qns_pic_dl/",
                         filename: `${qns_and_update_data.qns_number}.png`
                     };
-                    const download_pic = new Promise((resolve) => {
-                        download(pic_url, options);
-                        resolve('ok!');
-                    });
-                    yield download_pic;
+                    yield get(pic_url, options);
                     const upload_status = yield shortcut_1.db.storjUpload({
                         bucket_name: 'bounty-questions-db',
                         local_file_name: `./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`,
@@ -115,7 +127,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     });
                     if (upload_status)
                         yield interaction.followUp('圖片已上傳！');
-                    (0, fs_1.unlink)(`./cache/qns_pic_dl/temp.png`, () => { return; });
+                    (0, fs_1.unlink)(`./cache/qns_pic_dl/${qns_and_update_data.qns_number}.png`, () => { return; });
                 }
             }
         });
@@ -125,18 +137,21 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             const new_cache = {
                 _id: new mongodb_1.ObjectId(),
                 type: 'cache',
-                easy: null,
-                medium: null,
-                hard: null
+                easy: undefined,
+                medium: undefined,
+                hard: undefined
             };
-            ['easy', 'medium', 'hard'].forEach((diffi) => __awaiter(this, void 0, void 0, function* () {
+            const diffi_list = ['easy', 'medium', 'hard'];
+            for (let i = 0; i < diffi_list.length; i++) {
+                const diffi = diffi_list[i];
                 const file_names = yield shortcut_1.db.storjGetFolderFiles({
                     bucket_name: 'bounty-questions-db',
                     prefix: `${diffi}/`,
                     suffixes: '.png'
                 });
-                let max_number = null;
-                let skipped_numbers = null;
+                console.log('file names', file_names);
+                let max_number = undefined;
+                let skipped_numbers = undefined;
                 if (file_names.length === 1 && file_names[0] === '') {
                     max_number = -1;
                     skipped_numbers = [];
@@ -153,7 +168,8 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     max_number: max_number,
                     skipped_numbers: skipped_numbers
                 };
-            }));
+                console.log('new cache', new_cache);
+            }
             return new_cache;
         });
     }
