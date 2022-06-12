@@ -68,3 +68,6 @@ def list_objects(bucket_name: str, prefix: str = '', suffixes: list = []):
         objects_name_list = filter(lambda name: suffix_finding(name), objects_name_list)
 
     return objects_name_list
+
+def delete_file(bucket_name: str, storj_path: str):
+    project.delete_object(bucket_name, storj_path)

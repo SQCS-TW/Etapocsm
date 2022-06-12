@@ -71,13 +71,13 @@ export async function storjGetFolderSize(options: GetFolderSizeOptions) {
     return Number(size);
 }
 
-type getFolderFilesOptions = {
+type GetFolderFilesOptions = {
     bucket_name: string,
     prefix: string,
     suffixes?: string
 }
 
-export async function storjGetFolderFiles(options: getFolderFilesOptions) {
+export async function storjGetFolderFiles(options: GetFolderFilesOptions) {
     /*
         bucket_name: the bucket in storj where the target folder is,
         prefix: the target folder's path,
@@ -97,4 +97,26 @@ export async function storjGetFolderFiles(options: getFolderFilesOptions) {
             .replace("\n", '');
     }
     return filenames_array;
+}
+
+type DeleteFileOptions = {
+    bucket_name: string,
+    delete_path: string
+}
+
+export async function storjDeleteFile(options: DeleteFileOptions) {
+    /*
+        bucket_name: the bucket in storj where the target folder is,
+        delete_path: the storj path where the target file is
+    */
+    
+    const command = `python ./src/db/storj/py_port.py delete_file ${options.bucket_name} ${options.delete_path}`;
+
+    let delete_result: any = execSync(command);
+    delete_result = delete_result.toString("utf-8");
+
+    console.log('delete result:', delete_result);
+
+    delete_result = (delete_result.trim() === 'true');
+    return delete_result;
 }

@@ -128,6 +128,62 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     else
                         return yield interaction.editReply('更改完成！');
                 }
+                case 'log-create-bounty-qns-actions': {
+                    yield interaction.deferReply();
+                    const logs = yield (yield LCBQA_functions.getLogs(interaction.user.id)).toArray();
+                    if (logs.length === 0)
+                        return yield interaction.editReply('沒有任何紀錄！');
+                    const logs_prettify = [];
+                    for (let i = 0; i < logs.length; i++) {
+                        const log = logs[i];
+                        const finish_time_prettify = (new Date(log.finish_time)).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                        logs_prettify.push(`時間：${finish_time_prettify}\n題目難度：${log.qns_info.difficulty}\n題目編號：${log.qns_info.number}`);
+                    }
+                    while (logs_prettify.length > 0) {
+                        yield interaction.channel.send(logs_prettify[0]);
+                        logs_prettify.shift();
+                        yield LCBQA_functions.sleep(0.5);
+                    }
+                    return yield interaction.editReply('輸出完畢！');
+                }
+                case 'del-create-bounty-qns-action': {
+                    yield interaction.deferReply();
+                    const inner_values = yield DCBQA_functions.getInputData(interaction);
+                    const diffi = inner_values.diffi;
+                    const qns_number = inner_values.qns_number;
+                    const logs_operator = new shortcut_1.core.BaseOperator({
+                        db: 'Bounty',
+                        coll: 'AdminLogs'
+                    });
+                    const search_result = yield DCBQA_functions.getLog(interaction.user.id, diffi, qns_number, logs_operator.cursor_promise);
+                    if (search_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND) {
+                        return yield interaction.editReply('找不到此操作；或是此操作不來自你');
+                    }
+                    else {
+                        yield interaction.editReply('已找到資料，進行刪除中...');
+                    }
+                    const delete_result = yield shortcut_1.db.storjDeleteFile({
+                        bucket_name: 'bounty-questions-db',
+                        delete_path: `${diffi}/${qns_number}.png`
+                    });
+                    if (!delete_result)
+                        return yield interaction.editReply('刪除題目圖片出錯');
+                    const del_qns_info_result = yield (yield this.qns_op.cursor_promise).deleteOne({
+                        difficulty: diffi,
+                        number: qns_number
+                    });
+                    if (!del_qns_info_result.acknowledged)
+                        return yield interaction.editReply('刪除題目資訊出錯');
+                    const del_log_result = yield (yield logs_operator.cursor_promise).deleteOne({
+                        accessor: interaction.user.id,
+                        "qns_info.difficulty": diffi,
+                        "qns_info.number": qns_number
+                    });
+                    if (!del_log_result.acknowledged)
+                        return yield interaction.editReply('刪除操作紀錄出錯');
+                    else
+                        yield interaction.followUp('刪除成功！');
+                }
             }
         });
     }
@@ -156,6 +212,19 @@ const CBQ_functions = {
                 const create_result = yield (yield cursor_promise).insertOne(create_cache);
                 if (!create_result.acknowledged)
                     return yield interaction.editReply('error creating cache');
+            }
+            else {
+                const create_cache = yield CBQ_functions.createQnsInfoCache();
+                const execute = {
+                    $set: {
+                        easy: create_cache.easy,
+                        medium: create_cache.medium,
+                        hard: create_cache.hard
+                    }
+                };
+                const update_result = yield (yield cursor_promise).updateOne({ type: 'cache' }, execute);
+                if (!update_result.acknowledged)
+                    return yield interaction.editReply('error updating cache');
             }
         });
     },
@@ -272,7 +341,7 @@ const CBQ_functions = {
                 finish_time: finish_time,
                 qns_info: {
                     difficulty: difficulty,
-                    qns_number: qns_number
+                    number: qns_number
                 }
             };
             const create_result = yield (yield logs_operator.cursor_promise).insertOne(mani_info);
@@ -303,6 +372,48 @@ const EBQA_functions = {
                 diffi: interaction.options.getString('difficulty'),
                 qns_number: interaction.options.getInteger('number'),
                 new_answers: new_answers
+            };
+        });
+    }
+};
+const LCBQA_functions = {
+    getLogs(user_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const logs_operator = new shortcut_1.core.BaseOperator({
+                db: 'Bounty',
+                coll: 'AdminLogs'
+            });
+            const logs = (yield logs_operator.cursor_promise).find({ accessor: user_id }).sort({ finish_time: 1 });
+            return logs;
+        });
+    },
+    sleep(sec) {
+        return new Promise(resolve => setTimeout(resolve, sec * 1000));
+    }
+};
+const DCBQA_functions = {
+    getInputData(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                diffi: interaction.options.getString('difficulty'),
+                qns_number: interaction.options.getInteger('number')
+            };
+        });
+    },
+    getLog(user_id, diffi, qns_number, cursor_promise) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const log = yield (yield cursor_promise).findOne({
+                accessor: user_id,
+                "qns_info.difficulty": diffi,
+                "qns_info.number": qns_number
+            });
+            if (!log)
+                return {
+                    status: shortcut_1.db.StatusCode.DATA_NOT_FOUND
+                };
+            return {
+                status: shortcut_1.db.StatusCode.DATA_FOUND,
+                log: log
             };
         });
     }

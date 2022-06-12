@@ -5,7 +5,7 @@
 """
 
 import sys
-from storj import download_file, list_objects, upload_file
+from storj import download_file, list_objects, upload_file, delete_file
 
 # argv: start from 1
 
@@ -83,3 +83,17 @@ elif mode == 'getFolderFiles':
 
     except:
         print('false')
+
+elif mode == 'delete_file':
+    bucket_name = sys.argv[2]
+    delete_path = sys.argv[3]
+
+    try:
+        delete_file(
+            bucket_name=bucket_name,
+            storj_path=delete_path
+        )
+        print('true')
+
+    except Exception as e:
+        print(f'false, {e}')

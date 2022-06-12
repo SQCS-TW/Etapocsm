@@ -116,5 +116,41 @@ exports.REGISTER_LIST = [
                 required: true
             }
         ]
+    },
+    {
+        name: 'log-create-bounty-qns-actions',
+        description: '查詢個人新增懸賞問題的操作',
+    },
+    {
+        name: 'del-create-bounty-qns-action',
+        description: '刪除個人新增懸賞問題的操作',
+        options: [
+            {
+                name: 'difficulty',
+                description: '要修改問題的難度',
+                type: discord_js_1.Constants.ApplicationCommandOptionTypes.STRING,
+                required: true,
+                choices: [
+                    {
+                        name: '簡單',
+                        value: 'easy'
+                    },
+                    {
+                        name: '普通',
+                        value: 'medium'
+                    },
+                    {
+                        name: '困難',
+                        value: 'hard'
+                    }
+                ]
+            },
+            {
+                name: 'number',
+                description: '要修改問題的編號',
+                type: discord_js_1.Constants.ApplicationCommandOptionTypes.INTEGER,
+                required: true
+            }
+        ]
     }
 ];

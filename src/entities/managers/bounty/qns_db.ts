@@ -1,4 +1,4 @@
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, IntegrationApplication } from 'discord.js';
 import { REGISTER_LIST } from './slcmd/qns_db';
 import { core, db } from '../../shortcut';
 import { ObjectId } from 'mongodb';
@@ -35,7 +35,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const diffi: string = inner_values.diffi;
                 const max_choices: number = inner_values.max_choices;
                 const correct_ans: string[] = inner_values.correct_ans;
-                
+
                 // create operator
                 const db_cache_operator = new core.BaseOperator({
                     db: 'Bounty',
@@ -45,7 +45,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 // check cache
                 // if not exist -> create cache
                 await CBQ_functions.checkAndAutoCreateCache(interaction, db_cache_operator.cursor_promise);
-                
+
                 // refresh cache
                 const refresh_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
 
@@ -73,7 +73,7 @@ export class BountyQnsDBManager extends core.BaseManager {
 
                 const pic_url = pic.url;
                 const upload_status = await CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
-                
+
                 if (upload_status) await interaction.followUp('圖片已上傳！');
                 else return await interaction.followUp('圖片上傳錯誤');
 
@@ -111,7 +111,7 @@ export class BountyQnsDBManager extends core.BaseManager {
 
                 const update_result = await this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
                 if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
-                
+
                 if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
                 else return await interaction.editReply('更改完成！');
             }
@@ -127,9 +127,78 @@ export class BountyQnsDBManager extends core.BaseManager {
 
                 const update_result = await this.qns_op.setCorrectAns(diffi, qns_number, new_answers);
                 if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
-                
+
                 if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
                 else return await interaction.editReply('更改完成！');
+            }
+
+            case 'log-create-bounty-qns-actions': {
+                await interaction.deferReply();
+
+                const logs = await (await LCBQA_functions.getLogs(interaction.user.id)).toArray();
+
+                if (logs.length === 0) return await interaction.editReply('沒有任何紀錄！');
+
+                const logs_prettify = [];
+                for (let i = 0; i < logs.length; i++) {
+                    const log = logs[i];
+
+                    const finish_time_prettify = (new Date(log.finish_time)).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                    logs_prettify.push(`時間：${finish_time_prettify}\n題目難度：${log.qns_info.difficulty}\n題目編號：${log.qns_info.number}`);
+                }
+
+                while (logs_prettify.length > 0) {
+                    await interaction.channel.send(logs_prettify[0]);
+                    logs_prettify.shift();
+                    await LCBQA_functions.sleep(0.5);
+                }
+
+                return await interaction.editReply('輸出完畢！');
+            }
+
+            case 'del-create-bounty-qns-action': {
+                await interaction.deferReply();
+
+                const inner_values = await DCBQA_functions.getInputData(interaction);
+                const diffi = inner_values.diffi;
+                const qns_number = inner_values.qns_number;
+
+                const logs_operator = new core.BaseOperator({
+                    db: 'Bounty',
+                    coll: 'AdminLogs'
+                });
+
+                const search_result = await DCBQA_functions.getLog(
+                    interaction.user.id,
+                    diffi,
+                    qns_number,
+                    logs_operator.cursor_promise
+                );
+                if (search_result.status === db.StatusCode.DATA_NOT_FOUND) {
+                    return await interaction.editReply('找不到此操作；或是此操作不來自你');
+                } else {
+                    await interaction.editReply('已找到資料，進行刪除中...');
+                }
+
+                const delete_result = await db.storjDeleteFile({
+                    bucket_name: 'bounty-questions-db',
+                    delete_path: `${diffi}/${qns_number}.png`
+                });
+                if (!delete_result) return await interaction.editReply('刪除題目圖片出錯');
+
+                const del_qns_info_result = await (await this.qns_op.cursor_promise).deleteOne({
+                    difficulty: diffi,
+                    number: qns_number
+                });
+                if (!del_qns_info_result.acknowledged) return await interaction.editReply('刪除題目資訊出錯');
+
+                const del_log_result = await (await logs_operator.cursor_promise).deleteOne({
+                    accessor: interaction.user.id,
+                    "qns_info.difficulty": diffi,
+                    "qns_info.number": qns_number
+                });
+                if (!del_log_result.acknowledged) return await interaction.editReply('刪除操作紀錄出錯');
+                else await interaction.followUp('刪除成功！');
             }
         }
     }
@@ -159,6 +228,18 @@ const CBQ_functions = {
 
             const create_result = await (await cursor_promise).insertOne(create_cache);
             if (!create_result.acknowledged) return await interaction.editReply('error creating cache');
+        } else {
+            const create_cache = await CBQ_functions.createQnsInfoCache();
+
+            const execute = {
+                $set: {
+                    easy: create_cache.easy,
+                    medium: create_cache.medium,
+                    hard: create_cache.hard
+                }
+            }
+            const update_result = await (await cursor_promise).updateOne({ type: 'cache' }, execute);
+            if (!update_result.acknowledged) return await interaction.editReply('error updating cache');
         }
     },
 
@@ -258,7 +339,7 @@ const CBQ_functions = {
             filename: `${qns_number}.png`
         };
         await get(pic_url, options);
-        
+
         const upload_status = await db.storjUpload({
             bucket_name: 'bounty-questions-db',
             local_file_name: `./cache/qns_pic_dl/${qns_number}.png`,
@@ -282,7 +363,7 @@ const CBQ_functions = {
             finish_time: finish_time,
             qns_info: {
                 difficulty: difficulty,
-                qns_number: qns_number
+                number: qns_number
             }
         };
 
@@ -315,5 +396,47 @@ const EBQA_functions = {
             qns_number: interaction.options.getInteger('number'),
             new_answers: new_answers
         }
+    }
+}
+
+const LCBQA_functions = {
+    async getLogs(user_id: string) {
+        const logs_operator = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'AdminLogs'
+        });
+
+        const logs = (await logs_operator.cursor_promise).find({ accessor: user_id }).sort({ finish_time: 1 });
+        return logs;
+    },
+
+    sleep(sec) {
+        return new Promise(resolve => setTimeout(resolve, sec * 1000));
+    }
+}
+
+const DCBQA_functions = {
+    async getInputData(interaction) {
+        return {
+            diffi: interaction.options.getString('difficulty'),
+            qns_number: interaction.options.getInteger('number')
+        }
+    },
+
+    async getLog(user_id: string, diffi: string, qns_number: number, cursor_promise) {
+        const log = await (await cursor_promise).findOne({
+            accessor: user_id,
+            "qns_info.difficulty": diffi,
+            "qns_info.number": qns_number
+        });
+
+        if (!log) return {
+            status: db.StatusCode.DATA_NOT_FOUND
+        };
+
+        return {
+            status: db.StatusCode.DATA_FOUND,
+            log: log
+        };
     }
 }

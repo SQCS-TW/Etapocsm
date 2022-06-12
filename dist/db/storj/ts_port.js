@@ -14,7 +14,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.storjGetFolderFiles = exports.storjGetFolderSize = exports.storjUpload = exports.storjDownload = void 0;
+exports.storjDeleteFile = exports.storjGetFolderFiles = exports.storjGetFolderSize = exports.storjUpload = exports.storjDownload = void 0;
 const child_process_1 = require("child_process");
 function storjDownload(options) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -88,3 +88,18 @@ function storjGetFolderFiles(options) {
     });
 }
 exports.storjGetFolderFiles = storjGetFolderFiles;
+function storjDeleteFile(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        /*
+            bucket_name: the bucket in storj where the target folder is,
+            delete_path: the storj path where the target file is
+        */
+        const command = `python ./src/db/storj/py_port.py delete_file ${options.bucket_name} ${options.delete_path}`;
+        let delete_result = (0, child_process_1.execSync)(command);
+        delete_result = delete_result.toString("utf-8");
+        console.log('delete result:', delete_result);
+        delete_result = (delete_result.trim() === 'true');
+        return delete_result;
+    });
+}
+exports.storjDeleteFile = storjDeleteFile;
