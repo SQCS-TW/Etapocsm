@@ -12,7 +12,7 @@ export class BountyQnsDBManager extends core.BaseManager {
         super(f_platform);
         this.qns_op = new core.BountyQnsDBOperator();
 
-        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        // this.SLCMD_REGISTER_LIST = REGISTER_LIST;
 
         this.setupListener();
     }

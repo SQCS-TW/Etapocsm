@@ -13,7 +13,7 @@ export class BountyAccountManager extends core.BaseManager {
         this.account_op = new core.BountyUserAccountOperator();
         this.ongoing_op = new core.BountyUserOngoingInfoOperator();
 
-        this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
+        // this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
 
         this.setupListener();
     }
