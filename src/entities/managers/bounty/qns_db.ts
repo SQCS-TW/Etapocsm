@@ -173,9 +173,7 @@ const CBQ_functions = {
 
         const diffi_list = ['easy', 'medium', 'hard'];
 
-        for (let i = 0; i < diffi_list.length; i++) {
-            const diffi = diffi_list[i];
-
+        await core.asyncForEach(diffi_list, async (diffi) => {
             const file_names = await db.storjGetFolderFiles({
                 bucket_name: 'bounty-questions-db',
                 prefix: `${diffi}/`,
@@ -204,7 +202,7 @@ const CBQ_functions = {
                 max_number: max_number,
                 skipped_numbers: skipped_numbers
             }
-        }
+        });
 
         return new_cache;
     },

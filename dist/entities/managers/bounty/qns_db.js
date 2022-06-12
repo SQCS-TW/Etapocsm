@@ -169,8 +169,7 @@ const CBQ_functions = {
                 hard: undefined
             };
             const diffi_list = ['easy', 'medium', 'hard'];
-            for (let i = 0; i < diffi_list.length; i++) {
-                const diffi = diffi_list[i];
+            yield shortcut_1.core.asyncForEach(diffi_list, (diffi) => __awaiter(this, void 0, void 0, function* () {
                 const file_names = yield shortcut_1.db.storjGetFolderFiles({
                     bucket_name: 'bounty-questions-db',
                     prefix: `${diffi}/`,
@@ -195,7 +194,7 @@ const CBQ_functions = {
                     max_number: max_number,
                     skipped_numbers: skipped_numbers
                 };
-            }
+            }));
             return new_cache;
         });
     },

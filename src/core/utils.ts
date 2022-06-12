@@ -89,3 +89,9 @@ export async function isItemInArray<T>(item: T, arr: Array<T>) {
         return true;
     } else return false;
 }
+
+export async function asyncForEach(array, callback) {
+    for (let i = 0; i < array.length; i++) {
+        await callback(array[i], i, array);
+    }
+}

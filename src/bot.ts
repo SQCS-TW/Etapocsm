@@ -41,10 +41,9 @@ export class Etapocsm extends Client {
 
     private async invokePlatforms() {
         try {
-            for (let i = 0; i < this.platforms.length; i++) {
-                const pf: any = this.platforms[i];
+            await core.asyncForEach(this.platforms, async (pf) => {
                 await pf.activateManagers(pf);
-            }
+            });
         } catch (err) {
             throw new Error(`Error when invoking plats.\n msg: ${err}`);
         }
@@ -53,18 +52,15 @@ export class Etapocsm extends Client {
     private async registerSlcmd() {
         const slcmd_register_list = []
 
-        for (let i = 0; i < this.platforms.length; i++) {
-            const pf = this.platforms[i];
-            for (let j = 0; j < pf.managers.length; j++) {
-                const mng = pf.managers[j];
-                if (!mng.SLCMD_REGISTER_LIST) continue;
+        await core.asyncForEach(this.platforms, async (pf: any) => {
+            await core.asyncForEach(pf.managers, async (mng: any) => {
+                if (!mng.SLCMD_REGISTER_LIST) return;
 
-                for (let k = 0; k < mng.SLCMD_REGISTER_LIST.length; k++) {
-                    const slcmd = mng.SLCMD_REGISTER_LIST[k];
+                await core.asyncForEach(mng.SLCMD_REGISTER_LIST, async (slcmd) => {
                     slcmd_register_list.push(slcmd);
-                }
-            }
-        }
+                });
+            });
+        });
 
         const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
+exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const reglist_1 = require("../db/reglist");
 const timeAfterSecs = (seconds) => __awaiter(void 0, void 0, void 0, function* () { return Date.now() + seconds * 1000; });
 exports.timeAfterSecs = timeAfterSecs;
@@ -113,3 +113,11 @@ function isItemInArray(item, arr) {
     });
 }
 exports.isItemInArray = isItemInArray;
+function asyncForEach(array, callback) {
+    return __awaiter(this, void 0, void 0, function* () {
+        for (let i = 0; i < array.length; i++) {
+            yield callback(array[i], i, array);
+        }
+    });
+}
+exports.asyncForEach = asyncForEach;

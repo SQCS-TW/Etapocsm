@@ -14,6 +14,7 @@ const discord_js_1 = require("discord.js");
 const reglist_1 = require("./entities/platforms/reglist");
 const rest_1 = require("@discordjs/rest");
 const v9_1 = require("discord-api-types/v9");
+const shortcut_1 = require("./entities/shortcut");
 class Etapocsm extends discord_js_1.Client {
     constructor(options) {
         super(options);
@@ -46,10 +47,9 @@ class Etapocsm extends discord_js_1.Client {
     invokePlatforms() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                for (let i = 0; i < this.platforms.length; i++) {
-                    const pf = this.platforms[i];
+                yield shortcut_1.core.asyncForEach(this.platforms, (pf) => __awaiter(this, void 0, void 0, function* () {
                     yield pf.activateManagers(pf);
-                }
+                }));
             }
             catch (err) {
                 throw new Error(`Error when invoking plats.\n msg: ${err}`);
@@ -59,18 +59,15 @@ class Etapocsm extends discord_js_1.Client {
     registerSlcmd() {
         return __awaiter(this, void 0, void 0, function* () {
             const slcmd_register_list = [];
-            for (let i = 0; i < this.platforms.length; i++) {
-                const pf = this.platforms[i];
-                for (let j = 0; j < pf.managers.length; j++) {
-                    const mng = pf.managers[j];
+            yield shortcut_1.core.asyncForEach(this.platforms, (pf) => __awaiter(this, void 0, void 0, function* () {
+                yield shortcut_1.core.asyncForEach(pf.managers, (mng) => __awaiter(this, void 0, void 0, function* () {
                     if (!mng.SLCMD_REGISTER_LIST)
-                        continue;
-                    for (let k = 0; k < mng.SLCMD_REGISTER_LIST.length; k++) {
-                        const slcmd = mng.SLCMD_REGISTER_LIST[k];
+                        return;
+                    yield shortcut_1.core.asyncForEach(mng.SLCMD_REGISTER_LIST, (slcmd) => __awaiter(this, void 0, void 0, function* () {
                         slcmd_register_list.push(slcmd);
-                    }
-                }
-            }
+                    }));
+                }));
+            }));
             const rest = new rest_1.REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
             // await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] })
             if (slcmd_register_list.length !== 0) {
