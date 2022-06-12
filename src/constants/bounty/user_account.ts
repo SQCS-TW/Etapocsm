@@ -9,7 +9,7 @@ export const getDefaultBountyAccount = async function (payload: core.DefaultData
         create_date: -1,
         auth: true,
         exp: 0,
-        record: {
+        qns_record: {
             answered_qns_count: {
                 easy: 0,
                 medium: 0,
@@ -25,6 +25,11 @@ export const getDefaultBountyAccount = async function (payload: core.DefaultData
                 medium: [],
                 hard: []
             }
+        },
+        personal_record: {
+            thread_clear_count: 0,
+            thread_all_clear_count: 0,
+            extra_stamina_gained_count: 0
         }
     };
 };

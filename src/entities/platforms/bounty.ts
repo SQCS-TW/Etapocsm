@@ -1,6 +1,6 @@
 import { core } from '../shortcut';
 import { Etapocsm } from '../../bot';
-import { BountyQnsDBManager } from '../managers/bounty/reglist';
+import { BountyQnsDBManager, BountyAccountManager } from '../managers/bounty/reglist';
 
 export class BountyPlatform extends core.BasePlatform {
     constructor(f_bot: Etapocsm) {
@@ -13,7 +13,8 @@ export class BountyPlatform extends core.BasePlatform {
 
     public async addManagers(this_platform: core.BasePlatform) {
         this.managers = [
-            new BountyQnsDBManager(this_platform)
+            new BountyQnsDBManager(this_platform),
+            new BountyAccountManager(this_platform)
         ]
     }
 }

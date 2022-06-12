@@ -1,3 +1,67 @@
+import { CommandInteraction } from 'discord.js';
+import { ACCOUNT_MANAGER_SLCMD } from './slcmd/user_interaction';
+import { core, db } from '../../shortcut';
+
+
+export class BountyAccountManager extends core.BaseManager {
+    private account_op: core.BountyUserAccountOperator;
+    private ongoing_op: core.BountyUserOngoingInfoOperator;
+
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
+
+        this.account_op = new core.BountyUserAccountOperator();
+        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
+
+        this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
+
+        this.setupListener();
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
+            if (interaction.isCommand()) await this.slcmdHandler(interaction);
+        });
+    }
+
+    private async slcmdHandler(interaction: CommandInteraction) {
+
+        switch (interaction.commandName) {
+            case 'create-main-bounty-account': {
+                await interaction.deferReply({ ephemeral: true });
+
+                const exist_result = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                if (exist_result.status === db.StatusCode.DATA_FOUND) return await interaction.editReply('你已經建立過懸賞區主帳號了！');
+
+                const create_result = await this.account_op.createDefaultData({ user_id: interaction.user.id });
+                if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('建立帳號時發生錯誤了！');
+                else return await interaction.editReply('帳號建立成功！');
+            }
+
+            case 'check-main-bounty-account': {
+                await interaction.deferReply({ ephemeral: true });
+
+                const exist_result = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                if (exist_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('你還沒建立過懸賞區主帳號！');
+
+                const user_account = await (await this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                return await interaction.editReply(JSON.stringify(user_account, null, "\t"));
+            }
+
+            case 'check-bounty-ongoing-info': {
+                await interaction.deferReply({ ephemeral: true });
+
+                const exist_result = await this.ongoing_op.checkDataExistence({ user_id: interaction.user.id });
+                if (exist_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('你還沒開啟過懸賞區！');
+
+                const user_ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                return await interaction.editReply(JSON.stringify(user_ongoing_info, null, "\t"));
+            }
+        }
+    }
+}
+
+
 // import fs from 'fs';
 // import { ObjectId } from 'mongodb';
 
@@ -343,8 +407,3 @@
 //         };
 //     }
 // }
-
-
-// export {
-//     BountyMainManager
-// };

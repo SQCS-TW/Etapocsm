@@ -1,4 +1,66 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BountyAccountManager = void 0;
+const user_interaction_1 = require("./slcmd/user_interaction");
+const shortcut_1 = require("../../shortcut");
+class BountyAccountManager extends shortcut_1.core.BaseManager {
+    constructor(f_platform) {
+        super(f_platform);
+        this.account_op = new shortcut_1.core.BountyUserAccountOperator();
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.SLCMD_REGISTER_LIST = user_interaction_1.ACCOUNT_MANAGER_SLCMD;
+        this.setupListener();
+    }
+    setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
+            if (interaction.isCommand())
+                yield this.slcmdHandler(interaction);
+        }));
+    }
+    slcmdHandler(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            switch (interaction.commandName) {
+                case 'create-main-bounty-account': {
+                    yield interaction.deferReply({ ephemeral: true });
+                    const exist_result = yield this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                    if (exist_result.status === shortcut_1.db.StatusCode.DATA_FOUND)
+                        return yield interaction.editReply('你已經建立過懸賞區主帳號了！');
+                    const create_result = yield this.account_op.createDefaultData({ user_id: interaction.user.id });
+                    if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+                        return yield interaction.editReply('建立帳號時發生錯誤了！');
+                    else
+                        return yield interaction.editReply('帳號建立成功！');
+                }
+                case 'check-main-bounty-account': {
+                    yield interaction.deferReply({ ephemeral: true });
+                    const exist_result = yield this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                    if (exist_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
+                        return yield interaction.editReply('你還沒建立過懸賞區主帳號！');
+                    const user_account = yield (yield this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    return yield interaction.editReply(JSON.stringify(user_account, null, "\t"));
+                }
+                case 'check-bounty-ongoing-info': {
+                    yield interaction.deferReply({ ephemeral: true });
+                    const exist_result = yield this.ongoing_op.checkDataExistence({ user_id: interaction.user.id });
+                    if (exist_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
+                        return yield interaction.editReply('你還沒開啟過懸賞區！');
+                    const user_ongoing_info = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    return yield interaction.editReply(JSON.stringify(user_ongoing_info, null, "\t"));
+                }
+            }
+        });
+    }
+}
+exports.BountyAccountManager = BountyAccountManager;
 // import fs from 'fs';
 // import { ObjectId } from 'mongodb';
 // import { core, db } from '../../sc';
@@ -274,6 +336,3 @@
 //         };
 //     }
 // }
-// export {
-//     BountyMainManager
-// };

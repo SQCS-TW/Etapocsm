@@ -1,7 +1,4 @@
 "use strict";
-// export {
-//     BountyAutoTaskManager
-// } from './auto_tasks';
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -18,6 +15,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./qns_db"), exports);
-// export {
-//     BountyMainManager
-// } from './user_interaction';
+__exportStar(require("./user_interaction"), exports);

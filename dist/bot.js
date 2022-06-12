@@ -69,7 +69,7 @@ class Etapocsm extends discord_js_1.Client {
                 }));
             }));
             const rest = new rest_1.REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
-            // await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] })
+            yield rest.put(v9_1.Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] });
             if (slcmd_register_list.length !== 0) {
                 yield rest.put(v9_1.Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: slcmd_register_list });
                 console.log('slcmd registered!');

@@ -24,7 +24,8 @@ class BountyPlatform extends shortcut_1.core.BasePlatform {
     addManagers(this_platform) {
         return __awaiter(this, void 0, void 0, function* () {
             this.managers = [
-                new reglist_1.BountyQnsDBManager(this_platform)
+                new reglist_1.BountyQnsDBManager(this_platform),
+                new reglist_1.BountyAccountManager(this_platform)
             ];
         });
     }

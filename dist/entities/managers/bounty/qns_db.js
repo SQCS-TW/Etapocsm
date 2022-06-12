@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyQnsDBManager = void 0;
+const qns_db_1 = require("./slcmd/qns_db");
 const shortcut_1 = require("../../shortcut");
 const mongodb_1 = require("mongodb");
 const fs_1 = require("fs");
@@ -17,7 +18,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
-        // this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        this.SLCMD_REGISTER_LIST = qns_db_1.REGISTER_LIST;
         this.setupListener();
     }
     setupListener() {
