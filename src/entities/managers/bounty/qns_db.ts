@@ -1,4 +1,4 @@
-import { CommandInteraction, IntegrationApplication } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 import { REGISTER_LIST } from './slcmd/qns_db';
 import { core, db } from '../../shortcut';
 import { ObjectId } from 'mongodb';
