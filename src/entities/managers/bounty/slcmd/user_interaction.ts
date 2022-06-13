@@ -33,7 +33,7 @@ export const START_BOUNTY_COMPONENTS = {
         components: [
             {
                 style: 1,
-                label: `開始答題`,
+                label: '開始答題',
                 custom_id: `start_bounty`,
                 disabled: false,
                 type: 2
@@ -42,23 +42,23 @@ export const START_BOUNTY_COMPONENTS = {
     },
     embed: {
         type: "rich",
-        title: `題目資訊`,
+        title: '題目資訊',
         description: "",
         color: 0x00FFFF,
         fields: [
             {
-                name: `題目難度`,
-                value: `easy`,
+                name: '題目難度',
+                value: '',
                 inline: true
             },
             {
                 name: `題目編號`,
-                value: `56`,
+                value: '',
                 inline: true
             }
         ],
         footer: {
-            text: `題目將在確認之後發送；確認按鈕將在60秒後過期。`
+            text: '題目將在確認之後發送；確認按鈕將在60秒後過期。'
         }
     }
 }
