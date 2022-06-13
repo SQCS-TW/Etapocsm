@@ -1,5 +1,5 @@
 import { CommandInteraction } from 'discord.js';
-import { ACCOUNT_MANAGER_SLCMD } from './slcmd/user_interaction';
+import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD } from './slcmd/user_interaction';
 import { core, db } from '../../shortcut';
 
 
@@ -13,7 +13,7 @@ export class BountyAccountManager extends core.BaseManager {
         this.account_op = new core.BountyUserAccountOperator();
         this.ongoing_op = new core.BountyUserOngoingInfoOperator();
 
-        // this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
+        this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
 
         this.setupListener();
     }
@@ -58,6 +58,193 @@ export class BountyAccountManager extends core.BaseManager {
                 return await interaction.editReply(JSON.stringify(user_ongoing_info, null, "\t"));
             }
         }
+    }
+}
+
+type QnsThread = {
+    easy: number[],
+    medium: number[],
+    hard: number[]
+}
+
+class QnsThreadBeautifier {
+    private len_to_emoji: object;
+    private diffi_to_emoji: object;
+    private ban_repeat: number;
+    private ban_line: string;
+    private ban_left: string;
+    private ban_right: string;
+
+    constructor() {
+        this.len_to_emoji = {
+            2: '🔒 ║ ❓',
+            3: '🔒 ║ ❓ × 2️⃣'
+        }
+        
+        this.diffi_to_emoji = {
+            'easy': '🟩',
+            'medium': '🟧',
+            'hard': '🟥'
+        }
+        
+        this.ban_repeat = 4;
+        this.ban_line = '═';
+        this.ban_left = '╣';
+        this.ban_right = '╠';
+    }
+    
+    async beautify(thread: QnsThread): Promise<string> {
+        const text: string[] = [];
+
+        let previous_comp = true;
+        const diffi_list = ['easy', 'medium', 'hard'];
+
+        for (let i = 0; i < diffi_list.length; i++) {
+            const diffi = diffi_list[i];
+
+            const long_line = this.ban_line.repeat(this.ban_repeat);
+            const banner = `${long_line}${this.ban_left} ${this.diffi_to_emoji[diffi]} ${this.ban_right}${long_line}`;
+            text.push(banner);
+            
+            const thread_len = thread[diffi].length;
+            if (thread_len > 0 && previous_comp) {
+                previous_comp = false;
+
+                text.push("👉 ║ ❓");
+                if (thread_len > 1) text.push(this.len_to_emoji[thread_len]);
+
+            } else if (thread_len > 0 || !previous_comp) {
+                text.push('🔒');
+            } else {
+                text.push('✅');
+
+                previous_comp = true;
+            }
+            
+            if (diffi !== 'hard') text.push('\n');
+        }
+        return text.join('\n');
+    }
+}
+
+const qns_thread_beauty = new QnsThreadBeautifier();
+
+export class BountyEventManager extends core.BaseManager {
+    private account_op: core.BountyUserAccountOperator;
+    private ongoing_op: core.BountyUserOngoingInfoOperator;
+
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
+
+        this.account_op = new core.BountyUserAccountOperator();
+        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
+
+        this.SLCMD_REGISTER_LIST = EVENT_MANAGER_SLCMD;
+
+        this.setupListener();
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
+            if (interaction.isCommand()) await this.slcmdHandler(interaction);
+        });
+    }
+
+    private async slcmdHandler(interaction: CommandInteraction) {
+
+        switch (interaction.commandName) {
+            case 'start-bounty': {
+                await interaction.deferReply({ ephemeral: true });
+
+                const check_main_acc = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                if (check_main_acc.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('請先建立你的懸賞區資料！');
+
+                const user_acc = await (await this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                if (!user_acc.auth) return await interaction.editReply('你沒有遊玩懸賞區的權限！');
+
+                const create_result = await SB_functions.autoCreateAndGetOngoingInfo(interaction.user.id, {
+                    account_op: this.account_op,
+                    ongoing_op: this.ongoing_op
+                });
+
+                if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('創建問題串失敗！');
+                else if (create_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.editReply('問題串已建立！');
+
+                const beautified_qns_thread = await qns_thread_beauty.beautify(create_result.qns_thread);
+                await interaction.followUp(`你的答題狀態：\n${beautified_qns_thread}`);
+
+                break;
+            }
+        }
+    }
+}
+
+const SB_functions = {
+    async autoCreateAndGetOngoingInfo(user_id: string, ops) {
+        const data_exists = await ops.ongoing_op.checkDataExistence({ user_id: user_id });
+        if (data_exists.status === db.StatusCode.DATA_FOUND) {
+            const user_ongoing_info = await (await ops.ongoing_op.cursor_promise).findOne({user_id: user_id});
+            
+            return {
+                status: data_exists.status,
+                qns_thread: user_ongoing_info.qns_thread
+            };
+        }
+
+        const new_qns_thread = await this.createQnsThread(user_id, ops);
+        const create_result = await ops.ongoing_op.createDefaultData({
+            user_id: user_id,
+            qns_thread: new_qns_thread
+        });
+
+        return {
+            status: create_result.status,
+            qns_thread: new_qns_thread
+        }
+    },
+
+    async createQnsThread(user_id: string, ops) {
+        const user_main_acc = await (await ops.account_op.cursor_promise).findOne({ user_id: user_id });
+
+        const db_cache_operator = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'StorjQnsDBCache'
+        });
+
+        const cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+
+        const diffi_list = ['easy', 'medium', 'hard'];
+        const new_qns_thread = {
+            easy: undefined,
+            medium: undefined,
+            hard: undefined
+        }
+        await core.asyncForEach(diffi_list, async (diffi) => {
+            const max_num: number = cache[diffi].max_number;
+            const skipped_nums: number[] = cache[diffi].skipped_numbers;
+
+            const not_answered = []
+            const answered: number[] = user_main_acc.qns_record.answered_qns_number[diffi];
+            for (let i = 0; i <= max_num; i++) {
+                if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
+                    skipped_nums.shift();
+                    continue;
+                }
+
+                if (answered.length !== 0 && i === answered[0]) {
+                    answered.shift();
+                    continue;
+                }
+
+                not_answered.push(i);
+            }
+            await core.shuffle(not_answered);
+
+            const max_qns_count = Math.min(3, not_answered.length);
+            new_qns_thread[diffi] = not_answered.slice(0, max_qns_count);
+        });
+
+        return new_qns_thread;
     }
 }
 

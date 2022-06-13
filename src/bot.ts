@@ -23,7 +23,7 @@ export class Etapocsm extends Client {
             // activate = add + invoke
             await this.activatePlatforms(this);
 
-            await this.registerSlcmd();
+            // await this.registerSlcmd();
         });
     }
 
@@ -49,7 +49,7 @@ export class Etapocsm extends Client {
         }
     }
 
-    private async registerSlcmd() {
+    public async registerSlcmd() {
         const slcmd_register_list = []
 
         await core.asyncForEach(this.platforms, async (pf: any) => {
@@ -64,7 +64,7 @@ export class Etapocsm extends Client {
 
         const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
-        // await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] })
+        await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] })
         if (slcmd_register_list.length !== 0) {
             await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: slcmd_register_list })
             console.log('slcmd registered!');

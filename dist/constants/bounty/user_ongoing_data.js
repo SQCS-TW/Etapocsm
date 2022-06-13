@@ -18,9 +18,9 @@ const getDefaultUserOngoingData = function (payload) {
             user_id: payload.user_id,
             status: false,
             qns_thread: {
-                easy: [],
-                medium: [],
-                hard: []
+                easy: payload.qns_thread.easy,
+                medium: payload.qns_thread.medium,
+                hard: payload.qns_thread.hard
             },
             stamina: {
                 regular: 3,

@@ -12,7 +12,7 @@ export class BountyQnsDBManager extends core.BaseManager {
         super(f_platform);
         this.qns_op = new core.BountyQnsDBOperator();
 
-        // this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
 
         this.setupListener();
     }
@@ -44,7 +44,7 @@ export class BountyQnsDBManager extends core.BaseManager {
 
                 // check cache
                 // if not exist -> create cache
-                await CBQ_functions.checkAndAutoCreateCache(interaction, db_cache_operator.cursor_promise);
+                await CBQ_functions.checkAndAutoCreateCache(interaction, diffi, db_cache_operator.cursor_promise);
 
                 // refresh cache
                 const refresh_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
@@ -220,22 +220,20 @@ const CBQ_functions = {
         }
     },
 
-    async checkAndAutoCreateCache(interaction, cursor_promise) {
+    async checkAndAutoCreateCache(interaction: CommandInteraction, diffi: string, cursor_promise) {
         const exist_cache = await (await cursor_promise).findOne({ type: 'cache' });
 
         if (!exist_cache) {
-            const create_cache = await CBQ_functions.createQnsInfoCache();
+            const create_cache = await CBQ_functions.createQnsInfoCache(['easy', 'medium', 'hard']);
 
             const create_result = await (await cursor_promise).insertOne(create_cache);
             if (!create_result.acknowledged) return await interaction.editReply('error creating cache');
         } else {
-            const create_cache = await CBQ_functions.createQnsInfoCache();
+            const create_cache = await CBQ_functions.createQnsInfoCache([diffi]);
 
             const execute = {
                 $set: {
-                    easy: create_cache.easy,
-                    medium: create_cache.medium,
-                    hard: create_cache.hard
+                    [diffi]: create_cache[diffi]
                 }
             }
             const update_result = await (await cursor_promise).updateOne({ type: 'cache' }, execute);
@@ -243,7 +241,7 @@ const CBQ_functions = {
         }
     },
 
-    async createQnsInfoCache() {
+    async createQnsInfoCache(diffi_list: string[]) {
         const new_cache = {
             _id: new ObjectId(),
             type: 'cache',
@@ -251,8 +249,6 @@ const CBQ_functions = {
             medium: undefined,
             hard: undefined
         };
-
-        const diffi_list = ['easy', 'medium', 'hard'];
 
         await core.asyncForEach(diffi_list, async (diffi) => {
             const file_names = await db.storjGetFolderFiles({

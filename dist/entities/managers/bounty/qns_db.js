@@ -46,7 +46,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     });
                     // check cache
                     // if not exist -> create cache
-                    yield CBQ_functions.checkAndAutoCreateCache(interaction, db_cache_operator.cursor_promise);
+                    yield CBQ_functions.checkAndAutoCreateCache(interaction, diffi, db_cache_operator.cursor_promise);
                     // refresh cache
                     const refresh_cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
                     // update current diffi cache --> update when finished upload pic
@@ -205,22 +205,20 @@ const CBQ_functions = {
             };
         });
     },
-    checkAndAutoCreateCache(interaction, cursor_promise) {
+    checkAndAutoCreateCache(interaction, diffi, cursor_promise) {
         return __awaiter(this, void 0, void 0, function* () {
             const exist_cache = yield (yield cursor_promise).findOne({ type: 'cache' });
             if (!exist_cache) {
-                const create_cache = yield CBQ_functions.createQnsInfoCache();
+                const create_cache = yield CBQ_functions.createQnsInfoCache(['easy', 'medium', 'hard']);
                 const create_result = yield (yield cursor_promise).insertOne(create_cache);
                 if (!create_result.acknowledged)
                     return yield interaction.editReply('error creating cache');
             }
             else {
-                const create_cache = yield CBQ_functions.createQnsInfoCache();
+                const create_cache = yield CBQ_functions.createQnsInfoCache([diffi]);
                 const execute = {
                     $set: {
-                        easy: create_cache.easy,
-                        medium: create_cache.medium,
-                        hard: create_cache.hard
+                        [diffi]: create_cache[diffi]
                     }
                 };
                 const update_result = yield (yield cursor_promise).updateOne({ type: 'cache' }, execute);
@@ -229,7 +227,7 @@ const CBQ_functions = {
             }
         });
     },
-    createQnsInfoCache() {
+    createQnsInfoCache(diffi_list) {
         return __awaiter(this, void 0, void 0, function* () {
             const new_cache = {
                 _id: new mongodb_1.ObjectId(),
@@ -238,7 +236,6 @@ const CBQ_functions = {
                 medium: undefined,
                 hard: undefined
             };
-            const diffi_list = ['easy', 'medium', 'hard'];
             yield shortcut_1.core.asyncForEach(diffi_list, (diffi) => __awaiter(this, void 0, void 0, function* () {
                 const file_names = yield shortcut_1.db.storjGetFolderFiles({
                     bucket_name: 'bounty-questions-db',
