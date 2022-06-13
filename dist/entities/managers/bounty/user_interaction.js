@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyEventManager = exports.BountyAccountManager = void 0;
 const user_interaction_1 = require("./slcmd/user_interaction");
 const shortcut_1 = require("../../shortcut");
+const fs_1 = require("fs");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -115,6 +116,11 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.SLCMD_REGISTER_LIST = user_interaction_1.EVENT_MANAGER_SLCMD;
+        this.qns_diffi_time = {
+            'easy': 60,
+            'medium': 60 * 2,
+            'hard': 60 * 3
+        };
         this.setupListener();
     }
     setupListener() {
@@ -143,7 +149,46 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     else if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
                         yield interaction.editReply('問題串已建立！');
                     const beautified_qns_thread = yield qns_thread_beauty.beautify(create_result.qns_thread);
-                    yield interaction.followUp(`你的答題狀態：\n${beautified_qns_thread}`);
+                    yield interaction.followUp(`你的答題狀態：\n\n${beautified_qns_thread}`);
+                    const qns_data = yield SB_functions.getQnsThreadData(create_result.qns_thread);
+                    if (qns_data.finished)
+                        return yield interaction.followUp('你已經回答完所有問題了！');
+                    yield interaction.followUp({
+                        content: `開始答題！\n題目難度：${qns_data.curr_diffi}\n題目編號：${qns_data.curr_qns_number}`,
+                        ephemeral: true
+                    });
+                    // download qns pic
+                    const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_data.curr_qns_number}.png`;
+                    const dl_result = yield shortcut_1.db.storjDownload({
+                        bucket_name: 'bounty-questions-db',
+                        local_file_name: local_file_name,
+                        db_file_name: `${qns_data.curr_diffi}/${qns_data.curr_qns_number}.png`
+                    });
+                    if (!dl_result)
+                        return yield interaction.followUp('下載圖片錯誤！');
+                    yield shortcut_1.core.sleep(0.5);
+                    const execute = {
+                        $set: {
+                            time: {
+                                start: Date.now(),
+                                end: Date.now() + this.qns_diffi_time[qns_data.curr_diffi] * 1000,
+                                duration: -1
+                            }
+                        }
+                    };
+                    const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                    if (!update_result.acknowledged) {
+                        (0, fs_1.unlink)(local_file_name, () => { return; });
+                        return yield interaction.followUp('更新個人狀態錯誤！');
+                    }
+                    yield interaction.followUp('倒數 10 秒');
+                    yield shortcut_1.core.sleep(10);
+                    yield interaction.followUp({
+                        content: '**【題目】**注意，請將題目存起來，這則訊息將在一段時間後消失。\n但請勿將題目外流給他人，且答題過後建議銷毀。',
+                        files: [local_file_name],
+                        ephemeral: true
+                    });
+                    (0, fs_1.unlink)(local_file_name, () => { return; });
                     break;
                 }
             }
@@ -209,7 +254,31 @@ const SB_functions = {
             }));
             return new_qns_thread;
         });
-    }
+    },
+    getQnsThreadData(qns_thread) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const diffi_list = ['easy', 'medium', 'hard'];
+            let curr_diffi;
+            let curr_qns_number;
+            for (let i = 0; i < diffi_list.length; i++) {
+                const diffi = diffi_list[i];
+                if (qns_thread[diffi].length === 0)
+                    continue;
+                curr_diffi = diffi;
+                curr_qns_number = qns_thread[diffi][0];
+                break;
+            }
+            if (curr_diffi === undefined)
+                return {
+                    finished: true
+                };
+            return {
+                finished: false,
+                curr_diffi: curr_diffi,
+                curr_qns_number: curr_qns_number
+            };
+        });
+    },
 };
 // import fs from 'fs';
 // import { ObjectId } from 'mongodb';

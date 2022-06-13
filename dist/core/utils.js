@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
+exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const reglist_1 = require("../db/reglist");
 const timeAfterSecs = (seconds) => __awaiter(void 0, void 0, void 0, function* () { return Date.now() + seconds * 1000; });
 exports.timeAfterSecs = timeAfterSecs;
@@ -17,6 +17,10 @@ const cloneObj = (obj) => __awaiter(void 0, void 0, void 0, function* () { retur
 exports.cloneObj = cloneObj;
 const getRandomInt = (max) => __awaiter(void 0, void 0, void 0, function* () { return Math.floor(Math.random() * (max + 1)); });
 exports.getRandomInt = getRandomInt;
+const sleep = (sec) => {
+    return new Promise(resolve => setTimeout(resolve, sec * 1000));
+};
+exports.sleep = sleep;
 function factorial(num) {
     return __awaiter(this, void 0, void 0, function* () {
         let counter = 1;

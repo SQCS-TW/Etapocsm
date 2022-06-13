@@ -7,6 +7,10 @@ export const cloneObj = async (obj: object) => { return JSON.parse(JSON.stringif
 
 export const getRandomInt = async (max: number) => { return Math.floor(Math.random() * (max + 1)); };
 
+export const sleep = (sec) => {
+    return new Promise(resolve => setTimeout(resolve, sec * 1000));
+}
+
 export async function factorial(num: number) {
     let counter = 1;
     for (let i = 2; i <= num; i++)

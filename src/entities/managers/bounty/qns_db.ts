@@ -71,7 +71,9 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const pic = collected.first().attachments.first();
                 if (!pic) return await interaction.followUp('此並非圖片格式，請重新執行指令');
 
-                const pic_url = pic.url;
+                const pic_url: string = pic.url;
+                // if (!pic_url.endsWith('.png')) return await interaction.followUp('此圖片並非.png檔，請重新執行指令');
+
                 const upload_status = await CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
 
                 if (upload_status) await interaction.followUp('圖片已上傳！');
@@ -150,7 +152,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 while (logs_prettify.length > 0) {
                     await interaction.channel.send(logs_prettify[0]);
                     logs_prettify.shift();
-                    await LCBQA_functions.sleep(0.5);
+                    await core.sleep(0.5);
                 }
 
                 return await interaction.editReply('輸出完畢！');
@@ -336,6 +338,8 @@ const CBQ_functions = {
         };
         await get(pic_url, options);
 
+        await core.sleep(0.5);
+
         const upload_status = await db.storjUpload({
             bucket_name: 'bounty-questions-db',
             local_file_name: `./cache/qns_pic_dl/${qns_number}.png`,
@@ -404,10 +408,6 @@ const LCBQA_functions = {
 
         const logs = (await logs_operator.cursor_promise).find({ accessor: user_id }).sort({ finish_time: 1 });
         return logs;
-    },
-
-    sleep(sec) {
-        return new Promise(resolve => setTimeout(resolve, sec * 1000));
     }
 }
 

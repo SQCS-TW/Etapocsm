@@ -1,6 +1,7 @@
 import { CommandInteraction } from 'discord.js';
 import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD } from './slcmd/user_interaction';
 import { core, db } from '../../shortcut';
+import { unlink } from 'fs';
 
 
 export class BountyAccountManager extends core.BaseManager {
@@ -80,19 +81,19 @@ class QnsThreadBeautifier {
             2: '🔒 ║ ❓',
             3: '🔒 ║ ❓ × 2️⃣'
         }
-        
+
         this.diffi_to_emoji = {
             'easy': '🟩',
             'medium': '🟧',
             'hard': '🟥'
         }
-        
+
         this.ban_repeat = 4;
         this.ban_line = '═';
         this.ban_left = '╣';
         this.ban_right = '╠';
     }
-    
+
     async beautify(thread: QnsThread): Promise<string> {
         const text: string[] = [];
 
@@ -105,7 +106,7 @@ class QnsThreadBeautifier {
             const long_line = this.ban_line.repeat(this.ban_repeat);
             const banner = `${long_line}${this.ban_left} ${this.diffi_to_emoji[diffi]} ${this.ban_right}${long_line}`;
             text.push(banner);
-            
+
             const thread_len = thread[diffi].length;
             if (thread_len > 0 && previous_comp) {
                 previous_comp = false;
@@ -120,7 +121,7 @@ class QnsThreadBeautifier {
 
                 previous_comp = true;
             }
-            
+
             if (diffi !== 'hard') text.push('\n');
         }
         return text.join('\n');
@@ -133,6 +134,8 @@ export class BountyEventManager extends core.BaseManager {
     private account_op: core.BountyUserAccountOperator;
     private ongoing_op: core.BountyUserOngoingInfoOperator;
 
+    private qns_diffi_time: object;
+
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
@@ -140,6 +143,12 @@ export class BountyEventManager extends core.BaseManager {
         this.ongoing_op = new core.BountyUserOngoingInfoOperator();
 
         this.SLCMD_REGISTER_LIST = EVENT_MANAGER_SLCMD;
+
+        this.qns_diffi_time = {
+            'easy': 60,
+            'medium': 60 * 2,
+            'hard': 60 * 3
+        }
 
         this.setupListener();
     }
@@ -171,7 +180,52 @@ export class BountyEventManager extends core.BaseManager {
                 else if (create_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.editReply('問題串已建立！');
 
                 const beautified_qns_thread = await qns_thread_beauty.beautify(create_result.qns_thread);
-                await interaction.followUp(`你的答題狀態：\n${beautified_qns_thread}`);
+                await interaction.followUp(`你的答題狀態：\n\n${beautified_qns_thread}`);
+
+                const qns_data = await SB_functions.getQnsThreadData(create_result.qns_thread);
+                
+                if (qns_data.finished) return await interaction.followUp('你已經回答完所有問題了！');
+
+                await interaction.followUp({
+                    content: `開始答題！\n題目難度：${qns_data.curr_diffi}\n題目編號：${qns_data.curr_qns_number}`,
+                    ephemeral: true
+                });
+
+                // download qns pic
+                const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_data.curr_qns_number}.png`;
+                const dl_result = await db.storjDownload({
+                    bucket_name: 'bounty-questions-db',
+                    local_file_name: local_file_name,
+                    db_file_name: `${qns_data.curr_diffi}/${qns_data.curr_qns_number}.png`
+                });
+                if (!dl_result) return await interaction.followUp('下載圖片錯誤！');
+
+                await core.sleep(0.5);
+
+                const execute = {
+                    $set: {
+                        time: {
+                            start: Date.now(),
+                            end: Date.now() + this.qns_diffi_time[qns_data.curr_diffi] * 1000,
+                            duration: -1
+                        }
+                    }
+                }
+                const update_result = await (await this.ongoing_op.cursor_promise).updateOne({user_id: interaction.user.id}, execute);
+                if (!update_result.acknowledged) {
+                    unlink(local_file_name, () => { return; });
+                    return await interaction.followUp('更新個人狀態錯誤！');
+                }
+
+                await interaction.followUp('倒數 10 秒');
+                await core.sleep(10);
+
+                await interaction.followUp({
+                    content: '**【題目】**注意，請將題目存起來，這則訊息將在一段時間後消失。\n但請勿將題目外流給他人，且答題過後建議銷毀。',
+                    files: [local_file_name],
+                    ephemeral: true
+                });
+                unlink(local_file_name, () => { return; });
 
                 break;
             }
@@ -183,8 +237,8 @@ const SB_functions = {
     async autoCreateAndGetOngoingInfo(user_id: string, ops) {
         const data_exists = await ops.ongoing_op.checkDataExistence({ user_id: user_id });
         if (data_exists.status === db.StatusCode.DATA_FOUND) {
-            const user_ongoing_info = await (await ops.ongoing_op.cursor_promise).findOne({user_id: user_id});
-            
+            const user_ongoing_info = await (await ops.ongoing_op.cursor_promise).findOne({ user_id: user_id });
+
             return {
                 status: data_exists.status,
                 qns_thread: user_ongoing_info.qns_thread
@@ -245,7 +299,31 @@ const SB_functions = {
         });
 
         return new_qns_thread;
-    }
+    },
+
+    async getQnsThreadData(qns_thread: QnsThread) {
+        const diffi_list = ['easy', 'medium', 'hard'];
+
+        let curr_diffi: string;
+        let curr_qns_number: number;
+        for (let i = 0; i < diffi_list.length; i++) {
+            const diffi = diffi_list[i];
+            if (qns_thread[diffi].length === 0) continue;
+
+            curr_diffi = diffi;
+            curr_qns_number = qns_thread[diffi][0];
+            break;
+        }
+        if (curr_diffi === undefined) return {
+            finished: true
+        };
+
+        return {
+            finished: false,
+            curr_diffi: curr_diffi,
+            curr_qns_number: curr_qns_number
+        };
+    },
 }
 
 
