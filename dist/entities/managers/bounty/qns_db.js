@@ -23,6 +23,8 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
+            if (!interaction.inGuild())
+                return;
             if (!(this.checkPerm(interaction, 'ADMINISTRATOR')))
                 return;
             if (interaction.isCommand())

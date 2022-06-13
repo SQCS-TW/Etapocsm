@@ -19,6 +19,8 @@ class ChatListener extends shortcut_1.core.BaseManager {
     }
     setupListener() {
         this.f_platform.f_bot.on('messageCreate', (msg) => __awaiter(this, void 0, void 0, function* () {
+            if (!msg.inGuild())
+                return;
             yield this.messageHandler(msg);
         }));
     }

@@ -14,6 +14,7 @@ export class ChatListener extends core.BaseManager {
 
     private setupListener() {
         this.f_platform.f_bot.on('messageCreate', async (msg) => {
+            if (!msg.inGuild()) return;
             await this.messageHandler(msg);
         });
     }

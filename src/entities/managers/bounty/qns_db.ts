@@ -19,6 +19,7 @@ export class BountyQnsDBManager extends core.BaseManager {
 
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
+            if (!interaction.inGuild()) return;
             if (!(this.checkPerm(interaction, 'ADMINISTRATOR'))) return;
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });

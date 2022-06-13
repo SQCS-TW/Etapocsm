@@ -72,7 +72,7 @@
 // }
 
 
-// class BountyAutoTaskManager extends core.BaseManager {
+// class BountyEndtimeManager extends core.BaseManager {
 //     constructor(father_platform: core.BasePlatform) {
 //         super(father_platform);
 //         // do this every 5 seconds

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EVENT_MANAGER_SLCMD = exports.ACCOUNT_MANAGER_SLCMD = void 0;
+exports.START_BOUNTY_COMPONENTS = exports.EVENT_MANAGER_SLCMD = exports.ACCOUNT_MANAGER_SLCMD = void 0;
 exports.ACCOUNT_MANAGER_SLCMD = [
     {
         name: 'create-main-bounty-account',
@@ -25,3 +25,38 @@ exports.EVENT_MANAGER_SLCMD = [
         description: '結束並回答懸賞題'
     }
 ];
+exports.START_BOUNTY_COMPONENTS = {
+    button: {
+        type: 1,
+        components: [
+            {
+                style: 1,
+                label: `開始答題`,
+                custom_id: `start_bounty`,
+                disabled: false,
+                type: 2
+            }
+        ]
+    },
+    embed: {
+        type: "rich",
+        title: `題目資訊`,
+        description: "",
+        color: 0x00FFFF,
+        fields: [
+            {
+                name: `題目難度`,
+                value: `easy`,
+                inline: true
+            },
+            {
+                name: `題目編號`,
+                value: `56`,
+                inline: true
+            }
+        ],
+        footer: {
+            text: `題目將在確認之後發送；確認按鈕將在60秒後過期。`
+        }
+    }
+};

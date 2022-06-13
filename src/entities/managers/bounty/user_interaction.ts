@@ -1,7 +1,8 @@
-import { CommandInteraction } from 'discord.js';
-import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD } from './slcmd/user_interaction';
+import { ButtonInteraction, CommandInteraction, Message } from 'discord.js';
+import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD, START_BOUNTY_COMPONENTS } from './slcmd/user_interaction';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
+import { ObjectId } from 'mongodb';
 
 
 export class BountyAccountManager extends core.BaseManager {
@@ -134,6 +135,8 @@ export class BountyEventManager extends core.BaseManager {
     private account_op: core.BountyUserAccountOperator;
     private ongoing_op: core.BountyUserOngoingInfoOperator;
 
+    private start_button_op: core.BaseOperator;
+
     private qns_diffi_time: object;
 
     constructor(f_platform: core.BasePlatform) {
@@ -151,11 +154,17 @@ export class BountyEventManager extends core.BaseManager {
         }
 
         this.setupListener();
+
+        this.start_button_op = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'StartButtonPipeline'
+        });
     }
 
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
+            else if (interaction.isButton()) await this.buttonHandler(interaction);
         });
     }
 
@@ -183,47 +192,123 @@ export class BountyEventManager extends core.BaseManager {
                 await interaction.followUp(`你的答題狀態：\n\n${beautified_qns_thread}`);
 
                 const qns_data = await SB_functions.getQnsThreadData(create_result.qns_thread);
-                
+
                 if (qns_data.finished) return await interaction.followUp('你已經回答完所有問題了！');
 
-                await interaction.followUp({
-                    content: `開始答題！\n題目難度：${qns_data.curr_diffi}\n題目編號：${qns_data.curr_qns_number}`,
-                    ephemeral: true
+                // ==== modify embed -> set difficulty and qns_number
+                const new_embed = await this.getModifiedEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
+
+                const msg = await interaction.user.send({
+                    components: [START_BOUNTY_COMPONENTS.button],
+                    embeds: [new_embed]
                 });
 
+                const button_data = {
+                    _id: new ObjectId(),
+                    user_id: interaction.user.id,
+                    msg_id: msg.id,
+                    qns_info: {
+                        difficulty: qns_data.curr_diffi,
+                        number: qns_data.curr_qns_number
+                    }
+                }
+                await (await this.start_button_op.cursor_promise).insertOne(button_data);
+
+                await core.sleep(60);
+
+                const btn_data = await (await this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                if (!btn_data) return;
+
+                const new_button = await this.getDisabledButton();
+
+                await msg.edit({
+                    components: [new_button],
+                    embeds: [new_embed]
+                });
+                return;
+            }
+        }
+    }
+
+    private async getModifiedEmbed(diffi: string, qns_number: number) {
+        const new_embed = await core.cloneObj(START_BOUNTY_COMPONENTS.embed);
+        new_embed.fields[0].value = diffi;
+        new_embed.fields[1].value = qns_number.toString();
+        return new_embed;
+    }
+
+    private async getDisabledButton() {
+        const new_button = await core.cloneObj(START_BOUNTY_COMPONENTS.button);
+        new_button.components[0].disabled = true;
+        return new_button;
+    }
+
+    private async buttonHandler(interaction: ButtonInteraction) {
+        
+        switch (interaction.customId) {
+            case 'start_bounty': {
+                await interaction.deferReply();
+
+                const user_btn_data = await (await this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                if (!user_btn_data) return await interaction.editReply('錯誤，找不到驗證資訊');
+                else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤');
+
+                const diffi = user_btn_data.qns_info.difficulty;
+                const qns_number = user_btn_data.qns_info.number;
+
+                const new_embed = await this.getModifiedEmbed(diffi, qns_number);
+                const new_button = await this.getDisabledButton();
+                
+                const msg: any = interaction.message;
+                await msg.edit({
+                    components: [new_button],
+                    embeds: [new_embed]
+                });
+
+                const delete_result = await (await this.start_button_op.cursor_promise).deleteOne({user_id: interaction.user.id});
+                if (!delete_result.acknowledged) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+
                 // download qns pic
-                const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_data.curr_qns_number}.png`;
+                const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
                 const dl_result = await db.storjDownload({
                     bucket_name: 'bounty-questions-db',
                     local_file_name: local_file_name,
-                    db_file_name: `${qns_data.curr_diffi}/${qns_data.curr_qns_number}.png`
+                    db_file_name: `${diffi}/${qns_number}.png`
                 });
-                if (!dl_result) return await interaction.followUp('下載圖片錯誤！');
+                if (!dl_result) return await interaction.user.send('下載圖片錯誤！');
 
-                await core.sleep(0.5);
+                const buffer_time = 3;
+                const process_delay_time = 1;
 
+                const start_time = Date.now() + (buffer_time + process_delay_time + 1) * 1000;
+                const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time + 1) * 1000;
                 const execute = {
                     $set: {
+                        //status: true,
                         time: {
-                            start: Date.now(),
-                            end: Date.now() + this.qns_diffi_time[qns_data.curr_diffi] * 1000,
+                            start: start_time,
+                            end: end_time,
                             duration: -1
                         }
                     }
                 }
-                const update_result = await (await this.ongoing_op.cursor_promise).updateOne({user_id: interaction.user.id}, execute);
+                const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
                 if (!update_result.acknowledged) {
                     unlink(local_file_name, () => { return; });
-                    return await interaction.followUp('更新個人狀態錯誤！');
+                    return await interaction.user.send('更新個人狀態錯誤！');
                 }
 
-                await interaction.followUp('倒數 10 秒');
-                await core.sleep(10);
+                const relativeDiscordTimestamp = (t: number) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
+                await interaction.editReply(`開始時間：${relativeDiscordTimestamp(start_time)}\n結束時間：${relativeDiscordTimestamp(end_time)}`);
 
-                await interaction.followUp({
+                await core.sleep(1);
+
+                await interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
+                await core.sleep(buffer_time);
+
+                await interaction.user.send({
                     content: '**【題目】**注意，請將題目存起來，這則訊息將在一段時間後消失。\n但請勿將題目外流給他人，且答題過後建議銷毀。',
-                    files: [local_file_name],
-                    ephemeral: true
+                    files: [local_file_name]
                 });
                 unlink(local_file_name, () => { return; });
 

@@ -56,7 +56,7 @@
 //     const data = await inter_pl_cursor.find({}).toArray();
 //     data.filter(checkExpired).forEach(deleteItem);
 // }
-// class BountyAutoTaskManager extends core.BaseManager {
+// class BountyEndtimeManager extends core.BaseManager {
 //     constructor(father_platform: core.BasePlatform) {
 //         super(father_platform);
 //         // do this every 5 seconds

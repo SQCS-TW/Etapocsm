@@ -13,6 +13,7 @@ exports.BountyEventManager = exports.BountyAccountManager = void 0;
 const user_interaction_1 = require("./slcmd/user_interaction");
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
+const mongodb_1 = require("mongodb");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -122,11 +123,17 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             'hard': 60 * 3
         };
         this.setupListener();
+        this.start_button_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'StartButtonPipeline'
+        });
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
             if (interaction.isCommand())
                 yield this.slcmdHandler(interaction);
+            else if (interaction.isButton())
+                yield this.buttonHandler(interaction);
         }));
     }
     slcmdHandler(interaction) {
@@ -153,25 +160,92 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const qns_data = yield SB_functions.getQnsThreadData(create_result.qns_thread);
                     if (qns_data.finished)
                         return yield interaction.followUp('你已經回答完所有問題了！');
-                    yield interaction.followUp({
-                        content: `開始答題！\n題目難度：${qns_data.curr_diffi}\n題目編號：${qns_data.curr_qns_number}`,
-                        ephemeral: true
+                    // ==== modify embed -> set difficulty and qns_number
+                    const new_embed = yield this.getModifiedEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
+                    const msg = yield interaction.user.send({
+                        components: [user_interaction_1.START_BOUNTY_COMPONENTS.button],
+                        embeds: [new_embed]
                     });
+                    const button_data = {
+                        _id: new mongodb_1.ObjectId(),
+                        user_id: interaction.user.id,
+                        msg_id: msg.id,
+                        qns_info: {
+                            difficulty: qns_data.curr_diffi,
+                            number: qns_data.curr_qns_number
+                        }
+                    };
+                    yield (yield this.start_button_op.cursor_promise).insertOne(button_data);
+                    yield shortcut_1.core.sleep(60);
+                    const btn_data = yield (yield this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    if (!btn_data)
+                        return;
+                    const new_button = yield this.getDisabledButton();
+                    yield msg.edit({
+                        components: [new_button],
+                        embeds: [new_embed]
+                    });
+                    return;
+                }
+            }
+        });
+    }
+    getModifiedEmbed(diffi, qns_number) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_embed = yield shortcut_1.core.cloneObj(user_interaction_1.START_BOUNTY_COMPONENTS.embed);
+            new_embed.fields[0].value = diffi;
+            new_embed.fields[1].value = qns_number.toString();
+            return new_embed;
+        });
+    }
+    getDisabledButton() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_button = yield shortcut_1.core.cloneObj(user_interaction_1.START_BOUNTY_COMPONENTS.button);
+            new_button.components[0].disabled = true;
+            return new_button;
+        });
+    }
+    buttonHandler(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            switch (interaction.customId) {
+                case 'start_bounty': {
+                    yield interaction.deferReply();
+                    const user_btn_data = yield (yield this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    if (!user_btn_data)
+                        return yield interaction.editReply('錯誤，找不到驗證資訊');
+                    else if (user_btn_data.msg_id !== interaction.message.id)
+                        return yield interaction.editReply('驗證資訊錯誤');
+                    const diffi = user_btn_data.qns_info.difficulty;
+                    const qns_number = user_btn_data.qns_info.number;
+                    const new_embed = yield this.getModifiedEmbed(diffi, qns_number);
+                    const new_button = yield this.getDisabledButton();
+                    const msg = interaction.message;
+                    yield msg.edit({
+                        components: [new_button],
+                        embeds: [new_embed]
+                    });
+                    const delete_result = yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+                    if (!delete_result.acknowledged)
+                        return yield interaction.editReply('刪除驗證資訊時發生錯誤！');
                     // download qns pic
-                    const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_data.curr_qns_number}.png`;
+                    const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
                     const dl_result = yield shortcut_1.db.storjDownload({
                         bucket_name: 'bounty-questions-db',
                         local_file_name: local_file_name,
-                        db_file_name: `${qns_data.curr_diffi}/${qns_data.curr_qns_number}.png`
+                        db_file_name: `${diffi}/${qns_number}.png`
                     });
                     if (!dl_result)
-                        return yield interaction.followUp('下載圖片錯誤！');
-                    yield shortcut_1.core.sleep(0.5);
+                        return yield interaction.user.send('下載圖片錯誤！');
+                    const buffer_time = 3;
+                    const process_delay_time = 1;
+                    const start_time = Date.now() + (buffer_time + process_delay_time + 1) * 1000;
+                    const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time + 1) * 1000;
                     const execute = {
                         $set: {
+                            //status: true,
                             time: {
-                                start: Date.now(),
-                                end: Date.now() + this.qns_diffi_time[qns_data.curr_diffi] * 1000,
+                                start: start_time,
+                                end: end_time,
                                 duration: -1
                             }
                         }
@@ -179,14 +253,16 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
                     if (!update_result.acknowledged) {
                         (0, fs_1.unlink)(local_file_name, () => { return; });
-                        return yield interaction.followUp('更新個人狀態錯誤！');
+                        return yield interaction.user.send('更新個人狀態錯誤！');
                     }
-                    yield interaction.followUp('倒數 10 秒');
-                    yield shortcut_1.core.sleep(10);
-                    yield interaction.followUp({
+                    const relativeDiscordTimestamp = (t) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
+                    yield interaction.editReply(`開始時間：${relativeDiscordTimestamp(start_time)}\n結束時間：${relativeDiscordTimestamp(end_time)}`);
+                    yield shortcut_1.core.sleep(1);
+                    yield interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
+                    yield shortcut_1.core.sleep(buffer_time);
+                    yield interaction.user.send({
                         content: '**【題目】**注意，請將題目存起來，這則訊息將在一段時間後消失。\n但請勿將題目外流給他人，且答題過後建議銷毀。',
-                        files: [local_file_name],
-                        ephemeral: true
+                        files: [local_file_name]
                     });
                     (0, fs_1.unlink)(local_file_name, () => { return; });
                     break;
