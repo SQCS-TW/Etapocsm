@@ -204,7 +204,7 @@ export class BountyEventManager extends core.BaseManager {
                 if (qns_data.finished) return await interaction.followUp('你已經回答完所有問題了！');
 
                 // ==== modify embed -> set difficulty and qns_number
-                const new_embed = await this.getModifiedEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
+                const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
 
                 const msg = await interaction.user.send({
                     components: [START_BOUNTY_COMPONENTS.button],
@@ -232,15 +232,14 @@ export class BountyEventManager extends core.BaseManager {
                 const new_button = await common_functions.getDisabledButton(START_BOUNTY_COMPONENTS.button);
 
                 await msg.edit({
-                    components: [new_button],
-                    embeds: [new_embed]
+                    components: [new_button]
                 });
                 return;
             }
         }
     }
 
-    private async getModifiedEmbed(diffi: string, qns_number: number) {
+    private async getStartBountyEmbed(diffi: string, qns_number: number) {
         const new_embed = await core.cloneObj(START_BOUNTY_COMPONENTS.embed);
         new_embed.fields[0].value = diffi;
         new_embed.fields[1].value = qns_number.toString();
@@ -260,13 +259,11 @@ export class BountyEventManager extends core.BaseManager {
                 const diffi = user_btn_data.qns_info.difficulty;
                 const qns_number = user_btn_data.qns_info.number;
 
-                const new_embed = await this.getModifiedEmbed(diffi, qns_number);
                 const new_button = await common_functions.getDisabledButton(START_BOUNTY_COMPONENTS.button);
 
                 const msg: any = interaction.message;
                 await msg.edit({
-                    components: [new_button],
-                    embeds: [new_embed]
+                    components: [new_button]
                 });
 
                 const delete_result = await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
@@ -281,11 +278,12 @@ export class BountyEventManager extends core.BaseManager {
                 });
                 if (!dl_result) return await interaction.user.send('下載圖片錯誤！');
 
-                const buffer_time = 3;
+                const buffer_time = 10;
                 const process_delay_time = 1;
 
-                const start_time = Date.now() + (buffer_time + process_delay_time + 1) * 1000;
-                const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time + 1) * 1000;
+                const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
+                const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
+
                 const execute = {
                     $set: {
                         //status: true
@@ -298,29 +296,29 @@ export class BountyEventManager extends core.BaseManager {
                 }
 
                 const relativeDiscordTimestamp = (t: number) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
-                await interaction.editReply(`開始時間：${relativeDiscordTimestamp(start_time)}\n結束時間：${relativeDiscordTimestamp(end_time)}`);
-
-                await core.sleep(1);
-
-                const del_msg = await interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
-                await core.sleep(buffer_time);
-                await del_msg.delete();
-
-                await interaction.user.send({
-                    content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
-                    files: [local_file_name]
+                
+                const answering_embed = await this.getAnsweringInfoEmbed(
+                    relativeDiscordTimestamp(start_time),
+                    relativeDiscordTimestamp(end_time)
+                );
+                await interaction.editReply({
+                    embeds: [answering_embed]
                 });
-                unlink(local_file_name, () => { return; });
+                
+                await core.sleep(buffer_time);
 
-                const btn_msg = await interaction.user.send({
+                const qns_msg = await interaction.user.send({
+                    content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+                    files: [local_file_name],
                     components: [END_BOUNTY_COMPONENTS.button]
                 });
+                unlink(local_file_name, () => { return; });
 
                 const end_btn_info = {
                     _id: new ObjectId(),
                     user_id: interaction.user.id,
                     channel_id: interaction.channelId,
-                    msg_id: btn_msg.id,
+                    msg_id: qns_msg.id,
                     time: {
                         start: start_time,
                         end: end_time,
@@ -333,6 +331,13 @@ export class BountyEventManager extends core.BaseManager {
                 break;
             }
         }
+    }
+
+    private async getAnsweringInfoEmbed(start_time, end_time) {
+        const new_embed = await core.cloneObj(END_BOUNTY_COMPONENTS.embed);
+        new_embed.fields[0].value = start_time;
+        new_embed.fields[1].value = end_time;
+        return new_embed;
     }
 }
 
@@ -495,6 +500,8 @@ export class BountyEventAutoManager extends core.BaseManager {
                 const msg = await channel.messages.fetch(end_btn_data.msg_id);
                 const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
                 await msg.edit({
+                    content: '已超過可回答時間',
+                    files: [],
                     components: [new_button]
                 });
             }

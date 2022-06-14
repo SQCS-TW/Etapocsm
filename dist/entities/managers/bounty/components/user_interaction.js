@@ -46,12 +46,12 @@ exports.START_BOUNTY_COMPONENTS = {
         fields: [
             {
                 name: '題目難度',
-                value: '',
+                value: 'diffi',
                 inline: true
             },
             {
                 name: `題目編號`,
-                value: '',
+                value: 'qns_number',
                 inline: true
             }
         ],
@@ -73,4 +73,25 @@ exports.END_BOUNTY_COMPONENTS = {
             }
         ]
     },
+    embed: {
+        type: "rich",
+        title: '答題資訊',
+        description: "",
+        color: 0xff9500,
+        fields: [
+            {
+                name: '開始時間',
+                value: 'time.start',
+                inline: true
+            },
+            {
+                name: '結束時間',
+                value: 'time.end',
+                inline: true
+            }
+        ],
+        footer: {
+            text: '如要答題，請在結束時間抵達前按下按鈕。'
+        }
+    }
 };

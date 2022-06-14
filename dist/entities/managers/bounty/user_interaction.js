@@ -171,7 +171,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     if (qns_data.finished)
                         return yield interaction.followUp('你已經回答完所有問題了！');
                     // ==== modify embed -> set difficulty and qns_number
-                    const new_embed = yield this.getModifiedEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
+                    const new_embed = yield this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
                     const msg = yield interaction.user.send({
                         components: [user_interaction_1.START_BOUNTY_COMPONENTS.button],
                         embeds: [new_embed]
@@ -194,15 +194,14 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return;
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
                     yield msg.edit({
-                        components: [new_button],
-                        embeds: [new_embed]
+                        components: [new_button]
                     });
                     return;
                 }
             }
         });
     }
-    getModifiedEmbed(diffi, qns_number) {
+    getStartBountyEmbed(diffi, qns_number) {
         return __awaiter(this, void 0, void 0, function* () {
             const new_embed = yield shortcut_1.core.cloneObj(user_interaction_1.START_BOUNTY_COMPONENTS.embed);
             new_embed.fields[0].value = diffi;
@@ -223,12 +222,10 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('驗證資訊錯誤');
                     const diffi = user_btn_data.qns_info.difficulty;
                     const qns_number = user_btn_data.qns_info.number;
-                    const new_embed = yield this.getModifiedEmbed(diffi, qns_number);
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
                     const msg = interaction.message;
                     yield msg.edit({
-                        components: [new_button],
-                        embeds: [new_embed]
+                        components: [new_button]
                     });
                     const delete_result = yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
                     if (!delete_result.acknowledged)
@@ -242,10 +239,10 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     });
                     if (!dl_result)
                         return yield interaction.user.send('下載圖片錯誤！');
-                    const buffer_time = 3;
+                    const buffer_time = 10;
                     const process_delay_time = 1;
-                    const start_time = Date.now() + (buffer_time + process_delay_time + 1) * 1000;
-                    const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time + 1) * 1000;
+                    const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
+                    const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
                     const execute = {
                         $set: {
                         //status: true
@@ -257,24 +254,22 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.user.send('開始懸賞時發生錯誤！');
                     }
                     const relativeDiscordTimestamp = (t) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
-                    yield interaction.editReply(`開始時間：${relativeDiscordTimestamp(start_time)}\n結束時間：${relativeDiscordTimestamp(end_time)}`);
-                    yield shortcut_1.core.sleep(1);
-                    const del_msg = yield interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
-                    yield shortcut_1.core.sleep(buffer_time);
-                    yield del_msg.delete();
-                    yield interaction.user.send({
-                        content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
-                        files: [local_file_name]
+                    const answering_embed = yield this.getAnsweringInfoEmbed(relativeDiscordTimestamp(start_time), relativeDiscordTimestamp(end_time));
+                    yield interaction.editReply({
+                        embeds: [answering_embed]
                     });
-                    (0, fs_1.unlink)(local_file_name, () => { return; });
-                    const btn_msg = yield interaction.user.send({
+                    yield shortcut_1.core.sleep(buffer_time);
+                    const qns_msg = yield interaction.user.send({
+                        content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+                        files: [local_file_name],
                         components: [user_interaction_1.END_BOUNTY_COMPONENTS.button]
                     });
+                    (0, fs_1.unlink)(local_file_name, () => { return; });
                     const end_btn_info = {
                         _id: new mongodb_1.ObjectId(),
                         user_id: interaction.user.id,
                         channel_id: interaction.channelId,
-                        msg_id: btn_msg.id,
+                        msg_id: qns_msg.id,
                         time: {
                             start: start_time,
                             end: end_time,
@@ -287,6 +282,14 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     break;
                 }
             }
+        });
+    }
+    getAnsweringInfoEmbed(start_time, end_time) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_embed = yield shortcut_1.core.cloneObj(user_interaction_1.END_BOUNTY_COMPONENTS.embed);
+            new_embed.fields[0].value = start_time;
+            new_embed.fields[1].value = end_time;
+            return new_embed;
         });
     }
 }
@@ -418,6 +421,8 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
                     const msg = yield channel.messages.fetch(end_btn_data.msg_id);
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
                     yield msg.edit({
+                        content: '已超過可回答時間',
+                        files: [],
                         components: [new_button]
                     });
                 }
