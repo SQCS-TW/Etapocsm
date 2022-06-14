@@ -1,9 +1,15 @@
 import { ButtonInteraction, CommandInteraction, DMChannel } from 'discord.js';
-import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD, START_BOUNTY_COMPONENTS, END_BOUNTY_COMPONENTS } from './components/user_interaction';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
 import { ObjectId } from 'mongodb';
 import cron from 'node-cron';
+
+import {
+    ACCOUNT_MANAGER_SLCMD,
+    EVENT_MANAGER_SLCMD,
+    START_BOUNTY_COMPONENTS,
+    END_BOUNTY_COMPONENTS
+} from './components/user_interaction';
 
 
 export class BountyAccountManager extends core.BaseManager {
@@ -543,7 +549,6 @@ type UserCache = {
 
 export class BountyEventAutoManager extends core.BaseManager {
     private json_op: core.jsonOperator;
-
     private end_button_op: core.BaseOperator;
 
     private cache_path: string;
@@ -568,7 +573,6 @@ export class BountyEventAutoManager extends core.BaseManager {
         const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
 
         if (cache_data.cache.length === 0) return;
-
         console.log('cache found', cache_data);
 
         // eslint-disable-next-line no-constant-condition
@@ -576,11 +580,9 @@ export class BountyEventAutoManager extends core.BaseManager {
             if (cache_data.cache.length === 0) break;
 
             const user_cache = cache_data.cache[0];
-
             if (user_cache.end_time > Date.now()) break;
 
             const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
-
             if (end_btn_data) {
                 const channel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
                 if (!(channel instanceof DMChannel)) continue;
@@ -597,9 +599,6 @@ export class BountyEventAutoManager extends core.BaseManager {
             cache_data.cache.shift();
             await (await this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
         }
-
-        console.log('modify', cache_data);
-
         await this.json_op.writeFile(this.cache_path, cache_data);
     }
 
@@ -619,9 +618,7 @@ export class BountyEventAutoManager extends core.BaseManager {
             const data = end_btn_data[i];
 
             if (data.time.end > Date.now() + 150 * 1000) continue;
-
             if (await core.isItemInArray(data.user_id, cached_user_id)) continue;
-
 
             cache_data.cache.push({
                 user_id: data.user_id,

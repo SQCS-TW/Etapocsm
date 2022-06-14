@@ -62,11 +62,15 @@ export class Etapocsm extends Client {
             });
         });
 
-        const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
+        const BOT_TOKEN = process.env.BOT_TOKEN;
+        const BOT_ID = process.env.BOT_ID;
+        const MAIN_GUILD_ID = process.env.SQCS_MAIN_GUILD_ID;
 
-        await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: [] })
+        const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
+
+        await rest.put(Routes.applicationGuildCommands(BOT_ID, MAIN_GUILD_ID), { body: [] }) // reset slcmd
         if (slcmd_register_list.length !== 0) {
-            await rest.put(Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SQCS_MAIN_GUILD_ID), { body: slcmd_register_list })
+            await rest.put(Routes.applicationGuildCommands(BOT_ID, MAIN_GUILD_ID), { body: slcmd_register_list })
             console.log('slcmd registered!');
         }
     }
