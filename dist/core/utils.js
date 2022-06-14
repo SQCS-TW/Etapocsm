@@ -43,6 +43,8 @@ exports.binomialCoefficient = binomialCoefficient;
 function getSubsetsWithCertainLength(arr, length) {
     return __awaiter(this, void 0, void 0, function* () {
         let modify = [...arr].map(item => [item]);
+        if (length === 1)
+            return [arr];
         for (let i = 0; i < length - 1; i++) {
             const new_arr = [];
             for (let j = 0; j < [...modify].length; j++) {

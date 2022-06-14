@@ -27,6 +27,9 @@ export async function binomialCoefficient(m: number, n: number) {
 
 export async function getSubsetsWithCertainLength(arr: Array<any>, length: number) {
     let modify = [...arr].map(item => [item]);
+    
+    if (length === 1) return [arr];
+
     for (let i = 0; i < length - 1; i++) {
         const new_arr = [];
 

@@ -120,8 +120,16 @@ const qns_thread_beauty = new QnsThreadBeautifier();
 class BountyEventManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
+        this.alphabet_sequence = [
+            'A', 'B', 'C', 'D', 'E',
+            'F', 'G', 'H', 'I', 'J',
+            'K', 'L', 'M', 'N', 'O',
+            'P', 'Q', 'R', 'S', 'T',
+            'U', 'V', 'W', 'X', 'Y', 'Z'
+        ];
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
         this.SLCMD_REGISTER_LIST = user_interaction_1.EVENT_MANAGER_SLCMD;
         this.qns_diffi_time = {
             'easy': 60,
@@ -172,10 +180,16 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.followUp('你已經回答完所有問題了！');
                     // ==== modify embed -> set difficulty and qns_number
                     const new_embed = yield this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
-                    const msg = yield interaction.user.send({
-                        components: [user_interaction_1.START_BOUNTY_COMPONENTS.button],
-                        embeds: [new_embed]
-                    });
+                    let msg;
+                    try {
+                        msg = yield interaction.user.send({
+                            components: [user_interaction_1.START_BOUNTY_COMPONENTS.button],
+                            embeds: [new_embed]
+                        });
+                    }
+                    catch (_a) {
+                        return yield interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
+                    }
                     const button_data = {
                         _id: new mongodb_1.ObjectId(),
                         user_id: interaction.user.id,
@@ -196,7 +210,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     yield msg.edit({
                         components: [new_button]
                     });
-                    return;
+                    return yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
                 }
             }
         });
@@ -211,7 +225,6 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
     }
     buttonHandler(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(interaction.channelId);
             switch (interaction.customId) {
                 case 'start_bounty': {
                     yield interaction.deferReply();
@@ -281,6 +294,28 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.user.send('建立結束資料時發生錯誤！');
                     break;
                 }
+                case 'end_bounty': {
+                    yield interaction.deferReply();
+                    const user_end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+                    const channel = yield this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
+                    if (!(channel instanceof discord_js_1.DMChannel))
+                        return;
+                    const msg = yield channel.messages.fetch(user_end_btn_data.msg_id);
+                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
+                    yield msg.edit({
+                        components: [new_button]
+                    });
+                    const user_ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    const thread_data = yield SB_functions.getQnsThreadData(user_ongoing_data.qns_thread);
+                    const choices = yield this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
+                    const ans_dropdown = yield this.appendChoicesToDropdown(choices);
+                    yield interaction.editReply({
+                        content: '請選擇答案',
+                        components: [ans_dropdown]
+                    });
+                    return;
+                }
             }
         });
     }
@@ -290,6 +325,43 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             new_embed.fields[0].value = start_time;
             new_embed.fields[1].value = end_time;
             return new_embed;
+        });
+    }
+    generateQuestionChoices(qns_diffi, qns_number) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // ex:
+            // const qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
+            // const qns_ans = ['A', 'C'];
+            const qns_data = yield (yield this.qns_op.cursor_promise).findOne({
+                difficulty: qns_diffi,
+                number: qns_number
+            });
+            const qns_choices = this.alphabet_sequence.slice(0, qns_data.max_choices);
+            const qns_ans = qns_data.correct_ans;
+            if (qns_ans.length === 1)
+                return qns_choices;
+            let result = yield shortcut_1.core.getSubsetsWithCertainLength(qns_choices, qns_ans.length);
+            result = result.filter((item) => __awaiter(this, void 0, void 0, function* () { return (!(yield shortcut_1.core.arrayEquals(item, qns_ans))); }));
+            result = yield shortcut_1.core.shuffle(result);
+            const random_choices_count = Math.min(Math.pow(2, qns_ans.length) + 2, yield shortcut_1.core.binomialCoefficient(qns_choices.length, qns_ans.length)) - 1;
+            result = result.slice(0, random_choices_count);
+            result.push(qns_ans);
+            result = yield shortcut_1.core.shuffle(result);
+            result = result.map((item) => { return item.join(', '); });
+            return result;
+        });
+    }
+    appendChoicesToDropdown(choices) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_dropdown = yield shortcut_1.core.cloneObj(user_interaction_1.END_BOUNTY_COMPONENTS.dropdown);
+            for (let i = 0; i < choices.length; i++) {
+                const choice = choices[i];
+                const new_option = yield shortcut_1.core.cloneObj(user_interaction_1.END_BOUNTY_COMPONENTS.dropdown_option);
+                new_option.label = choice;
+                new_option.value = choice;
+                new_dropdown.components[0].options.push(new_option);
+            }
+            return new_dropdown;
         });
     }
 }
@@ -391,7 +463,6 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.json_op = new json_1.jsonOperator();
-        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.end_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'EndButtonPipeline'

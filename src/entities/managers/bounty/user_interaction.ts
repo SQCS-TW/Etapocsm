@@ -136,17 +136,27 @@ const qns_thread_beauty = new QnsThreadBeautifier();
 export class BountyEventManager extends core.BaseManager {
     private account_op: core.BountyUserAccountOperator;
     private ongoing_op: core.BountyUserOngoingInfoOperator;
+    private qns_op: core.BountyQnsDBOperator;
 
     private start_button_op: core.BaseOperator;
     private end_button_op: core.BaseOperator;
 
     private qns_diffi_time: object;
 
+    private alphabet_sequence = [
+        'A', 'B', 'C', 'D', 'E',
+        'F', 'G', 'H', 'I', 'J',
+        'K', 'L', 'M', 'N', 'O',
+        'P', 'Q', 'R', 'S', 'T',
+        'U', 'V', 'W', 'X', 'Y', 'Z'
+    ];
+
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
         this.account_op = new core.BountyUserAccountOperator();
         this.ongoing_op = new core.BountyUserOngoingInfoOperator();
+        this.qns_op = new core.BountyQnsDBOperator();
 
         this.SLCMD_REGISTER_LIST = EVENT_MANAGER_SLCMD;
 
@@ -206,10 +216,15 @@ export class BountyEventManager extends core.BaseManager {
                 // ==== modify embed -> set difficulty and qns_number
                 const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
 
-                const msg = await interaction.user.send({
-                    components: [START_BOUNTY_COMPONENTS.button],
-                    embeds: [new_embed]
-                });
+                let msg;
+                try {
+                    msg = await interaction.user.send({
+                        components: [START_BOUNTY_COMPONENTS.button],
+                        embeds: [new_embed]
+                    });
+                } catch {
+                    return await interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
+                }
 
                 const button_data = {
                     _id: new ObjectId(),
@@ -234,7 +249,8 @@ export class BountyEventManager extends core.BaseManager {
                 await msg.edit({
                     components: [new_button]
                 });
-                return;
+
+                return await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
             }
         }
     }
@@ -247,7 +263,6 @@ export class BountyEventManager extends core.BaseManager {
     }
 
     private async buttonHandler(interaction: ButtonInteraction) {
-        console.log(interaction.channelId);
         switch (interaction.customId) {
             case 'start_bounty': {
                 await interaction.deferReply();
@@ -296,7 +311,7 @@ export class BountyEventManager extends core.BaseManager {
                 }
 
                 const relativeDiscordTimestamp = (t: number) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
-                
+
                 const answering_embed = await this.getAnsweringInfoEmbed(
                     relativeDiscordTimestamp(start_time),
                     relativeDiscordTimestamp(end_time)
@@ -304,7 +319,7 @@ export class BountyEventManager extends core.BaseManager {
                 await interaction.editReply({
                     embeds: [answering_embed]
                 });
-                
+
                 await core.sleep(buffer_time);
 
                 const qns_msg = await interaction.user.send({
@@ -330,6 +345,36 @@ export class BountyEventManager extends core.BaseManager {
 
                 break;
             }
+
+            case 'end_bounty': {
+                await interaction.deferReply();
+
+                const user_end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+
+                await (await this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+
+                const channel: AnyChannel = await this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
+                if (!(channel instanceof DMChannel)) return;
+
+                const msg = await channel.messages.fetch(user_end_btn_data.msg_id);
+                const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
+                await msg.edit({
+                    components: [new_button]
+                });
+
+                const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+
+                const thread_data = await SB_functions.getQnsThreadData(user_ongoing_data.qns_thread);
+
+                const choices = await this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
+                const ans_dropdown = await this.appendChoicesToDropdown(choices);
+
+                await interaction.editReply({
+                    content: '請選擇答案',
+                    components: [ans_dropdown]
+                });
+                return;
+            }
         }
     }
 
@@ -338,6 +383,52 @@ export class BountyEventManager extends core.BaseManager {
         new_embed.fields[0].value = start_time;
         new_embed.fields[1].value = end_time;
         return new_embed;
+    }
+
+    private async generateQuestionChoices(qns_diffi: string, qns_number: number) {
+        // ex:
+        // const qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
+        // const qns_ans = ['A', 'C'];
+
+        const qns_data = await (await this.qns_op.cursor_promise).findOne({
+            difficulty: qns_diffi,
+            number: qns_number
+        });
+
+        const qns_choices = this.alphabet_sequence.slice(0, qns_data.max_choices);
+        const qns_ans = qns_data.correct_ans;
+
+        if (qns_ans.length === 1) return qns_choices;
+
+        let result: Array<any> = await core.getSubsetsWithCertainLength(qns_choices, qns_ans.length);
+        result = result.filter(async (item) => { return (!(await core.arrayEquals(item, qns_ans))) });
+        result = await core.shuffle(result);
+
+        const random_choices_count = Math.min(
+            Math.pow(2, qns_ans.length) + 2,
+            await core.binomialCoefficient(qns_choices.length, qns_ans.length)
+        ) - 1;
+
+        result = result.slice(0, random_choices_count);
+        result.push(qns_ans);
+        result = await core.shuffle(result);
+        result = result.map((item) => { return item.join(', ') });
+        return result;
+    }
+
+    private async appendChoicesToDropdown(choices: string[]) {
+        const new_dropdown = await core.cloneObj(END_BOUNTY_COMPONENTS.dropdown);
+
+        for (let i = 0; i < choices.length; i++) {
+            const choice = choices[i];
+
+            const new_option = await core.cloneObj(END_BOUNTY_COMPONENTS.dropdown_option);
+            new_option.label = choice;
+            new_option.value = choice;
+            
+            new_dropdown.components[0].options.push(new_option)
+        }
+        return new_dropdown;
     }
 }
 
@@ -453,7 +544,6 @@ type UserCache = {
 
 export class BountyEventAutoManager extends core.BaseManager {
     private json_op: core.jsonOperator;
-    private ongoing_op: core.BountyUserOngoingInfoOperator;
 
     private end_button_op: core.BaseOperator;
 
@@ -463,7 +553,6 @@ export class BountyEventAutoManager extends core.BaseManager {
         super(f_platform);
 
         this.json_op = new jsonOperator();
-        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
 
         this.end_button_op = new core.BaseOperator({
             db: 'Bounty',
@@ -492,7 +581,7 @@ export class BountyEventAutoManager extends core.BaseManager {
             if (user_cache.end_time > Date.now()) break;
 
             const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
-            
+
             if (end_btn_data) {
                 const channel: AnyChannel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
                 if (!(channel instanceof DMChannel)) continue;
@@ -505,7 +594,7 @@ export class BountyEventAutoManager extends core.BaseManager {
                     components: [new_button]
                 });
             }
-            
+
             cache_data.cache.shift();
             await (await this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
         }
@@ -518,21 +607,21 @@ export class BountyEventAutoManager extends core.BaseManager {
     private async setupCache() {
         const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
         const cached_user_id: string[] = [];
-        
+
         if (cache_data.cache.length !== 0) {
-            for(let i = 0; i < cache_data.cache.length; i++) {
+            for (let i = 0; i < cache_data.cache.length; i++) {
                 cached_user_id.push(cache_data.cache[i].user_id);
             }
         }
 
         const end_btn_data = await (await this.end_button_op.cursor_promise).find({}).toArray();
-        
+
         for (let i = 0; i < end_btn_data.length; i++) {
             const data = end_btn_data[i];
 
             if (data.time.end > Date.now() + 150 * 1000) continue;
-            
-            if(await core.isItemInArray(data.user_id, cached_user_id)) continue;
+
+            if (await core.isItemInArray(data.user_id, cached_user_id)) continue;
 
 
             cache_data.cache.push({

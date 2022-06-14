@@ -96,5 +96,25 @@ export const END_BOUNTY_COMPONENTS = {
         footer: {
             text: '如要答題，請在結束時間抵達前按下按鈕。'
         }
+    },
+    dropdown: {
+        type: 1,
+        components: [
+            {
+                custom_id: `bounty_answers`,
+                placeholder: `選擇答案`,
+                options: [
+                    // put options below here
+                ],
+                min_values: 1,
+                max_values: 1,
+                type: 3
+            }
+        ]
+    },
+    dropdown_option: {
+        label: 'ex: A, B',
+        value: 'ex: A, B',
+        default: false
     }
 }
