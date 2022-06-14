@@ -1,8 +1,10 @@
-import { ButtonInteraction, CommandInteraction, Message } from 'discord.js';
-import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD, START_BOUNTY_COMPONENTS } from './slcmd/user_interaction';
+import { AnyChannel, ButtonInteraction, Channel, CommandInteraction, DMChannel } from 'discord.js';
+import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD, START_BOUNTY_COMPONENTS, END_BOUNTY_COMPONENTS } from './components/user_interaction';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
 import { ObjectId } from 'mongodb';
+import cron from 'node-cron';
+import { jsonOperator } from '../../../core/json';
 
 
 export class BountyAccountManager extends core.BaseManager {
@@ -136,6 +138,7 @@ export class BountyEventManager extends core.BaseManager {
     private ongoing_op: core.BountyUserOngoingInfoOperator;
 
     private start_button_op: core.BaseOperator;
+    private end_button_op: core.BaseOperator;
 
     private qns_diffi_time: object;
 
@@ -158,6 +161,11 @@ export class BountyEventManager extends core.BaseManager {
         this.start_button_op = new core.BaseOperator({
             db: 'Bounty',
             coll: 'StartButtonPipeline'
+        });
+
+        this.end_button_op = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'EndButtonPipeline'
         });
     }
 
@@ -206,11 +214,13 @@ export class BountyEventManager extends core.BaseManager {
                 const button_data = {
                     _id: new ObjectId(),
                     user_id: interaction.user.id,
+                    channel_id: msg.channelId,
                     msg_id: msg.id,
                     qns_info: {
                         difficulty: qns_data.curr_diffi,
                         number: qns_data.curr_qns_number
-                    }
+                    },
+                    due_time: Date.now() + 60 * 1000
                 }
                 await (await this.start_button_op.cursor_promise).insertOne(button_data);
 
@@ -219,7 +229,7 @@ export class BountyEventManager extends core.BaseManager {
                 const btn_data = await (await this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
                 if (!btn_data) return;
 
-                const new_button = await this.getDisabledButton();
+                const new_button = await common_functions.getDisabledButton(START_BOUNTY_COMPONENTS.button);
 
                 await msg.edit({
                     components: [new_button],
@@ -237,14 +247,8 @@ export class BountyEventManager extends core.BaseManager {
         return new_embed;
     }
 
-    private async getDisabledButton() {
-        const new_button = await core.cloneObj(START_BOUNTY_COMPONENTS.button);
-        new_button.components[0].disabled = true;
-        return new_button;
-    }
-
     private async buttonHandler(interaction: ButtonInteraction) {
-        
+        console.log(interaction.channelId);
         switch (interaction.customId) {
             case 'start_bounty': {
                 await interaction.deferReply();
@@ -257,15 +261,15 @@ export class BountyEventManager extends core.BaseManager {
                 const qns_number = user_btn_data.qns_info.number;
 
                 const new_embed = await this.getModifiedEmbed(diffi, qns_number);
-                const new_button = await this.getDisabledButton();
-                
+                const new_button = await common_functions.getDisabledButton(START_BOUNTY_COMPONENTS.button);
+
                 const msg: any = interaction.message;
                 await msg.edit({
                     components: [new_button],
                     embeds: [new_embed]
                 });
 
-                const delete_result = await (await this.start_button_op.cursor_promise).deleteOne({user_id: interaction.user.id});
+                const delete_result = await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
                 if (!delete_result.acknowledged) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
 
                 // download qns pic
@@ -284,18 +288,13 @@ export class BountyEventManager extends core.BaseManager {
                 const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time + 1) * 1000;
                 const execute = {
                     $set: {
-                        //status: true,
-                        time: {
-                            start: start_time,
-                            end: end_time,
-                            duration: -1
-                        }
+                        //status: true
                     }
                 }
                 const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
                 if (!update_result.acknowledged) {
                     unlink(local_file_name, () => { return; });
-                    return await interaction.user.send('更新個人狀態錯誤！');
+                    return await interaction.user.send('開始懸賞時發生錯誤！');
                 }
 
                 const relativeDiscordTimestamp = (t: number) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
@@ -303,14 +302,33 @@ export class BountyEventManager extends core.BaseManager {
 
                 await core.sleep(1);
 
-                await interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
+                const del_msg = await interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
                 await core.sleep(buffer_time);
+                await del_msg.delete();
 
                 await interaction.user.send({
-                    content: '**【題目】**注意，請將題目存起來，這則訊息將在一段時間後消失。\n但請勿將題目外流給他人，且答題過後建議銷毀。',
+                    content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
                     files: [local_file_name]
                 });
                 unlink(local_file_name, () => { return; });
+
+                const btn_msg = await interaction.user.send({
+                    components: [END_BOUNTY_COMPONENTS.button]
+                });
+
+                const end_btn_info = {
+                    _id: new ObjectId(),
+                    user_id: interaction.user.id,
+                    channel_id: interaction.channelId,
+                    msg_id: btn_msg.id,
+                    time: {
+                        start: start_time,
+                        end: end_time,
+                        duration: -1
+                    }
+                }
+                const create_result = await (await this.end_button_op.cursor_promise).insertOne(end_btn_info);
+                if (!create_result.acknowledged) return await interaction.user.send('建立結束資料時發生錯誤！');
 
                 break;
             }
@@ -408,9 +426,126 @@ const SB_functions = {
             curr_diffi: curr_diffi,
             curr_qns_number: curr_qns_number
         };
-    },
+    }
 }
 
+const common_functions = {
+    async getDisabledButton(obj: object) {
+        const new_button = await core.cloneObj(obj);
+        new_button.components[0].disabled = true;
+        return new_button;
+    }
+}
+
+type pipeline = {
+    cache: UserCache[]
+}
+
+type UserCache = {
+    user_id: string,
+    end_time: number
+}
+
+export class BountyEventAutoManager extends core.BaseManager {
+    private json_op: core.jsonOperator;
+    private ongoing_op: core.BountyUserOngoingInfoOperator;
+
+    private end_button_op: core.BaseOperator;
+
+    private cache_path: string;
+
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
+
+        this.json_op = new jsonOperator();
+        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
+
+        this.end_button_op = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'EndButtonPipeline'
+        });
+
+        cron.schedule('*/15 * * * * *', async () => { await this.setupCache() });
+        cron.schedule('*/2 * * * * *', async () => { await this.checkCache() });
+
+        this.cache_path = './cache/bounty/player_data.json';
+    }
+
+    private async checkCache() {
+        const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
+
+        if (cache_data.cache.length === 0) return;
+
+        console.log('cache found', cache_data);
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            if (cache_data.cache.length === 0) break;
+
+            const user_cache = cache_data.cache[0];
+
+            if (user_cache.end_time > Date.now()) break;
+
+            const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
+            
+            if (end_btn_data) {
+                const channel: AnyChannel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
+                if (!(channel instanceof DMChannel)) continue;
+
+                const msg = await channel.messages.fetch(end_btn_data.msg_id);
+                const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
+                await msg.edit({
+                    components: [new_button]
+                });
+            }
+            
+            cache_data.cache.shift();
+            await (await this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
+        }
+
+        console.log('modify', cache_data);
+
+        await this.json_op.writeFile(this.cache_path, cache_data);
+    }
+
+    private async setupCache() {
+        const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
+        const cached_user_id: string[] = [];
+        
+        if (cache_data.cache.length !== 0) {
+            for(let i = 0; i < cache_data.cache.length; i++) {
+                cached_user_id.push(cache_data.cache[i].user_id);
+            }
+        }
+
+        const end_btn_data = await (await this.end_button_op.cursor_promise).find({}).toArray();
+        
+        for (let i = 0; i < end_btn_data.length; i++) {
+            const data = end_btn_data[i];
+
+            if (data.time.end > Date.now() + 150 * 1000) continue;
+            
+            if(await core.isItemInArray(data.user_id, cached_user_id)) continue;
+
+
+            cache_data.cache.push({
+                user_id: data.user_id,
+                end_time: data.time.end
+            });
+
+            console.log('pushed', {
+                user_id: data.user_id,
+                end_time: data.time.end
+            });
+        }
+
+        cache_data.cache.sort((a, b) => a.end_time - b.end_time);
+        await this.json_op.writeFile(this.cache_path, cache_data);
+
+
+        return;
+    }
+}
 
 // import fs from 'fs';
 // import { ObjectId } from 'mongodb';

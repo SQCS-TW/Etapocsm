@@ -8,12 +8,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BountyEventManager = exports.BountyAccountManager = void 0;
-const user_interaction_1 = require("./slcmd/user_interaction");
+exports.BountyEventAutoManager = exports.BountyEventManager = exports.BountyAccountManager = void 0;
+const discord_js_1 = require("discord.js");
+const user_interaction_1 = require("./components/user_interaction");
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 const mongodb_1 = require("mongodb");
+const node_cron_1 = __importDefault(require("node-cron"));
+const json_1 = require("../../../core/json");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -127,6 +133,10 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             db: 'Bounty',
             coll: 'StartButtonPipeline'
         });
+        this.end_button_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'EndButtonPipeline'
+        });
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
@@ -169,18 +179,20 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const button_data = {
                         _id: new mongodb_1.ObjectId(),
                         user_id: interaction.user.id,
+                        channel_id: msg.channelId,
                         msg_id: msg.id,
                         qns_info: {
                             difficulty: qns_data.curr_diffi,
                             number: qns_data.curr_qns_number
-                        }
+                        },
+                        due_time: Date.now() + 60 * 1000
                     };
                     yield (yield this.start_button_op.cursor_promise).insertOne(button_data);
                     yield shortcut_1.core.sleep(60);
                     const btn_data = yield (yield this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
                     if (!btn_data)
                         return;
-                    const new_button = yield this.getDisabledButton();
+                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
                     yield msg.edit({
                         components: [new_button],
                         embeds: [new_embed]
@@ -198,15 +210,9 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             return new_embed;
         });
     }
-    getDisabledButton() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const new_button = yield shortcut_1.core.cloneObj(user_interaction_1.START_BOUNTY_COMPONENTS.button);
-            new_button.components[0].disabled = true;
-            return new_button;
-        });
-    }
     buttonHandler(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log(interaction.channelId);
             switch (interaction.customId) {
                 case 'start_bounty': {
                     yield interaction.deferReply();
@@ -218,7 +224,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const diffi = user_btn_data.qns_info.difficulty;
                     const qns_number = user_btn_data.qns_info.number;
                     const new_embed = yield this.getModifiedEmbed(diffi, qns_number);
-                    const new_button = yield this.getDisabledButton();
+                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
                     const msg = interaction.message;
                     yield msg.edit({
                         components: [new_button],
@@ -242,29 +248,42 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time + 1) * 1000;
                     const execute = {
                         $set: {
-                            //status: true,
-                            time: {
-                                start: start_time,
-                                end: end_time,
-                                duration: -1
-                            }
+                        //status: true
                         }
                     };
                     const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
                     if (!update_result.acknowledged) {
                         (0, fs_1.unlink)(local_file_name, () => { return; });
-                        return yield interaction.user.send('更新個人狀態錯誤！');
+                        return yield interaction.user.send('開始懸賞時發生錯誤！');
                     }
                     const relativeDiscordTimestamp = (t) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
                     yield interaction.editReply(`開始時間：${relativeDiscordTimestamp(start_time)}\n結束時間：${relativeDiscordTimestamp(end_time)}`);
                     yield shortcut_1.core.sleep(1);
-                    yield interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
+                    const del_msg = yield interaction.user.send(`倒數 ${buffer_time} 秒後傳送問題圖片`);
                     yield shortcut_1.core.sleep(buffer_time);
+                    yield del_msg.delete();
                     yield interaction.user.send({
-                        content: '**【題目】**注意，請將題目存起來，這則訊息將在一段時間後消失。\n但請勿將題目外流給他人，且答題過後建議銷毀。',
+                        content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
                         files: [local_file_name]
                     });
                     (0, fs_1.unlink)(local_file_name, () => { return; });
+                    const btn_msg = yield interaction.user.send({
+                        components: [user_interaction_1.END_BOUNTY_COMPONENTS.button]
+                    });
+                    const end_btn_info = {
+                        _id: new mongodb_1.ObjectId(),
+                        user_id: interaction.user.id,
+                        channel_id: interaction.channelId,
+                        msg_id: btn_msg.id,
+                        time: {
+                            start: start_time,
+                            end: end_time,
+                            duration: -1
+                        }
+                    };
+                    const create_result = yield (yield this.end_button_op.cursor_promise).insertOne(end_btn_info);
+                    if (!create_result.acknowledged)
+                        return yield interaction.user.send('建立結束資料時發生錯誤！');
                     break;
                 }
             }
@@ -354,8 +373,93 @@ const SB_functions = {
                 curr_qns_number: curr_qns_number
             };
         });
-    },
+    }
 };
+const common_functions = {
+    getDisabledButton(obj) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_button = yield shortcut_1.core.cloneObj(obj);
+            new_button.components[0].disabled = true;
+            return new_button;
+        });
+    }
+};
+class BountyEventAutoManager extends shortcut_1.core.BaseManager {
+    constructor(f_platform) {
+        super(f_platform);
+        this.json_op = new json_1.jsonOperator();
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.end_button_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'EndButtonPipeline'
+        });
+        node_cron_1.default.schedule('*/15 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }));
+        node_cron_1.default.schedule('*/2 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }));
+        this.cache_path = './cache/bounty/player_data.json';
+    }
+    checkCache() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const cache_data = yield this.json_op.readFile(this.cache_path);
+            if (cache_data.cache.length === 0)
+                return;
+            console.log('cache found', cache_data);
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                if (cache_data.cache.length === 0)
+                    break;
+                const user_cache = cache_data.cache[0];
+                if (user_cache.end_time > Date.now())
+                    break;
+                const end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
+                if (end_btn_data) {
+                    const channel = yield this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
+                    if (!(channel instanceof discord_js_1.DMChannel))
+                        continue;
+                    const msg = yield channel.messages.fetch(end_btn_data.msg_id);
+                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
+                    yield msg.edit({
+                        components: [new_button]
+                    });
+                }
+                cache_data.cache.shift();
+                yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
+            }
+            console.log('modify', cache_data);
+            yield this.json_op.writeFile(this.cache_path, cache_data);
+        });
+    }
+    setupCache() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const cache_data = yield this.json_op.readFile(this.cache_path);
+            const cached_user_id = [];
+            if (cache_data.cache.length !== 0) {
+                for (let i = 0; i < cache_data.cache.length; i++) {
+                    cached_user_id.push(cache_data.cache[i].user_id);
+                }
+            }
+            const end_btn_data = yield (yield this.end_button_op.cursor_promise).find({}).toArray();
+            for (let i = 0; i < end_btn_data.length; i++) {
+                const data = end_btn_data[i];
+                if (data.time.end > Date.now() + 150 * 1000)
+                    continue;
+                if (yield shortcut_1.core.isItemInArray(data.user_id, cached_user_id))
+                    continue;
+                cache_data.cache.push({
+                    user_id: data.user_id,
+                    end_time: data.time.end
+                });
+                console.log('pushed', {
+                    user_id: data.user_id,
+                    end_time: data.time.end
+                });
+            }
+            cache_data.cache.sort((a, b) => a.end_time - b.end_time);
+            yield this.json_op.writeFile(this.cache_path, cache_data);
+            return;
+        });
+    }
+}
+exports.BountyEventAutoManager = BountyEventAutoManager;
 // import fs from 'fs';
 // import { ObjectId } from 'mongodb';
 // import { core, db } from '../../sc';

@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyQnsDBManager = void 0;
-const qns_db_1 = require("./slcmd/qns_db");
+const qns_db_1 = require("./components/qns_db");
 const shortcut_1 = require("../../shortcut");
 const mongodb_1 = require("mongodb");
 const fs_1 = require("fs");

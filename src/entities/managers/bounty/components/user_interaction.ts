@@ -62,3 +62,18 @@ export const START_BOUNTY_COMPONENTS = {
         }
     }
 }
+
+export const END_BOUNTY_COMPONENTS = {
+    button: {
+        type: 1,
+        components: [
+            {
+            style: 3,
+            label: '結束答題',
+            custom_id: 'end_bounty',
+            disabled: false,
+            type: 2
+            }
+        ]
+    },
+}

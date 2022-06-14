@@ -1,5 +1,5 @@
 import { CommandInteraction } from 'discord.js';
-import { REGISTER_LIST } from './slcmd/qns_db';
+import { REGISTER_LIST } from './components/qns_db';
 import { core, db } from '../../shortcut';
 import { ObjectId } from 'mongodb';
 import { unlink } from 'fs';

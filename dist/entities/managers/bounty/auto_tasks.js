@@ -64,6 +64,3 @@
 //         cron.schedule('*/5 * * * * *', checkOngoingPipeline);
 //     }
 // }
-// export {
-//     BountyAutoTaskManager
-// };
