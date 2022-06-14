@@ -61,12 +61,12 @@ export async function shuffle(array: Array<any>) {
     return array;
 }
 
-export async function arrayEquals(arr1: Array<any>, arr2: Array<any>) {
+export function arrayEquals(arr1: Array<any>, arr2: Array<any>) {
     if (arr1.length != arr2.length) return false;
 
     for (let i = 0; i < arr2.length; i++) {
         if (arr1[i] instanceof Array && arr2[i] instanceof Array) {
-            if (!(await arrayEquals(arr1[i], arr2[i]))) return false;
+            if (!(arrayEquals(arr1[i], arr2[i]))) return false;
         } else if (arr1[i] != arr2[i]) {
             return false;
         }

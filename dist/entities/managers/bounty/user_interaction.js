@@ -14,12 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyEventAutoManager = exports.BountyEventManager = exports.BountyAccountManager = void 0;
 const discord_js_1 = require("discord.js");
-const user_interaction_1 = require("./components/user_interaction");
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 const mongodb_1 = require("mongodb");
 const node_cron_1 = __importDefault(require("node-cron"));
-const json_1 = require("../../../core/json");
+const user_interaction_1 = require("./components/user_interaction");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -341,7 +340,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             if (qns_ans.length === 1)
                 return qns_choices;
             let result = yield shortcut_1.core.getSubsetsWithCertainLength(qns_choices, qns_ans.length);
-            result = result.filter((item) => __awaiter(this, void 0, void 0, function* () { return (!(yield shortcut_1.core.arrayEquals(item, qns_ans))); }));
+            result = result.filter((item) => { return !(shortcut_1.core.arrayEquals(item, qns_ans)); });
             result = yield shortcut_1.core.shuffle(result);
             const random_choices_count = Math.min(Math.pow(2, qns_ans.length) + 2, yield shortcut_1.core.binomialCoefficient(qns_choices.length, qns_ans.length)) - 1;
             result = result.slice(0, random_choices_count);
@@ -462,7 +461,7 @@ const common_functions = {
 class BountyEventAutoManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
-        this.json_op = new json_1.jsonOperator();
+        this.json_op = new shortcut_1.core.jsonOperator();
         this.end_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'EndButtonPipeline'
@@ -500,7 +499,6 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
                 cache_data.cache.shift();
                 yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
             }
-            console.log('modify', cache_data);
             yield this.json_op.writeFile(this.cache_path, cache_data);
         });
     }

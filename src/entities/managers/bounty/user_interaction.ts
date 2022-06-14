@@ -370,7 +370,6 @@ export class BountyEventManager extends core.BaseManager {
                 const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
 
                 const thread_data = await SB_functions.getQnsThreadData(user_ongoing_data.qns_thread);
-
                 const choices = await this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
                 const ans_dropdown = await this.appendChoicesToDropdown(choices);
 
@@ -406,7 +405,8 @@ export class BountyEventManager extends core.BaseManager {
         if (qns_ans.length === 1) return qns_choices;
 
         let result: Array<any> = await core.getSubsetsWithCertainLength(qns_choices, qns_ans.length);
-        result = result.filter(async (item) => { return (!(await core.arrayEquals(item, qns_ans))) });
+        
+        result = result.filter((item) => { return !(core.arrayEquals(item, qns_ans)) });
         result = await core.shuffle(result);
 
         const random_choices_count = Math.min(

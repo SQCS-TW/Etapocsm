@@ -79,20 +79,18 @@ function shuffle(array) {
 }
 exports.shuffle = shuffle;
 function arrayEquals(arr1, arr2) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (arr1.length != arr2.length)
-            return false;
-        for (let i = 0; i < arr2.length; i++) {
-            if (arr1[i] instanceof Array && arr2[i] instanceof Array) {
-                if (!(yield arrayEquals(arr1[i], arr2[i])))
-                    return false;
-            }
-            else if (arr1[i] != arr2[i]) {
+    if (arr1.length != arr2.length)
+        return false;
+    for (let i = 0; i < arr2.length; i++) {
+        if (arr1[i] instanceof Array && arr2[i] instanceof Array) {
+            if (!(arrayEquals(arr1[i], arr2[i])))
                 return false;
-            }
         }
-        return true;
-    });
+        else if (arr1[i] != arr2[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 exports.arrayEquals = arrayEquals;
 function verifyMenuApplication(verify) {
