@@ -1,10 +1,9 @@
-import { AnyChannel, ButtonInteraction, Channel, CommandInteraction, DMChannel } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, DMChannel } from 'discord.js';
 import { ACCOUNT_MANAGER_SLCMD, EVENT_MANAGER_SLCMD, START_BOUNTY_COMPONENTS, END_BOUNTY_COMPONENTS } from './components/user_interaction';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
 import { ObjectId } from 'mongodb';
 import cron from 'node-cron';
-import { jsonOperator } from '../../../core/json';
 
 
 export class BountyAccountManager extends core.BaseManager {
@@ -353,7 +352,7 @@ export class BountyEventManager extends core.BaseManager {
 
                 await (await this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
 
-                const channel: AnyChannel = await this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
+                const channel = await this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
                 if (!(channel instanceof DMChannel)) return;
 
                 const msg = await channel.messages.fetch(user_end_btn_data.msg_id);
@@ -552,7 +551,7 @@ export class BountyEventAutoManager extends core.BaseManager {
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
-        this.json_op = new jsonOperator();
+        this.json_op = new core.jsonOperator();
 
         this.end_button_op = new core.BaseOperator({
             db: 'Bounty',
@@ -583,7 +582,7 @@ export class BountyEventAutoManager extends core.BaseManager {
             const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
 
             if (end_btn_data) {
-                const channel: AnyChannel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
+                const channel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
                 if (!(channel instanceof DMChannel)) continue;
 
                 const msg = await channel.messages.fetch(end_btn_data.msg_id);
