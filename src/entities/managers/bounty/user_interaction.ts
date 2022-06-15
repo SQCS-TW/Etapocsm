@@ -777,6 +777,13 @@ export class BountyEventAutoManager extends core.BaseManager {
                     files: [],
                     components: [new_button]
                 });
+
+                const status_execute = {
+                    $set: {
+                        status: false
+                    }
+                }
+                await (await this.account_op.cursor_promise).updateOne({ user_id: user_cache.user_id }, status_execute);
             }
 
             cache_data.cache.shift();
