@@ -6,7 +6,7 @@ export const getDefaultBountyAccount = async function (payload: core.DefaultData
     return {
         _id: new ObjectId(),
         user_id: payload.user_id,
-        create_date: -1,
+        create_date: Date.now(),
         auth: true,
         exp: 0,
         qns_record: {

@@ -14,12 +14,8 @@ export const getDefaultUserOngoingData = async function (payload: core.DefaultDa
         },
         stamina: {
             regular: 3,
-            extra: 0
-        },
-        time: {
-            start: -1,
-            end: -1,
-            duration: -1
+            extra: 0,
+            extra_gained: 0
         }
     };
 };

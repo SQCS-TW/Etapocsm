@@ -16,7 +16,7 @@ const getDefaultBountyAccount = function (payload) {
         return {
             _id: new mongodb_1.ObjectId(),
             user_id: payload.user_id,
-            create_date: -1,
+            create_date: Date.now(),
             auth: true,
             exp: 0,
             qns_record: {

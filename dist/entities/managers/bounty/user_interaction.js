@@ -119,13 +119,6 @@ const qns_thread_beauty = new QnsThreadBeautifier();
 class BountyEventManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
-        this.alphabet_sequence = [
-            'A', 'B', 'C', 'D', 'E',
-            'F', 'G', 'H', 'I', 'J',
-            'K', 'L', 'M', 'N', 'O',
-            'P', 'Q', 'R', 'S', 'T',
-            'U', 'V', 'W', 'X', 'Y', 'Z'
-        ];
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
@@ -134,6 +127,16 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             'easy': 60,
             'medium': 60 * 2,
             'hard': 60 * 3
+        };
+        this.qns_diffi_exp = {
+            'easy': 10,
+            'medium': 10 * 2,
+            'hard': 10 * 3
+        };
+        this.qns_ext_stamina_portion = {
+            'easy': 1 / 4,
+            'medium': 1 / 3,
+            'hard': 1 / 3
         };
         this.setupListener();
         this.start_button_op = new shortcut_1.core.BaseOperator({
@@ -144,6 +147,17 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             db: 'Bounty',
             coll: 'EndButtonPipeline'
         });
+        this.dropdown_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'DropdownPipeline'
+        });
+        this.alphabet_sequence = [
+            'A', 'B', 'C', 'D', 'E',
+            'F', 'G', 'H', 'I', 'J',
+            'K', 'L', 'M', 'N', 'O',
+            'P', 'Q', 'R', 'S', 'T',
+            'U', 'V', 'W', 'X', 'Y', 'Z'
+        ];
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
@@ -151,6 +165,8 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                 yield this.slcmdHandler(interaction);
             else if (interaction.isButton())
                 yield this.buttonHandler(interaction);
+            else if (interaction.isSelectMenu())
+                yield this.dropdownHandler(interaction);
         }));
     }
     slcmdHandler(interaction) {
@@ -164,6 +180,8 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const user_acc = yield (yield this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
                     if (!user_acc.auth)
                         return yield interaction.editReply('你沒有遊玩懸賞區的權限！');
+                    if (user_acc.status)
+                        return yield interaction.editReply('你已經在遊玩懸賞區了！');
                     const create_result = yield SB_functions.autoCreateAndGetOngoingInfo(interaction.user.id, {
                         account_op: this.account_op,
                         ongoing_op: this.ongoing_op
@@ -232,6 +250,32 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('錯誤，找不到驗證資訊');
                     else if (user_btn_data.msg_id !== interaction.message.id)
                         return yield interaction.editReply('驗證資訊錯誤');
+                    const ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    let stamina_execute;
+                    if (ongoing_data.stamina.regular > 0) {
+                        stamina_execute = {
+                            $inc: {
+                                "stamina.regular": -1
+                            }
+                        };
+                    }
+                    else if (ongoing_data.stamina.extra > 0) {
+                        stamina_execute = {
+                            $inc: {
+                                "stamina.extra": -1
+                            }
+                        };
+                    }
+                    else {
+                        return yield interaction.editReply('錯誤，你沒有足夠的體力！');
+                    }
+                    yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
+                    const start_bounty_execute = {
+                        $set: {
+                            status: true
+                        }
+                    };
+                    yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
                     const diffi = user_btn_data.qns_info.difficulty;
                     const qns_number = user_btn_data.qns_info.number;
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
@@ -284,8 +328,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         msg_id: qns_msg.id,
                         time: {
                             start: start_time,
-                            end: end_time,
-                            duration: -1
+                            end: end_time
                         }
                     };
                     const create_result = yield (yield this.end_button_op.cursor_promise).insertOne(end_btn_info);
@@ -295,11 +338,18 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                 }
                 case 'end_bounty': {
                     yield interaction.deferReply();
+                    const stop_answering_time = Date.now();
                     const user_end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
                     yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
                     const channel = yield this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
                     if (!(channel instanceof discord_js_1.DMChannel))
                         return;
+                    const start_bounty_execute = {
+                        $set: {
+                            status: false
+                        }
+                    };
+                    yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
                     const msg = yield channel.messages.fetch(user_end_btn_data.msg_id);
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
                     yield msg.edit({
@@ -309,11 +359,34 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const thread_data = yield SB_functions.getQnsThreadData(user_ongoing_data.qns_thread);
                     const choices = yield this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
                     const ans_dropdown = yield this.appendChoicesToDropdown(choices);
-                    yield interaction.editReply({
-                        content: '請選擇答案',
+                    const dp_msg = yield interaction.editReply({
+                        content: '請選擇答案（限時30秒）',
                         components: [ans_dropdown]
                     });
-                    return;
+                    if (!(dp_msg instanceof discord_js_1.Message))
+                        return yield interaction.channel.send('err dealing with types');
+                    const dp_data = {
+                        _id: new mongodb_1.ObjectId(),
+                        user_id: interaction.user.id,
+                        channel_id: dp_msg.channelId,
+                        msg_id: dp_msg.id,
+                        ans_duration: stop_answering_time - user_end_btn_data.time.start
+                    };
+                    const create_result = yield (yield this.dropdown_op.cursor_promise).insertOne(dp_data);
+                    if (!create_result.acknowledged)
+                        return yield interaction.channel.send('新增dp驗證時發生錯誤！');
+                    yield shortcut_1.core.sleep(30);
+                    try {
+                        if (!(dp_msg instanceof discord_js_1.Message))
+                            return;
+                        yield dp_msg.edit({
+                            content: '選擇答案時間已過時',
+                            components: []
+                        });
+                    }
+                    catch (_a) {
+                        return;
+                    }
                 }
             }
         });
@@ -361,6 +434,92 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                 new_dropdown.components[0].options.push(new_option);
             }
             return new_dropdown;
+        });
+    }
+    dropdownHandler(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            switch (interaction.customId) {
+                case 'bounty_answers': {
+                    yield interaction.deferReply();
+                    const user_dp_data = yield (yield this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    if (!user_dp_data)
+                        return yield interaction.editReply('找不到驗證資訊！');
+                    if (user_dp_data.channel_id !== interaction.channelId)
+                        return yield interaction.editReply('驗證資訊錯誤！');
+                    if (user_dp_data.msg_id !== interaction.message.id)
+                        return yield interaction.editReply('驗證資訊錯誤！');
+                    yield (yield this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+                    const user_ongoing_info = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                    const thread_data = yield SB_functions.getQnsThreadData(user_ongoing_info.qns_thread);
+                    const qns_data = yield (yield this.qns_op.cursor_promise).findOne({
+                        difficulty: thread_data.curr_diffi,
+                        number: thread_data.curr_qns_number
+                    });
+                    yield interaction.editReply({
+                        content: `你選擇的答案是：${interaction.values[0]}`,
+                        components: []
+                    });
+                    const user_choice = interaction.values[0].split(', ');
+                    // statistics
+                    const correct = shortcut_1.core.arrayEquals(user_choice, qns_data.correct_ans);
+                    let delta_exp;
+                    if (!correct) {
+                        yield interaction.channel.send('啊 這不是正確答案');
+                        delta_exp = 2;
+                    }
+                    else {
+                        yield interaction.channel.send('這是正確答案！');
+                        delta_exp = this.qns_diffi_exp[thread_data.curr_diffi];
+                        // del curr qns in thread
+                        user_ongoing_info.qns_thread[thread_data.curr_diffi].shift();
+                        const execute = {
+                            $set: {
+                                ['qns_thread.' + thread_data.curr_diffi]: user_ongoing_info.qns_thread[thread_data.curr_diffi]
+                            }
+                        };
+                        const result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                        if (!result.acknowledged)
+                            return interaction.channel.send('更新問題串時發生錯誤');
+                    }
+                    const execute = {
+                        $inc: {
+                            exp: delta_exp
+                        }
+                    };
+                    yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                    yield interaction.channel.send(`恭喜獲得 ${delta_exp} exp`);
+                    if (!correct)
+                        return;
+                    // extra stamina
+                    const qns_max_time = this.qns_diffi_time[thread_data.curr_diffi];
+                    const duration_portion = this.qns_ext_stamina_portion[thread_data.curr_diffi];
+                    const can_gain_ext_stamina = (user_dp_data.ans_duration / 1000 <= qns_max_time * duration_portion);
+                    console.log('can ext sta', can_gain_ext_stamina);
+                    console.log(user_dp_data.ans_duration / 1000, qns_max_time * duration_portion);
+                    if (!can_gain_ext_stamina)
+                        return;
+                    if (user_ongoing_info.stamina.extra_gained < 2) {
+                        const execute = {
+                            $inc: {
+                                "stamina.extra": 1,
+                                "stamina.extra_gained": 1
+                            }
+                        };
+                        yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                        yield interaction.channel.send('恭喜獲得1個額外體力！');
+                    }
+                    else {
+                        const execute = {
+                            $inc: {
+                                exp: 10
+                            }
+                        };
+                        yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                        yield interaction.channel.send(`因為你的額外體力已經爆滿，因此自動將新的額外體力轉化成 10 exp`);
+                    }
+                    return;
+                }
+            }
         });
     }
 }
@@ -461,14 +620,15 @@ const common_functions = {
 class BountyEventAutoManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
+        this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.json_op = new shortcut_1.core.jsonOperator();
         this.end_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'EndButtonPipeline'
         });
-        node_cron_1.default.schedule('*/15 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }));
+        node_cron_1.default.schedule('*/10 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }));
         node_cron_1.default.schedule('*/2 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }));
-        this.cache_path = './cache/bounty/player_data.json';
+        this.cache_path = './cache/bounty/end_btn.json';
     }
     checkCache() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -508,6 +668,11 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
             const cached_user_id = [];
             if (cache_data.cache.length !== 0) {
                 for (let i = 0; i < cache_data.cache.length; i++) {
+                    const user_acc = yield (yield this.account_op.cursor_promise).findOne({ user_id: cache_data.cache[i].user_id });
+                    if (!user_acc.status) {
+                        cache_data.cache.splice(i, 1);
+                        continue;
+                    }
                     cached_user_id.push(cache_data.cache[i].user_id);
                 }
             }
