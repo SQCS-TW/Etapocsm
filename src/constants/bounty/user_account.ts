@@ -27,8 +27,8 @@ export const getDefaultBountyAccount = async function (payload: core.DefaultData
             }
         },
         personal_record: {
-            thread_clear_count: 0,
-            thread_all_clear_count: 0,
+            thread_cleared_count: 0,
+            thread_all_cleared_count: 0,
             extra_stamina_gained_count: 0
         }
     };

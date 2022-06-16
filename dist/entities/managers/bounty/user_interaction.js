@@ -190,8 +190,13 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('創建問題串失敗！');
                     else if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
                         yield interaction.editReply('問題串已建立！');
+                    else if (create_result.status === shortcut_1.db.StatusCode.DATA_FOUND)
+                        yield interaction.editReply('找到問題串資料');
                     const beautified_qns_thread = yield qns_thread_beauty.beautify(create_result.qns_thread);
-                    yield interaction.followUp(`你的答題狀態：\n\n${beautified_qns_thread}`);
+                    yield interaction.followUp({
+                        content: `你的答題狀態：\n\n${beautified_qns_thread}`,
+                        ephemeral: true
+                    });
                     const qns_data = yield SB_functions.getQnsThreadData(create_result.qns_thread);
                     if (qns_data.finished)
                         return yield interaction.followUp('你已經回答完所有問題了！');
@@ -270,12 +275,6 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('錯誤，你沒有足夠的體力！');
                     }
                     yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
-                    const start_bounty_execute = {
-                        $set: {
-                            status: true
-                        }
-                    };
-                    yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
                     const diffi = user_btn_data.qns_info.difficulty;
                     const qns_number = user_btn_data.qns_info.number;
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
@@ -301,7 +300,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
                     const execute = {
                         $set: {
-                        //status: true
+                            status: true
                         }
                     };
                     const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
@@ -349,7 +348,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                             status: false
                         }
                     };
-                    yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
+                    yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
                     const msg = yield channel.messages.fetch(user_end_btn_data.msg_id);
                     const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
                     yield msg.edit({
@@ -441,6 +440,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             switch (interaction.customId) {
                 case 'bounty_answers': {
                     yield interaction.deferReply();
+                    // auth
                     const user_dp_data = yield (yield this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
                     if (!user_dp_data)
                         return yield interaction.editReply('找不到驗證資訊！');
@@ -449,76 +449,172 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
                     if (user_dp_data.msg_id !== interaction.message.id)
                         return yield interaction.editReply('驗證資訊錯誤！');
                     yield (yield this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+                    //
+                    // fetch data
                     const user_ongoing_info = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
                     const thread_data = yield SB_functions.getQnsThreadData(user_ongoing_info.qns_thread);
                     const qns_data = yield (yield this.qns_op.cursor_promise).findOne({
                         difficulty: thread_data.curr_diffi,
                         number: thread_data.curr_qns_number
                     });
+                    //
                     yield interaction.editReply({
                         content: `你選擇的答案是：${interaction.values[0]}`,
                         components: []
                     });
-                    const user_choice = interaction.values[0].split(', ');
-                    // statistics
-                    const correct = shortcut_1.core.arrayEquals(user_choice, qns_data.correct_ans);
-                    let delta_exp;
-                    if (!correct) {
-                        yield interaction.channel.send('啊 這不是正確答案');
-                        delta_exp = 2;
+                    const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
+                    if (correct)
+                        yield interaction.channel.send('這是正確答案');
+                    else
+                        yield interaction.channel.send('這不是正確答案！');
+                    const give_result = yield this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
+                    if (give_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
+                        yield interaction.channel.send(`恭喜獲得 ${give_result.delta_exp} exp`);
+                    else
+                        yield interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
+                    let new_thread = undefined;
+                    if (correct) {
+                        const result = yield this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi);
+                        if (result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+                            yield interaction.channel.send('更新問題串時發生錯誤');
+                        new_thread = result.new_thread;
                     }
-                    else {
-                        yield interaction.channel.send('這是正確答案！');
-                        delta_exp = this.qns_diffi_exp[thread_data.curr_diffi];
-                        // del curr qns in thread
-                        user_ongoing_info.qns_thread[thread_data.curr_diffi].shift();
-                        const execute = {
-                            $set: {
-                                ['qns_thread.' + thread_data.curr_diffi]: user_ongoing_info.qns_thread[thread_data.curr_diffi]
-                            }
-                        };
-                        const result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-                        if (!result.acknowledged)
-                            return interaction.channel.send('更新問題串時發生錯誤');
-                    }
-                    const execute = {
-                        $inc: {
-                            exp: delta_exp
-                        }
-                    };
-                    yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-                    yield interaction.channel.send(`恭喜獲得 ${delta_exp} exp`);
+                    const stat_result = yield this.updateStatistics(interaction.user.id, correct, thread_data.curr_diffi, thread_data.curr_qns_number, new_thread);
+                    if (!stat_result)
+                        yield interaction.channel.send('更新統計資料時發生錯誤');
                     if (!correct)
                         return;
                     // extra stamina
-                    const qns_max_time = this.qns_diffi_time[thread_data.curr_diffi];
-                    const duration_portion = this.qns_ext_stamina_portion[thread_data.curr_diffi];
-                    const can_gain_ext_stamina = (user_dp_data.ans_duration / 1000 <= qns_max_time * duration_portion);
-                    console.log('can ext sta', can_gain_ext_stamina);
-                    console.log(user_dp_data.ans_duration / 1000, qns_max_time * duration_portion);
+                    const can_gain_ext_stamina = yield this.canUserGainExtraStamina(user_dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
                     if (!can_gain_ext_stamina)
                         return;
-                    if (user_ongoing_info.stamina.extra_gained < 2) {
-                        const execute = {
-                            $inc: {
-                                "stamina.extra": 1,
-                                "stamina.extra_gained": 1
-                            }
-                        };
-                        yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-                        yield interaction.channel.send('恭喜獲得1個額外體力！');
-                    }
-                    else {
-                        const execute = {
-                            $inc: {
-                                exp: 10
-                            }
-                        };
-                        yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-                        yield interaction.channel.send(`因為你的額外體力已經爆滿，因此自動將新的額外體力轉化成 10 exp`);
-                    }
-                    return;
+                    return yield this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
                 }
+            }
+        });
+    }
+    isUserCorrect(interaction, correct_ans) {
+        const user_choice = interaction.values[0].split(', ');
+        const correct = shortcut_1.core.arrayEquals(user_choice, correct_ans);
+        return correct;
+    }
+    giveExp(correct, diffi, user_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let delta_exp;
+            if (!correct)
+                delta_exp = 2;
+            else
+                delta_exp = this.qns_diffi_exp[diffi];
+            const execute = {
+                $inc: {
+                    exp: delta_exp
+                }
+            };
+            const update_result = yield (yield this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+            let status;
+            if (update_result.acknowledged)
+                status = shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS;
+            else
+                status = shortcut_1.db.StatusCode.WRITE_DATA_ERROR;
+            return {
+                status: status,
+                delta_exp: delta_exp
+            };
+        });
+    }
+    updateQnsThread(user_id, user_qns_thread, diffi) {
+        return __awaiter(this, void 0, void 0, function* () {
+            user_qns_thread[diffi].shift();
+            const execute = {
+                $set: {
+                    [`qns_thread.${diffi}`]: user_qns_thread[diffi]
+                }
+            };
+            const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+            let status;
+            if (update_result.acknowledged)
+                status = shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS;
+            else
+                status = shortcut_1.db.StatusCode.WRITE_DATA_ERROR;
+            return {
+                status: status,
+                new_thread: user_qns_thread
+            };
+        });
+    }
+    updateStatistics(user_id, correct, qns_diffi, qns_number, new_thread) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let execute;
+            let cleared_execute = undefined;
+            if (!correct) {
+                execute = {
+                    $inc: {
+                        [`qns_record.answered_qns_count.${qns_diffi}`]: 1
+                    }
+                };
+            }
+            else {
+                execute = {
+                    $inc: {
+                        [`qns_record.answered_qns_count.${qns_diffi}`]: 1,
+                        [`qns_record.correct_qns_count.${qns_diffi}`]: 1
+                    },
+                    $push: {
+                        [`qns_record.answered_qns_number.${qns_diffi}`]: qns_number
+                    }
+                };
+                let thread_cleared_count = 0;
+                let thread_all_cleared_count = 0;
+                if (new_thread[qns_diffi].length === 0) {
+                    thread_cleared_count++;
+                    if (qns_diffi === 'hard')
+                        thread_all_cleared_count++;
+                }
+                cleared_execute = {
+                    $inc: {
+                        "personal_record.thread_cleared_count": thread_cleared_count,
+                        "personal_record.thread_all_cleared_count": thread_all_cleared_count
+                    }
+                };
+            }
+            let final_result;
+            if (cleared_execute === undefined) {
+                const execute_result = yield (yield this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+                final_result = execute_result.acknowledged;
+            }
+            else {
+                const execute_result = yield (yield this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+                const cleared_result = yield (yield this.account_op.cursor_promise).updateOne({ user_id: user_id }, cleared_execute);
+                final_result = (execute_result.acknowledged && cleared_result.acknowledged);
+            }
+            return final_result;
+        });
+    }
+    canUserGainExtraStamina(ans_duration, qns_max_time, duration_portion) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return (ans_duration / 1000 <= qns_max_time * duration_portion);
+        });
+    }
+    giveExtraStamina(interaction, gained_extra_stamina) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (gained_extra_stamina < 2) {
+                const execute = {
+                    $inc: {
+                        "stamina.extra": 1,
+                        "stamina.extra_gained": 1
+                    }
+                };
+                yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                yield interaction.channel.send('恭喜獲得1個額外體力！');
+            }
+            else {
+                const execute = {
+                    $inc: {
+                        exp: 10
+                    }
+                };
+                yield (yield this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+                yield interaction.channel.send(`因為你的額外體力已經爆滿，因此自動將新的額外體力轉化成 10 exp`);
             }
         });
     }
@@ -620,7 +716,7 @@ const common_functions = {
 class BountyEventAutoManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
-        this.account_op = new shortcut_1.core.BountyUserAccountOperator();
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.json_op = new shortcut_1.core.jsonOperator();
         this.end_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
@@ -655,6 +751,12 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
                         files: [],
                         components: [new_button]
                     });
+                    const status_execute = {
+                        $set: {
+                            status: false
+                        }
+                    };
+                    yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: user_cache.user_id }, status_execute);
                 }
                 cache_data.cache.shift();
                 yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
@@ -668,7 +770,7 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
             const cached_user_id = [];
             if (cache_data.cache.length !== 0) {
                 for (let i = 0; i < cache_data.cache.length; i++) {
-                    const user_acc = yield (yield this.account_op.cursor_promise).findOne({ user_id: cache_data.cache[i].user_id });
+                    const user_acc = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: cache_data.cache[i].user_id });
                     if (!user_acc.status) {
                         cache_data.cache.splice(i, 1);
                         continue;

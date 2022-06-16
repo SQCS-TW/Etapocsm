@@ -37,8 +37,8 @@ const getDefaultBountyAccount = function (payload) {
                 }
             },
             personal_record: {
-                thread_clear_count: 0,
-                thread_all_clear_count: 0,
+                thread_cleared_count: 0,
+                thread_all_cleared_count: 0,
                 extra_stamina_gained_count: 0
             }
         };

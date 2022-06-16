@@ -16,3 +16,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./qns_db"), exports);
 __exportStar(require("./user_interaction"), exports);
+__exportStar(require("./user_mani"), exports);

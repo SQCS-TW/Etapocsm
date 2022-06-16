@@ -1,6 +1,13 @@
 import { core } from '../shortcut';
 import { Etapocsm } from '../../bot';
-import { BountyQnsDBManager, BountyAccountManager, BountyEventManager, BountyEventAutoManager } from '../managers/bounty/reglist';
+
+import {
+    BountyQnsDBManager,
+    BountyAccountManager,
+    BountyEventManager,
+    BountyEventAutoManager,
+    BountyUserManiManager
+} from '../managers/bounty/reglist';
 
 export class BountyPlatform extends core.BasePlatform {
     constructor(f_bot: Etapocsm) {
@@ -16,7 +23,8 @@ export class BountyPlatform extends core.BasePlatform {
             new BountyQnsDBManager(this_platform),
             new BountyAccountManager(this_platform),
             new BountyEventManager(this_platform),
-            new BountyEventAutoManager(this_platform)
+            new BountyEventAutoManager(this_platform),
+            new BountyUserManiManager(this_platform)
         ]
     }
 }

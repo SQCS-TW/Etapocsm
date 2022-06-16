@@ -27,7 +27,7 @@ class Etapocsm extends discord_js_1.Client {
             console.log(`${this.user.username} has logged in!`);
             // activate = add + invoke
             yield this.activatePlatforms(this);
-            // await this.registerSlcmd();
+            yield this.registerSlcmd();
         }));
     }
     activatePlatforms(this_bot) {
