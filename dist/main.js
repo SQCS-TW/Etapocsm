@@ -6,6 +6,7 @@ const discord_js_1 = require("discord.js");
 const bot = new bot_1.Etapocsm({
     intents: [
         discord_js_1.Intents.FLAGS.GUILDS,
+        discord_js_1.Intents.FLAGS.GUILD_MEMBERS,
         discord_js_1.Intents.FLAGS.GUILD_MESSAGES
     ]
 });

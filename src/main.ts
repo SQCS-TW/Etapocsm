@@ -6,6 +6,7 @@ import { Intents } from 'discord.js';
 const bot = new Etapocsm({
     intents: [
         Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MEMBERS,
         Intents.FLAGS.GUILD_MESSAGES
     ]
 });
