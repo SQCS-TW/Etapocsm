@@ -11,6 +11,12 @@ export class Etapocsm extends Client {
 
     constructor(options: ClientOptions) {
         super(options);
+
+        this.platforms = [
+            new LvlSysPlatform(this),
+            new BountyPlatform(this)
+        ]
+
         this.setupListener();
     }
 
@@ -20,33 +26,8 @@ export class Etapocsm extends Client {
 
             console.log(`${this.user.username} has logged in!`);
 
-            // activate = add + invoke
-            await this.activatePlatforms(this);
-
             // await this.registerSlcmd();
         });
-    }
-
-    public async activatePlatforms(this_bot: Etapocsm) {
-        await this.addPlatforms(this_bot);
-        await this.invokePlatforms();
-    }
-
-    private async addPlatforms(this_bot: Etapocsm) {
-        this.platforms = [
-            new LvlSysPlatform(this_bot),
-            new BountyPlatform(this_bot)
-        ]
-    }
-
-    private async invokePlatforms() {
-        try {
-            await core.asyncForEach(this.platforms, async (pf) => {
-                await pf.activateManagers(pf);
-            });
-        } catch (err) {
-            throw new Error(`Error when invoking plats.\n msg: ${err}`);
-        }
     }
 
     public async registerSlcmd() {

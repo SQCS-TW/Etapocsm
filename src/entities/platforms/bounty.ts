@@ -12,19 +12,13 @@ import {
 export class BountyPlatform extends core.BasePlatform {
     constructor(f_bot: Etapocsm) {
         super(f_bot);
-    }
 
-    public async activateManagers(this_platform: core.BasePlatform) {
-        await this.addManagers(this_platform);
-    }
-
-    public async addManagers(this_platform: core.BasePlatform) {
         this.managers = [
-            new BountyQnsDBManager(this_platform),
-            new BountyAccountManager(this_platform),
-            new BountyEventManager(this_platform),
-            new BountyEventAutoManager(this_platform),
-            new BountyUserManiManager(this_platform)
+            new BountyQnsDBManager(this),
+            new BountyAccountManager(this),
+            new BountyEventManager(this),
+            new BountyEventAutoManager(this),
+            new BountyUserManiManager(this)
         ]
     }
 }

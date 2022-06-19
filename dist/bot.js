@@ -18,6 +18,10 @@ const shortcut_1 = require("./entities/shortcut");
 class Etapocsm extends discord_js_1.Client {
     constructor(options) {
         super(options);
+        this.platforms = [
+            new reglist_1.LvlSysPlatform(this),
+            new reglist_1.BountyPlatform(this)
+        ];
         this.setupListener();
     }
     setupListener() {
@@ -25,36 +29,8 @@ class Etapocsm extends discord_js_1.Client {
             if (!this.user)
                 throw new Error('Client is null.');
             console.log(`${this.user.username} has logged in!`);
-            // activate = add + invoke
-            yield this.activatePlatforms(this);
             // await this.registerSlcmd();
         }));
-    }
-    activatePlatforms(this_bot) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.addPlatforms(this_bot);
-            yield this.invokePlatforms();
-        });
-    }
-    addPlatforms(this_bot) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.platforms = [
-                new reglist_1.LvlSysPlatform(this_bot),
-                new reglist_1.BountyPlatform(this_bot)
-            ];
-        });
-    }
-    invokePlatforms() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield shortcut_1.core.asyncForEach(this.platforms, (pf) => __awaiter(this, void 0, void 0, function* () {
-                    yield pf.activateManagers(pf);
-                }));
-            }
-            catch (err) {
-                throw new Error(`Error when invoking plats.\n msg: ${err}`);
-            }
-        });
     }
     registerSlcmd() {
         return __awaiter(this, void 0, void 0, function* () {
