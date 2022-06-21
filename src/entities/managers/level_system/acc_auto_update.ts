@@ -68,11 +68,11 @@ export class AutoUpdateAccountManager extends core.BaseManager {
             await (await this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_exp);
         }
 
-        return self_routine;
+        return self_routine();
     }
 
     private async updateCurrLevel() {
-        const self_routine = () => setTimeout(async () => { await this.updateCurrLevel() }, 5 * this.mins_in_mili_secs);
+        const self_routine = () => setTimeout(async () => { await this.updateCurrLevel() }, 2 * this.mins_in_mili_secs);
 
         const users_data = await (await this.mainlvl_acc_op.cursor_promise).find({}).toArray();
 
@@ -88,9 +88,10 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                 }
             }
             await (await this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_lvl);
+            await this.sendUserLevelUpdate(user_mainlvl_data.user_id, user_mainlvl_data.level, new_lvl);
         }
 
-        return self_routine;
+        return self_routine();
     }
 
     private async getUserLevel(exp: number) {
@@ -109,8 +110,25 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         return cur_lvl;
     }
 
+    private async sendUserLevelUpdate(user_id: string, old_lvl: number, new_lvl: number) {
+        if (this.sqcs_main_guild === undefined) {
+            this.sqcs_main_guild = await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
+        }
+
+        const member = await this.sqcs_main_guild.members.fetch(user_id);
+        try {
+            if (old_lvl < new_lvl) {
+                await member.send(`恭喜！你升級啦！\nLV.${old_lvl} -> LV.${new_lvl}`);
+            } else {
+                await member.send(`可惜，你降級了...\nLV.${old_lvl} -> LV.${new_lvl}`);
+            }
+        } catch {
+            return;
+        }
+    }
+
     private async updateGuildRole() {
-        const self_routine = () => setTimeout(async () => { await this.updateCurrLevel() }, 3 * this.mins_in_mili_secs);
+        const self_routine = () => setTimeout(async () => { await this.updateGuildRole() }, 3 * this.mins_in_mili_secs);
 
         if (this.exp_role_id_dict === undefined) {
             const exp_role_id_data = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'exp-role-id-dict' });
@@ -149,7 +167,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
             await core.sleep(4);
         }
 
-        return self_routine;
+        return self_routine();
     }
 
     private async getNearestLvlNumber(lvl: number) {

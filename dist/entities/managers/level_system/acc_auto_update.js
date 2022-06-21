@@ -68,12 +68,12 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
                 };
                 yield (yield this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_exp);
             }
-            return self_routine;
+            return self_routine();
         });
     }
     updateCurrLevel() {
         return __awaiter(this, void 0, void 0, function* () {
-            const self_routine = () => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.updateCurrLevel(); }), 5 * this.mins_in_mili_secs);
+            const self_routine = () => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.updateCurrLevel(); }), 2 * this.mins_in_mili_secs);
             const users_data = yield (yield this.mainlvl_acc_op.cursor_promise).find({}).toArray();
             for (let i = 0; i < users_data.length; i++) {
                 const user_mainlvl_data = users_data[i];
@@ -86,8 +86,9 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
                     }
                 };
                 yield (yield this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_lvl);
+                yield this.sendUserLevelUpdate(user_mainlvl_data.user_id, user_mainlvl_data.level, new_lvl);
             }
-            return self_routine;
+            return self_routine();
         });
     }
     getUserLevel(exp) {
@@ -107,9 +108,28 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
             return cur_lvl;
         });
     }
+    sendUserLevelUpdate(user_id, old_lvl, new_lvl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.sqcs_main_guild === undefined) {
+                this.sqcs_main_guild = yield this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
+            }
+            const member = yield this.sqcs_main_guild.members.fetch(user_id);
+            try {
+                if (old_lvl < new_lvl) {
+                    yield member.send(`恭喜！你升級啦！\nLV.${old_lvl} -> LV.${new_lvl}`);
+                }
+                else {
+                    yield member.send(`可惜，你降級了...\nLV.${old_lvl} -> LV.${new_lvl}`);
+                }
+            }
+            catch (_a) {
+                return;
+            }
+        });
+    }
     updateGuildRole() {
         return __awaiter(this, void 0, void 0, function* () {
-            const self_routine = () => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.updateCurrLevel(); }), 3 * this.mins_in_mili_secs);
+            const self_routine = () => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.updateGuildRole(); }), 3 * this.mins_in_mili_secs);
             if (this.exp_role_id_dict === undefined) {
                 const exp_role_id_data = yield (yield this.mainlvl_data_op.cursor_promise).findOne({ type: 'exp-role-id-dict' });
                 this.exp_role_id_dict = exp_role_id_data.role_id_dict;
@@ -139,7 +159,7 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
                 console.log(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
                 yield shortcut_1.core.sleep(4);
             }
-            return self_routine;
+            return self_routine();
         });
     }
     getNearestLvlNumber(lvl) {
