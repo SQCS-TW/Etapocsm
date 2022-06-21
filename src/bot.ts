@@ -1,6 +1,6 @@
 import { Client, ClientOptions } from 'discord.js';
 import { BasePlatform } from './core/reglist';
-import { LvlSysPlatform, BountyPlatform } from './entities/platforms/reglist';
+import { ChatExpPlatform, BountyPlatform, LvlSysPlatform } from './entities/platforms/reglist';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import { core } from './entities/shortcut';
@@ -13,8 +13,9 @@ export class Etapocsm extends Client {
         super(options);
 
         this.platforms = [
-            new LvlSysPlatform(this),
-            new BountyPlatform(this)
+            new ChatExpPlatform(this),
+            new BountyPlatform(this),
+            new LvlSysPlatform(this)
         ]
 
         this.setupListener();

@@ -14,8 +14,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./bounty/qns_info"), exports);
-__exportStar(require("./bounty/user_account"), exports);
-__exportStar(require("./bounty/user_ongoing_data"), exports);
-__exportStar(require("./chat/chat_accounts"), exports);
-__exportStar(require("./level/level_main_account"), exports);
+__exportStar(require("./db_static_data"), exports);
+__exportStar(require("./acc_auto_update"), exports);

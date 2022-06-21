@@ -8,24 +8,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.jsonOperator = void 0;
-const fs_1 = __importDefault(require("fs"));
-class jsonOperator {
-    readFile(file_path) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const rawdata = String(fs_1.default.readFileSync(file_path));
-            return JSON.parse(rawdata);
-        });
-    }
-    writeFile(file_path, write_data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            write_data = JSON.stringify(write_data, null, 4);
-            fs_1.default.writeFileSync(file_path, write_data);
-        });
-    }
-}
-exports.jsonOperator = jsonOperator;
+exports.getDefaultMainLevelAccount = void 0;
+const mongodb_1 = require("mongodb");
+const getDefaultMainLevelAccount = function (payload) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return {
+            _id: new mongodb_1.ObjectId(),
+            user_id: payload.user_id,
+            create_date: Date.now(),
+            total_exp: 0,
+            level: 0,
+            curr_role: '947153762257100830',
+            vice_exp_record: {}
+        };
+    });
+};
+exports.getDefaultMainLevelAccount = getDefaultMainLevelAccount;

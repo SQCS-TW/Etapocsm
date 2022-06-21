@@ -8,22 +8,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyEventAutoManager = exports.BountyEventManager = exports.BountyAccountManager = void 0;
 const discord_js_1 = require("discord.js");
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 const mongodb_1 = require("mongodb");
-const node_cron_1 = __importDefault(require("node-cron"));
 const user_interaction_1 = require("./components/user_interaction");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.mainlvlacc_op = new shortcut_1.core.MainLevelAccountOperator();
         this.SLCMD_REGISTER_LIST = user_interaction_1.ACCOUNT_MANAGER_SLCMD;
         this.setupListener();
     }
@@ -44,8 +41,10 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                     const create_result = yield this.account_op.createDefaultData({ user_id: interaction.user.id });
                     if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                         return yield interaction.editReply('建立帳號時發生錯誤了！');
-                    else
+                    else {
+                        yield this.mainlvlacc_op.createUserMainAccount(interaction.user.id);
                         return yield interaction.editReply('帳號建立成功！');
+                    }
                 }
                 case 'check-main-bounty-account': {
                     yield interaction.deferReply({ ephemeral: true });
@@ -722,15 +721,22 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
             db: 'Bounty',
             coll: 'EndButtonPipeline'
         });
-        node_cron_1.default.schedule('*/10 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }));
-        node_cron_1.default.schedule('*/2 * * * * *', () => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }));
+        // cron.schedule('*/2 * * * * *', async () => { await this.checkCache() });
+        // cron.schedule('*/10 * * * * *', async () => { await this.setupCache() });
+        this.setupListener();
         this.cache_path = './cache/bounty/end_btn.json';
+    }
+    setupListener() {
+        this.f_platform.f_bot.on('ready', () => __awaiter(this, void 0, void 0, function* () {
+            yield this.checkCache();
+            yield this.setupCache();
+        }));
     }
     checkCache() {
         return __awaiter(this, void 0, void 0, function* () {
             const cache_data = yield this.json_op.readFile(this.cache_path);
             if (cache_data.cache.length === 0)
-                return;
+                return setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }), 2000);
             console.log('cache found', cache_data);
             // eslint-disable-next-line no-constant-condition
             while (true) {
@@ -762,6 +768,7 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
                 yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
             }
             yield this.json_op.writeFile(this.cache_path, cache_data);
+            return setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }), 2000);
         });
     }
     setupCache() {
@@ -796,7 +803,7 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
             }
             cache_data.cache.sort((a, b) => a.end_time - b.end_time);
             yield this.json_op.writeFile(this.cache_path, cache_data);
-            return;
+            return setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }), 10000);
         });
     }
 }

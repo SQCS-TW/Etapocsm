@@ -16,6 +16,7 @@ const getDefaultChatAccount = function (payload) {
         return {
             _id: new mongodb_1.ObjectId(),
             user_id: payload.user_id,
+            create_date: Date.now(),
             exp: 0,
             cooldown: -1
         };

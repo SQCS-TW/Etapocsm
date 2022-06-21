@@ -8,24 +8,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.jsonOperator = void 0;
-const fs_1 = __importDefault(require("fs"));
-class jsonOperator {
-    readFile(file_path) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const rawdata = String(fs_1.default.readFileSync(file_path));
-            return JSON.parse(rawdata);
+exports.MainLevelAccountOperator = void 0;
+const base_1 = require("../base");
+const reglist_1 = require("../../../constants/reglist");
+class MainLevelAccountOperator extends base_1.BaseOperator {
+    constructor() {
+        super({
+            db: "Level",
+            coll: "Accounts",
+            default_data_function: reglist_1.getDefaultMainLevelAccount
         });
     }
-    writeFile(file_path, write_data) {
+    createUserMainAccount(user_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            write_data = JSON.stringify(write_data, null, 4);
-            fs_1.default.writeFileSync(file_path, write_data);
+            const user_data = yield (yield this.cursor_promise).findOne({ user_id: user_id });
+            if (user_data)
+                return;
+            yield this.createDefaultData({
+                user_id: user_id
+            });
         });
     }
 }
-exports.jsonOperator = jsonOperator;
+exports.MainLevelAccountOperator = MainLevelAccountOperator;

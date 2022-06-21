@@ -15,12 +15,14 @@ import {
 export class BountyAccountManager extends core.BaseManager {
     private account_op: core.BountyUserAccountOperator;
     private ongoing_op: core.BountyUserOngoingInfoOperator;
+    private mainlvlacc_op: core.MainLevelAccountOperator;
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
         this.account_op = new core.BountyUserAccountOperator();
         this.ongoing_op = new core.BountyUserOngoingInfoOperator();
+        this.mainlvlacc_op = new core.MainLevelAccountOperator();
 
         this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
 
@@ -44,7 +46,10 @@ export class BountyAccountManager extends core.BaseManager {
 
                 const create_result = await this.account_op.createDefaultData({ user_id: interaction.user.id });
                 if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('建立帳號時發生錯誤了！');
-                else return await interaction.editReply('帳號建立成功！');
+                else {
+                    await this.mainlvlacc_op.createUserMainAccount(interaction.user.id);
+                    return await interaction.editReply('帳號建立成功！');
+                }
             }
 
             case 'check-main-bounty-account': {
@@ -524,11 +529,11 @@ export class BountyEventManager extends core.BaseManager {
 
                 // auth
                 const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                
+
                 if (!user_dp_data) return await interaction.editReply('找不到驗證資訊！');
                 if (user_dp_data.channel_id !== interaction.channelId) return await interaction.editReply('驗證資訊錯誤！');
                 if (user_dp_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤！');
-                
+
                 await (await this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
                 //
 
@@ -561,7 +566,7 @@ export class BountyEventManager extends core.BaseManager {
                     if (result.status === db.StatusCode.WRITE_DATA_ERROR) await interaction.channel.send('更新問題串時發生錯誤');
                     new_thread = result.new_thread;
                 }
-                
+
                 const stat_result = await this.updateStatistics(
                     interaction.user.id,
                     correct,
@@ -594,7 +599,7 @@ export class BountyEventManager extends core.BaseManager {
 
     private async giveExp(correct, diffi, user_id) {
         let delta_exp: number;
-        
+
         if (!correct) delta_exp = 2;
         else delta_exp = this.qns_diffi_exp[diffi];
 
@@ -614,7 +619,7 @@ export class BountyEventManager extends core.BaseManager {
             delta_exp: delta_exp
         };
     }
-    
+
     private async updateQnsThread(user_id, user_qns_thread, diffi) {
         user_qns_thread[diffi].shift();
 
@@ -624,7 +629,7 @@ export class BountyEventManager extends core.BaseManager {
             }
         };
         const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: user_id }, execute);
-        
+
         let status: string;
         if (update_result.acknowledged) status = db.StatusCode.WRITE_DATA_SUCCESS;
         else status = db.StatusCode.WRITE_DATA_ERROR;
@@ -634,7 +639,7 @@ export class BountyEventManager extends core.BaseManager {
             new_thread: user_qns_thread
         };
     }
-    
+
     private async updateStatistics(user_id, correct, qns_diffi, qns_number, new_thread) {
         let execute;
         let cleared_execute = undefined;
@@ -673,14 +678,14 @@ export class BountyEventManager extends core.BaseManager {
 
         let final_result: boolean;
         if (cleared_execute === undefined) {
-            const execute_result = await (await this.account_op.cursor_promise).updateOne({user_id: user_id}, execute);
+            const execute_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
             final_result = execute_result.acknowledged;
         } else {
-            const execute_result = await (await this.account_op.cursor_promise).updateOne({user_id: user_id}, execute);
-            const cleared_result = await (await this.account_op.cursor_promise).updateOne({user_id: user_id}, cleared_execute);
+            const execute_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+            const cleared_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, cleared_execute);
             final_result = (execute_result.acknowledged && cleared_result.acknowledged);
         }
-        
+
         return final_result;
     }
 
@@ -842,16 +847,25 @@ export class BountyEventAutoManager extends core.BaseManager {
             coll: 'EndButtonPipeline'
         });
 
-        cron.schedule('*/10 * * * * *', async () => { await this.setupCache() });
-        cron.schedule('*/2 * * * * *', async () => { await this.checkCache() });
+        // cron.schedule('*/2 * * * * *', async () => { await this.checkCache() });
+        // cron.schedule('*/10 * * * * *', async () => { await this.setupCache() });
+
+        this.setupListener();
 
         this.cache_path = './cache/bounty/end_btn.json';
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('ready', async () => {
+            await this.checkCache();
+            await this.setupCache();
+        });
     }
 
     private async checkCache() {
         const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
 
-        if (cache_data.cache.length === 0) return;
+        if (cache_data.cache.length === 0) return setTimeout(async () => { await this.checkCache(); }, 2000);
         console.log('cache found', cache_data);
 
         // eslint-disable-next-line no-constant-condition
@@ -886,6 +900,8 @@ export class BountyEventAutoManager extends core.BaseManager {
             await (await this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
         }
         await this.json_op.writeFile(this.cache_path, cache_data);
+
+        return setTimeout(async () => { await this.checkCache(); }, 2000);
     }
 
     private async setupCache() {
@@ -927,6 +943,6 @@ export class BountyEventAutoManager extends core.BaseManager {
         await this.json_op.writeFile(this.cache_path, cache_data);
 
 
-        return;
+        return setTimeout(async () => { await this.setupCache(); }, 10000);
     }
 }

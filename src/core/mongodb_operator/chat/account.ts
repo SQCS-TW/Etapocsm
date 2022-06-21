@@ -1,15 +1,20 @@
 import { BaseOperator, OperatorResponse } from '../base';
 import { getDefaultChatAccount } from '../../../constants/reglist';
 import { isItemInArray } from '../../reglist';
+import * as core from '../../reglist';
 
 
 export class ChatAccountOperator extends BaseOperator {
+    private mainlvlacc_op: core.MainLevelAccountOperator;
+    
     constructor() {
         super({
             db: "Chat",
             coll: "Accounts",
             default_data_function: getDefaultChatAccount
         });
+
+        this.mainlvlacc_op = new core.MainLevelAccountOperator();
     }
 
     public async clearCooldown(user_id: string): Promise<OperatorResponse> {
@@ -39,6 +44,7 @@ export class ChatAccountOperator extends BaseOperator {
         if (check_result.status === 'M003') {
             return check_result;
         } else if (check_result.status === 'nM003') {
+            await this.mainlvlacc_op.createUserMainAccount(user_id);
             return {
                 status: false
             }
