@@ -9,7 +9,6 @@ export const getDefaultMainLevelAccount = async function (payload: core.DefaultD
         create_date: Date.now(),
         total_exp: 0,
         level: 0,
-        curr_role: '947153762257100830',
-        vice_exp_record: {}
+        curr_role_id: '947153762257100830'
     };
 };
