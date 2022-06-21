@@ -4,18 +4,14 @@ import { core } from '../../shortcut';
 
 
 export class BountyUserManiManager extends core.BaseManager {
-    private account_op: core.BountyUserAccountOperator;
-    private ongoing_op: core.BountyUserOngoingInfoOperator;
+    private account_op = new core.BountyUserAccountOperator();
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
-        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
-
-        this.account_op = new core.BountyUserAccountOperator();
-        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
-
         this.setupListener();
+        
+        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
     }
 
     private setupListener() {

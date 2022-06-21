@@ -1,5 +1,5 @@
 import { Guild } from 'discord.js';
-import { core, db } from '../../shortcut';
+import { core } from '../../shortcut';
 
 export class AutoUpdateAccountManager extends core.BaseManager {
     // operators

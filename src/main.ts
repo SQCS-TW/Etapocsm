@@ -8,6 +8,7 @@ const bot = new Etapocsm({
     intents: allIntents
 });
 
+// prevent break down
 process.on('uncaughtException', async (data) => {
     console.log(data);
 });

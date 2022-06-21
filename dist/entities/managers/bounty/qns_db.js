@@ -18,8 +18,8 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
-        this.SLCMD_REGISTER_LIST = qns_db_1.REGISTER_LIST;
         this.setupListener();
+        this.SLCMD_REGISTER_LIST = qns_db_1.REGISTER_LIST;
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {

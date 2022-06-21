@@ -2,7 +2,6 @@ import { ButtonInteraction, CommandInteraction, DMChannel, Message, SelectMenuIn
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
 import { ObjectId } from 'mongodb';
-import cron from 'node-cron';
 
 import {
     ACCOUNT_MANAGER_SLCMD,
@@ -13,20 +12,16 @@ import {
 
 
 export class BountyAccountManager extends core.BaseManager {
-    private account_op: core.BountyUserAccountOperator;
-    private ongoing_op: core.BountyUserOngoingInfoOperator;
-    private mainlvlacc_op: core.MainLevelAccountOperator;
+    private account_op = new core.BountyUserAccountOperator();
+    private ongoing_op = new core.BountyUserOngoingInfoOperator();
+    private mainlvl_acc_op = new core.MainLevelAccountOperator();
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
-
-        this.account_op = new core.BountyUserAccountOperator();
-        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
-        this.mainlvlacc_op = new core.MainLevelAccountOperator();
+        
+        this.setupListener();
 
         this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
-
-        this.setupListener();
     }
 
     private setupListener() {
@@ -47,7 +42,7 @@ export class BountyAccountManager extends core.BaseManager {
                 const create_result = await this.account_op.createDefaultData({ user_id: interaction.user.id });
                 if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('建立帳號時發生錯誤了！');
                 else {
-                    await this.mainlvlacc_op.createUserMainAccount(interaction.user.id);
+                    await this.mainlvl_acc_op.createUserMainAccount(interaction.user.id);
                     return await interaction.editReply('帳號建立成功！');
                 }
             }
@@ -82,30 +77,19 @@ type QnsThread = {
 }
 
 class QnsThreadBeautifier {
-    private len_to_emoji: object;
-    private diffi_to_emoji: object;
-    private ban_repeat: number;
-    private ban_line: string;
-    private ban_left: string;
-    private ban_right: string;
-
-    constructor() {
-        this.len_to_emoji = {
-            2: '🔒 ║ ❓',
-            3: '🔒 ║ ❓ × 2️⃣'
-        }
-
-        this.diffi_to_emoji = {
-            'easy': '🟩',
-            'medium': '🟧',
-            'hard': '🟥'
-        }
-
-        this.ban_repeat = 4;
-        this.ban_line = '═';
-        this.ban_left = '╣';
-        this.ban_right = '╠';
-    }
+    private len_to_emoji = {
+        2: '🔒 ║ ❓',
+        3: '🔒 ║ ❓ × 2️⃣'
+    };
+    private diffi_to_emoji = {
+        'easy': '🟩',
+        'medium': '🟧',
+        'hard': '🟥'
+    };
+    private ban_repeat = 4;
+    private ban_line = '═';
+    private ban_left = '╣';
+    private ban_right = '╠';
 
     async beautify(thread: QnsThread): Promise<string> {
         const text: string[] = [];
@@ -144,71 +128,52 @@ class QnsThreadBeautifier {
 const qns_thread_beauty = new QnsThreadBeautifier();
 
 export class BountyEventManager extends core.BaseManager {
-    private account_op: core.BountyUserAccountOperator;
-    private ongoing_op: core.BountyUserOngoingInfoOperator;
-    private qns_op: core.BountyQnsDBOperator;
+    private account_op = new core.BountyUserAccountOperator();
+    private ongoing_op = new core.BountyUserOngoingInfoOperator();
+    private qns_op = new core.BountyQnsDBOperator();
 
-    private start_button_op: core.BaseOperator;
-    private end_button_op: core.BaseOperator;
-    private dropdown_op: core.BaseOperator;
+    private start_button_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'StartButtonPipeline'
+    });
+    private end_button_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'EndButtonPipeline'
+    });
+    private dropdown_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'DropdownPipeline'
+    });
 
-    private qns_diffi_exp: object;
-    private qns_diffi_time: object;
-    private qns_ext_stamina_portion: object;
-
-    private alphabet_sequence: string[];
+    private qns_diffi_exp = {
+        'easy': 10,
+        'medium': 10 * 2,
+        'hard': 10 * 3
+    };
+    private qns_diffi_time = {
+        'easy': 60,
+        'medium': 60 * 2,
+        'hard': 60 * 3
+    };
+    private qns_ext_stamina_portion = {
+        'easy': 1/4,
+        'medium': 1/3,
+        'hard': 1/3
+    };
+    private alphabet_sequence = [
+        'A', 'B', 'C', 'D', 'E',
+        'F', 'G', 'H', 'I', 'J',
+        'K', 'L', 'M', 'N', 'O',
+        'P', 'Q', 'R', 'S', 'T',
+        'U', 'V', 'W', 'X', 'Y', 'Z'
+    ];
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
-        this.account_op = new core.BountyUserAccountOperator();
-        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
-        this.qns_op = new core.BountyQnsDBOperator();
-
-        this.SLCMD_REGISTER_LIST = EVENT_MANAGER_SLCMD;
-
-        this.qns_diffi_time = {
-            'easy': 60,
-            'medium': 60 * 2,
-            'hard': 60 * 3
-        }
-
-        this.qns_diffi_exp = {
-            'easy': 10,
-            'medium': 10 * 2,
-            'hard': 10 * 3
-        }
-
-        this.qns_ext_stamina_portion = {
-            'easy': 1 / 4,
-            'medium': 1 / 3,
-            'hard': 1 / 3
-        }
-
         this.setupListener();
 
-        this.start_button_op = new core.BaseOperator({
-            db: 'Bounty',
-            coll: 'StartButtonPipeline'
-        });
-
-        this.end_button_op = new core.BaseOperator({
-            db: 'Bounty',
-            coll: 'EndButtonPipeline'
-        });
-
-        this.dropdown_op = new core.BaseOperator({
-            db: 'Bounty',
-            coll: 'DropdownPipeline'
-        });
-
-        this.alphabet_sequence = [
-            'A', 'B', 'C', 'D', 'E',
-            'F', 'G', 'H', 'I', 'J',
-            'K', 'L', 'M', 'N', 'O',
-            'P', 'Q', 'R', 'S', 'T',
-            'U', 'V', 'W', 'X', 'Y', 'Z'
-        ];
+        this.SLCMD_REGISTER_LIST = EVENT_MANAGER_SLCMD;
     }
 
     private setupListener() {
@@ -468,7 +433,7 @@ export class BountyEventManager extends core.BaseManager {
         }
     }
 
-    private async getAnsweringInfoEmbed(start_time, end_time) {
+    private async getAnsweringInfoEmbed(start_time: string, end_time: string) {
         const new_embed = await core.cloneObj(END_BOUNTY_COMPONENTS.embed);
         new_embed.fields[0].value = start_time;
         new_embed.fields[1].value = end_time;
@@ -828,31 +793,20 @@ type UserCache = {
 }
 
 export class BountyEventAutoManager extends core.BaseManager {
-    private ongoing_op: core.BountyUserOngoingInfoOperator;
+    private ongoing_op = new core.BountyUserOngoingInfoOperator();
 
-    private json_op: core.jsonOperator;
-    private end_button_op: core.BaseOperator;
+    private json_op = new core.jsonOperator();
+    private end_button_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'EndButtonPipeline'
+    });
 
-    private cache_path: string;
+    private cache_path = './cache/bounty/end_btn.json';
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
-        this.ongoing_op = new core.BountyUserOngoingInfoOperator();
-
-        this.json_op = new core.jsonOperator();
-
-        this.end_button_op = new core.BaseOperator({
-            db: 'Bounty',
-            coll: 'EndButtonPipeline'
-        });
-
-        // cron.schedule('*/2 * * * * *', async () => { await this.checkCache() });
-        // cron.schedule('*/10 * * * * *', async () => { await this.setupCache() });
-
         this.setupListener();
-
-        this.cache_path = './cache/bounty/end_btn.json';
     }
 
     private setupListener() {
@@ -863,9 +817,11 @@ export class BountyEventAutoManager extends core.BaseManager {
     }
 
     private async checkCache() {
+        const self_routine = (t: number) => setTimeout(async () => { await this.checkCache(); }, t * 1000);
+
         const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
 
-        if (cache_data.cache.length === 0) return setTimeout(async () => { await this.checkCache(); }, 2000);
+        if (cache_data.cache.length === 0) return self_routine(6);
         console.log('cache found', cache_data);
 
         // eslint-disable-next-line no-constant-condition
@@ -901,10 +857,12 @@ export class BountyEventAutoManager extends core.BaseManager {
         }
         await this.json_op.writeFile(this.cache_path, cache_data);
 
-        return setTimeout(async () => { await this.checkCache(); }, 2000);
+        return self_routine(2);
     }
 
     private async setupCache() {
+        const self_routine = (t: number) => setTimeout(async () => { await this.setupCache(); }, t * 1000);
+
         const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
         const cached_user_id: string[] = [];
 
@@ -942,7 +900,6 @@ export class BountyEventAutoManager extends core.BaseManager {
         cache_data.cache.sort((a, b) => a.end_time - b.end_time);
         await this.json_op.writeFile(this.cache_path, cache_data);
 
-
-        return setTimeout(async () => { await this.setupCache(); }, 10000);
+        return self_routine(10);
     }
 }

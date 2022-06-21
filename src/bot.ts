@@ -1,9 +1,14 @@
 import { Client, ClientOptions } from 'discord.js';
 import { BasePlatform } from './core/reglist';
-import { ChatExpPlatform, BountyPlatform, LvlSysPlatform } from './entities/platforms/reglist';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import { core } from './entities/shortcut';
+
+import {
+    ChatExpPlatform,
+    BountyPlatform,
+    LvlSysPlatform
+} from './entities/platforms/reglist';
 
 
 export class Etapocsm extends Client {
@@ -32,7 +37,7 @@ export class Etapocsm extends Client {
     }
 
     public async registerSlcmd() {
-        const slcmd_register_list = []
+        const slcmd_register_list = [];
 
         await core.asyncForEach(this.platforms, async (pf: any) => {
             await core.asyncForEach(pf.managers, async (mng: any) => {

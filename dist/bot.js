@@ -11,10 +11,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Etapocsm = void 0;
 const discord_js_1 = require("discord.js");
-const reglist_1 = require("./entities/platforms/reglist");
 const rest_1 = require("@discordjs/rest");
 const v9_1 = require("discord-api-types/v9");
 const shortcut_1 = require("./entities/shortcut");
+const reglist_1 = require("./entities/platforms/reglist");
 class Etapocsm extends discord_js_1.Client {
     constructor(options) {
         super(options);

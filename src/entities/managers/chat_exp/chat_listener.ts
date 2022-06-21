@@ -3,11 +3,10 @@ import { core, db } from '../../shortcut';
 
 
 export class ChatListener extends core.BaseManager {
-    private account_op: core.ChatAccountOperator;
+    private account_op = new core.ChatAccountOperator();
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
-        this.account_op = new core.ChatAccountOperator();
 
         this.setupListener();
     }

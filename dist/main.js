@@ -16,6 +16,7 @@ const allIntents = new discord_js_1.Intents(32767);
 const bot = new bot_1.Etapocsm({
     intents: allIntents
 });
+// prevent break down
 process.on('uncaughtException', (data) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(data);
 }));

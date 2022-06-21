@@ -20,9 +20,9 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
         super(f_platform);
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
-        this.mainlvlacc_op = new shortcut_1.core.MainLevelAccountOperator();
-        this.SLCMD_REGISTER_LIST = user_interaction_1.ACCOUNT_MANAGER_SLCMD;
+        this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
         this.setupListener();
+        this.SLCMD_REGISTER_LIST = user_interaction_1.ACCOUNT_MANAGER_SLCMD;
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
@@ -42,7 +42,7 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                     if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                         return yield interaction.editReply('建立帳號時發生錯誤了！');
                     else {
-                        yield this.mainlvlacc_op.createUserMainAccount(interaction.user.id);
+                        yield this.mainlvl_acc_op.createUserMainAccount(interaction.user.id);
                         return yield interaction.editReply('帳號建立成功！');
                     }
                 }
@@ -121,23 +121,6 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
-        this.SLCMD_REGISTER_LIST = user_interaction_1.EVENT_MANAGER_SLCMD;
-        this.qns_diffi_time = {
-            'easy': 60,
-            'medium': 60 * 2,
-            'hard': 60 * 3
-        };
-        this.qns_diffi_exp = {
-            'easy': 10,
-            'medium': 10 * 2,
-            'hard': 10 * 3
-        };
-        this.qns_ext_stamina_portion = {
-            'easy': 1 / 4,
-            'medium': 1 / 3,
-            'hard': 1 / 3
-        };
-        this.setupListener();
         this.start_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'StartButtonPipeline'
@@ -150,6 +133,21 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             db: 'Bounty',
             coll: 'DropdownPipeline'
         });
+        this.qns_diffi_exp = {
+            'easy': 10,
+            'medium': 10 * 2,
+            'hard': 10 * 3
+        };
+        this.qns_diffi_time = {
+            'easy': 60,
+            'medium': 60 * 2,
+            'hard': 60 * 3
+        };
+        this.qns_ext_stamina_portion = {
+            'easy': 1 / 4,
+            'medium': 1 / 3,
+            'hard': 1 / 3
+        };
         this.alphabet_sequence = [
             'A', 'B', 'C', 'D', 'E',
             'F', 'G', 'H', 'I', 'J',
@@ -157,6 +155,8 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             'P', 'Q', 'R', 'S', 'T',
             'U', 'V', 'W', 'X', 'Y', 'Z'
         ];
+        this.setupListener();
+        this.SLCMD_REGISTER_LIST = user_interaction_1.EVENT_MANAGER_SLCMD;
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
@@ -721,10 +721,8 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
             db: 'Bounty',
             coll: 'EndButtonPipeline'
         });
-        // cron.schedule('*/2 * * * * *', async () => { await this.checkCache() });
-        // cron.schedule('*/10 * * * * *', async () => { await this.setupCache() });
-        this.setupListener();
         this.cache_path = './cache/bounty/end_btn.json';
+        this.setupListener();
     }
     setupListener() {
         this.f_platform.f_bot.on('ready', () => __awaiter(this, void 0, void 0, function* () {
@@ -734,9 +732,10 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
     }
     checkCache() {
         return __awaiter(this, void 0, void 0, function* () {
+            const self_routine = (t) => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }), t * 1000);
             const cache_data = yield this.json_op.readFile(this.cache_path);
             if (cache_data.cache.length === 0)
-                return setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }), 2000);
+                return self_routine(6);
             console.log('cache found', cache_data);
             // eslint-disable-next-line no-constant-condition
             while (true) {
@@ -768,11 +767,12 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
                 yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
             }
             yield this.json_op.writeFile(this.cache_path, cache_data);
-            return setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }), 2000);
+            return self_routine(2);
         });
     }
     setupCache() {
         return __awaiter(this, void 0, void 0, function* () {
+            const self_routine = (t) => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }), t * 1000);
             const cache_data = yield this.json_op.readFile(this.cache_path);
             const cached_user_id = [];
             if (cache_data.cache.length !== 0) {
@@ -803,7 +803,7 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
             }
             cache_data.cache.sort((a, b) => a.end_time - b.end_time);
             yield this.json_op.writeFile(this.cache_path, cache_data);
-            return setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }), 10000);
+            return self_routine(10);
         });
     }
 }

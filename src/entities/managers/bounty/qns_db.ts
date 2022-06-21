@@ -6,15 +6,14 @@ import { unlink } from 'fs';
 
 
 export class BountyQnsDBManager extends core.BaseManager {
-    private qns_op: core.BountyQnsDBOperator;
+    private qns_op = new core.BountyQnsDBOperator();
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
-        this.qns_op = new core.BountyQnsDBOperator();
-
-        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
 
         this.setupListener();
+
+        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
     }
 
     private setupListener() {

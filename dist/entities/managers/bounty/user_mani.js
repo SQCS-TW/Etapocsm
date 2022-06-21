@@ -15,10 +15,9 @@ const shortcut_1 = require("../../shortcut");
 class BountyUserManiManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
-        this.SLCMD_REGISTER_LIST = user_mani_1.REGISTER_LIST;
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
-        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.setupListener();
+        this.SLCMD_REGISTER_LIST = user_mani_1.REGISTER_LIST;
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
