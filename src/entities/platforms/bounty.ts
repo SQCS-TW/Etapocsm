@@ -5,7 +5,7 @@ import {
     BountyQnsDBManager,
     BountyAccountManager,
     BountyEventManager,
-    BountyEventAutoManager,
+    EndBountySessionManager,
     BountyUserManiManager
 } from '../managers/bounty/reglist';
 
@@ -17,7 +17,7 @@ export class BountyPlatform extends core.BasePlatform {
             new BountyQnsDBManager(this),
             new BountyAccountManager(this),
             new BountyEventManager(this),
-            new BountyEventAutoManager(this),
+            new EndBountySessionManager(this),
             new BountyUserManiManager(this)
         ]
     }

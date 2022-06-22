@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9,12 +32,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BountyEventAutoManager = exports.BountyEventManager = exports.BountyAccountManager = void 0;
+exports.EndBountySessionManager = exports.BountyEventManager = exports.BountyAccountManager = void 0;
 const discord_js_1 = require("discord.js");
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 const mongodb_1 = require("mongodb");
 const user_interaction_1 = require("./components/user_interaction");
+const session = __importStar(require("../../powerup_mngs/session_mng"));
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -712,77 +736,46 @@ const common_functions = {
         });
     }
 };
-class BountyEventAutoManager extends shortcut_1.core.BaseManager {
+class EndBountySessionManager extends session.SessionManager {
     constructor(f_platform) {
-        super(f_platform);
+        const session_config = {
+            session_name: 'end_bounty',
+            interval_data: {
+                idle: 4,
+                normal: 2,
+                fast: 1
+            }
+        };
+        super(f_platform, session_config);
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
-        this.json_op = new shortcut_1.core.jsonOperator();
         this.end_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'EndButtonPipeline'
         });
-        this.cache_path = './cache/bounty/end_btn.json';
-        this.setupListener();
-    }
-    setupListener() {
+        this.event.on('sessionExpired', (session_data) => __awaiter(this, void 0, void 0, function* () {
+            yield this.doAfterExpired(session_data);
+        }));
         this.f_platform.f_bot.on('ready', () => __awaiter(this, void 0, void 0, function* () {
-            yield this.checkCache();
             yield this.setupCache();
         }));
-    }
-    checkCache() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const self_routine = (t) => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.checkCache(); }), t * 1000);
-            const cache_data = yield this.json_op.readFile(this.cache_path);
-            if (cache_data.cache.length === 0)
-                return self_routine(6);
-            console.log('cache found', cache_data);
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
-                if (cache_data.cache.length === 0)
-                    break;
-                const user_cache = cache_data.cache[0];
-                if (user_cache.end_time > Date.now())
-                    break;
-                const end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
-                if (end_btn_data) {
-                    const channel = yield this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
-                    if (!(channel instanceof discord_js_1.DMChannel))
-                        continue;
-                    const msg = yield channel.messages.fetch(end_btn_data.msg_id);
-                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
-                    yield msg.edit({
-                        content: '已超過可回答時間',
-                        files: [],
-                        components: [new_button]
-                    });
-                    const status_execute = {
-                        $set: {
-                            status: false
-                        }
-                    };
-                    yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: user_cache.user_id }, status_execute);
-                }
-                cache_data.cache.shift();
-                yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
-            }
-            yield this.json_op.writeFile(this.cache_path, cache_data);
-            return self_routine(2);
-        });
     }
     setupCache() {
         return __awaiter(this, void 0, void 0, function* () {
             const self_routine = (t) => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }), t * 1000);
-            const cache_data = yield this.json_op.readFile(this.cache_path);
+            let cache_data = yield this.getData();
+            if (cache_data === null) {
+                yield this.writeData([]);
+            }
+            cache_data = yield this.getData();
             const cached_user_id = [];
-            if (cache_data.cache.length !== 0) {
-                for (let i = 0; i < cache_data.cache.length; i++) {
-                    const user_acc = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: cache_data.cache[i].user_id });
+            if (cache_data.length !== 0) {
+                for (let i = 0; i < cache_data.length; i++) {
+                    const user_acc = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: cache_data[i].id });
                     if (!user_acc.status) {
-                        cache_data.cache.splice(i, 1);
+                        cache_data.splice(i, 1);
                         continue;
                     }
-                    cached_user_id.push(cache_data.cache[i].user_id);
+                    cached_user_id.push(cache_data[i].id);
                 }
             }
             const end_btn_data = yield (yield this.end_button_op.cursor_promise).find({}).toArray();
@@ -792,19 +785,44 @@ class BountyEventAutoManager extends shortcut_1.core.BaseManager {
                     continue;
                 if (yield shortcut_1.core.isItemInArray(data.user_id, cached_user_id))
                     continue;
-                cache_data.cache.push({
-                    user_id: data.user_id,
-                    end_time: data.time.end
+                cache_data.push({
+                    id: data.user_id,
+                    expired_date: data.time.end
                 });
                 console.log('pushed', {
-                    user_id: data.user_id,
-                    end_time: data.time.end
+                    id: data.user_id,
+                    expired_date: data.time.end
                 });
             }
-            cache_data.cache.sort((a, b) => a.end_time - b.end_time);
-            yield this.json_op.writeFile(this.cache_path, cache_data);
+            cache_data.sort((a, b) => a.expired_date - b.expired_date);
+            yield this.writeData(cache_data);
             return self_routine(10);
         });
     }
+    doAfterExpired(session_data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: session_data.id });
+            if (end_btn_data) {
+                const channel = yield this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
+                if (!(channel instanceof discord_js_1.DMChannel))
+                    return;
+                const msg = yield channel.messages.fetch(end_btn_data.msg_id);
+                const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
+                yield msg.edit({
+                    content: '已超過可回答時間',
+                    files: [],
+                    components: [new_button]
+                });
+                const status_execute = {
+                    $set: {
+                        status: false
+                    }
+                };
+                yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: session_data.id }, status_execute);
+                yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: session_data.id });
+            }
+            return;
+        });
+    }
 }
-exports.BountyEventAutoManager = BountyEventAutoManager;
+exports.EndBountySessionManager = EndBountySessionManager;

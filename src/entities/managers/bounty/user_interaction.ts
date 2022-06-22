@@ -10,6 +10,8 @@ import {
     END_BOUNTY_COMPONENTS
 } from './components/user_interaction';
 
+import * as session from '../../powerup_mngs/session_mng';
+
 
 export class BountyAccountManager extends core.BaseManager {
     private account_op = new core.BountyUserAccountOperator();
@@ -783,98 +785,56 @@ const common_functions = {
     }
 }
 
-type pipeline = {
-    cache: UserCache[]
-}
+export class EndBountySessionManager extends session.SessionManager {
 
-type UserCache = {
-    user_id: string,
-    end_time: number
-}
-
-export class BountyEventAutoManager extends core.BaseManager {
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
-
-    private json_op = new core.jsonOperator();
     private end_button_op = new core.BaseOperator({
         db: 'Bounty',
         coll: 'EndButtonPipeline'
     });
-
-    private cache_path = './cache/bounty/end_btn.json';
-
+    
     constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+        const session_config: session.SessionConfig = {
+            session_name: 'end_bounty',
+            interval_data: {
+                idle: 4,
+                normal: 2,
+                fast: 1
+            }
+        }
+        
+        super(f_platform, session_config);
 
-        this.setupListener();
-    }
+        this.event.on('sessionExpired', async (session_data: session.SessionData) => {
+            await this.doAfterExpired(session_data);
+        });
 
-    private setupListener() {
         this.f_platform.f_bot.on('ready', async () => {
-            await this.checkCache();
             await this.setupCache();
         });
-    }
-
-    private async checkCache() {
-        const self_routine = (t: number) => setTimeout(async () => { await this.checkCache(); }, t * 1000);
-
-        const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
-
-        if (cache_data.cache.length === 0) return self_routine(6);
-        console.log('cache found', cache_data);
-
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-            if (cache_data.cache.length === 0) break;
-
-            const user_cache = cache_data.cache[0];
-            if (user_cache.end_time > Date.now()) break;
-
-            const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: user_cache.user_id });
-            if (end_btn_data) {
-                const channel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
-                if (!(channel instanceof DMChannel)) continue;
-
-                const msg = await channel.messages.fetch(end_btn_data.msg_id);
-                const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
-                await msg.edit({
-                    content: '已超過可回答時間',
-                    files: [],
-                    components: [new_button]
-                });
-
-                const status_execute = {
-                    $set: {
-                        status: false
-                    }
-                }
-                await (await this.ongoing_op.cursor_promise).updateOne({ user_id: user_cache.user_id }, status_execute);
-            }
-
-            cache_data.cache.shift();
-            await (await this.end_button_op.cursor_promise).deleteOne({ user_id: user_cache.user_id });
-        }
-        await this.json_op.writeFile(this.cache_path, cache_data);
-
-        return self_routine(2);
     }
 
     private async setupCache() {
         const self_routine = (t: number) => setTimeout(async () => { await this.setupCache(); }, t * 1000);
 
-        const cache_data: pipeline = await this.json_op.readFile(this.cache_path);
-        const cached_user_id: string[] = [];
+        let cache_data = await this.getData();
 
-        if (cache_data.cache.length !== 0) {
-            for (let i = 0; i < cache_data.cache.length; i++) {
-                const user_acc = await (await this.ongoing_op.cursor_promise).findOne({ user_id: cache_data.cache[i].user_id });
+        if (cache_data === null) {
+            await this.writeData([]);
+        }
+
+        cache_data = await this.getData();
+
+        const cached_user_id: string[] = [];
+        if (cache_data.length !== 0) {
+            for (let i = 0; i < cache_data.length; i++) {
+                const user_acc = await (await this.ongoing_op.cursor_promise).findOne({ user_id: cache_data[i].id });
 
                 if (!user_acc.status) {
-                    cache_data.cache.splice(i, 1);
+                    cache_data.splice(i, 1);
                     continue;
                 }
-                cached_user_id.push(cache_data.cache[i].user_id);
+                cached_user_id.push(cache_data[i].id);
             }
         }
 
@@ -886,20 +846,45 @@ export class BountyEventAutoManager extends core.BaseManager {
             if (data.time.end > Date.now() + 150 * 1000) continue;
             if (await core.isItemInArray(data.user_id, cached_user_id)) continue;
 
-            cache_data.cache.push({
-                user_id: data.user_id,
-                end_time: data.time.end
+            cache_data.push({
+                id: data.user_id,
+                expired_date: data.time.end
             });
 
             console.log('pushed', {
-                user_id: data.user_id,
-                end_time: data.time.end
+                id: data.user_id,
+                expired_date: data.time.end
             });
         }
 
-        cache_data.cache.sort((a, b) => a.end_time - b.end_time);
-        await this.json_op.writeFile(this.cache_path, cache_data);
+        cache_data.sort((a, b) => a.expired_date - b.expired_date);
+        await this.writeData(cache_data);
 
         return self_routine(10);
+    }
+
+    private async doAfterExpired(session_data: session.SessionData) {
+        const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: session_data.id });
+        if (end_btn_data) {
+            const channel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
+            if (!(channel instanceof DMChannel)) return;
+
+            const msg = await channel.messages.fetch(end_btn_data.msg_id);
+            const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
+            await msg.edit({
+                content: '已超過可回答時間',
+                files: [],
+                components: [new_button]
+            });
+
+            const status_execute = {
+                $set: {
+                    status: false
+                }
+            }
+            await (await this.ongoing_op.cursor_promise).updateOne({ user_id: session_data.id }, status_execute);
+            await (await this.end_button_op.cursor_promise).deleteOne({ user_id: session_data.id });
+        }
+        return;
     }
 }
