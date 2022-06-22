@@ -16,7 +16,6 @@ class Redis {
         this.client = (0, redis_1.createClient)({
             password: process.env.REDIS_PW
         });
-        console.log('red', process.env.REDIS_PW);
     }
     connect() {
         return __awaiter(this, void 0, void 0, function* () {

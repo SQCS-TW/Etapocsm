@@ -762,11 +762,13 @@ class EndBountySessionManager extends session.SessionManager {
     setupCache() {
         return __awaiter(this, void 0, void 0, function* () {
             const self_routine = (t) => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }), t * 1000);
+            if (!this.connected)
+                return self_routine(1);
             let cache_data = yield this.getData();
             if (cache_data === null) {
                 yield this.writeData([]);
+                cache_data = yield this.getData();
             }
-            cache_data = yield this.getData();
             const cached_user_id = [];
             if (cache_data.length !== 0) {
                 for (let i = 0; i < cache_data.length; i++) {
@@ -789,7 +791,7 @@ class EndBountySessionManager extends session.SessionManager {
                     id: data.user_id,
                     expired_date: data.time.end
                 });
-                console.log('pushed', {
+                console.log('cache pushed', {
                     id: data.user_id,
                     expired_date: data.time.end
                 });

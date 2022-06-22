@@ -817,13 +817,14 @@ export class EndBountySessionManager extends session.SessionManager {
     private async setupCache() {
         const self_routine = (t: number) => setTimeout(async () => { await this.setupCache(); }, t * 1000);
 
+        if (!this.connected) return self_routine(1);
+        
         let cache_data = await this.getData();
 
         if (cache_data === null) {
             await this.writeData([]);
+            cache_data = await this.getData();
         }
-
-        cache_data = await this.getData();
 
         const cached_user_id: string[] = [];
         if (cache_data.length !== 0) {
@@ -851,7 +852,7 @@ export class EndBountySessionManager extends session.SessionManager {
                 expired_date: data.time.end
             });
 
-            console.log('pushed', {
+            console.log('cache pushed', {
                 id: data.user_id,
                 expired_date: data.time.end
             });

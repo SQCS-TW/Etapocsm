@@ -28,6 +28,7 @@ export class SessionManager extends core.BaseManager {
     public event = new EventEmitter();
 
     private maintaining_data = false;
+    protected connected = false;
 
     constructor(f_platform: core.BasePlatform, session_config: SessionConfig) {
         super(f_platform);
@@ -37,6 +38,7 @@ export class SessionManager extends core.BaseManager {
 
         this.f_platform.f_bot.on('ready', async () => {
             await this.cache.connect();
+            this.connected = true;
 
             await this.checkSession();
         });
@@ -50,7 +52,6 @@ export class SessionManager extends core.BaseManager {
 
     protected async getData(): Promise<SessionData[]> {
         const data = await this.cache.client.GET(this.session_name);
-        console.log('data', data);
         if (data === null) return null;
         return JSON.parse(data);
     }
@@ -67,6 +68,7 @@ export class SessionManager extends core.BaseManager {
             this.event.emit('sessionExpired', data[0]);
             data.shift();
             await this.writeData(data);
+            console.log('cache del', data[0]);
         }
 
         return self_routine(this.interval_data.normal);
