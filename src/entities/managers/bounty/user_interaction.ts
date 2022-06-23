@@ -149,14 +149,14 @@ class QnsThreadBeautifier {
             const thread_len = thread[diffi].length;
             if (thread_len > 0 && previous_comp) {
                 previous_comp = false;
-                embed_content = `剩餘 ${thread_len} 題\n`;
+                embed_content = `剩餘 ${thread_len} 題`;
             } else if (thread_len > 0 || !previous_comp) {
-                embed_content = '🔒\n';
+                embed_content = '🔒';
             } else {
                 previous_comp = true;
-                embed_content = '✅\n';
+                embed_content = '✅';
             }
-            basic_embed.addField(embed_title, embed_content);
+            basic_embed.addField(embed_title, embed_content + '\n\u200b');
         }
         return basic_embed;
     }

@@ -1,82 +1,65 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.discord = exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const reglist_1 = require("../db/reglist");
 const discord_js_1 = require("discord.js");
-const timeAfterSecs = (seconds) => __awaiter(void 0, void 0, void 0, function* () { return Date.now() + seconds * 1000; });
+const timeAfterSecs = async (seconds) => { return Date.now() + seconds * 1000; };
 exports.timeAfterSecs = timeAfterSecs;
-const cloneObj = (obj) => __awaiter(void 0, void 0, void 0, function* () { return JSON.parse(JSON.stringify(obj)); });
+const cloneObj = async (obj) => { return JSON.parse(JSON.stringify(obj)); };
 exports.cloneObj = cloneObj;
-const getRandomInt = (max) => __awaiter(void 0, void 0, void 0, function* () { return Math.floor(Math.random() * (max + 1)); });
+const getRandomInt = async (max) => { return Math.floor(Math.random() * (max + 1)); };
 exports.getRandomInt = getRandomInt;
 const sleep = (sec) => {
     return new Promise(resolve => setTimeout(resolve, sec * 1000));
 };
 exports.sleep = sleep;
-function factorial(num) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let counter = 1;
-        for (let i = 2; i <= num; i++)
-            counter = counter * i;
-        return counter;
-    });
+async function factorial(num) {
+    let counter = 1;
+    for (let i = 2; i <= num; i++)
+        counter = counter * i;
+    return counter;
 }
 exports.factorial = factorial;
-function binomialCoefficient(m, n) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (m <= n)
-            return 1;
-        const numerator = yield factorial(m);
-        const denominator = (yield factorial(n)) * (yield factorial(m - n));
-        return numerator / denominator;
-    });
+async function binomialCoefficient(m, n) {
+    if (m <= n)
+        return 1;
+    const numerator = await factorial(m);
+    const denominator = (await factorial(n)) * (await factorial(m - n));
+    return numerator / denominator;
 }
 exports.binomialCoefficient = binomialCoefficient;
-function getSubsetsWithCertainLength(arr, length) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let modify = [...arr].map(item => [item]);
-        if (length === 1)
-            return [arr];
-        for (let i = 0; i < length - 1; i++) {
-            const new_arr = [];
-            for (let j = 0; j < [...modify].length; j++) {
-                const item = [...modify][j];
-                if (item.length === length)
-                    return;
-                const index = arr.indexOf(item[item.length - 1]);
-                const m_after = [...arr].slice(index + 1, arr.length + 1 - (length - i - 1));
-                for (let k = 0; k < m_after.length; k++) {
-                    const it = m_after[k];
-                    const temp = [...item];
-                    temp.push(it);
-                    new_arr.push(temp);
-                }
+async function getSubsetsWithCertainLength(arr, length) {
+    let modify = [...arr].map(item => [item]);
+    if (length === 1)
+        return [arr];
+    for (let i = 0; i < length - 1; i++) {
+        const new_arr = [];
+        for (let j = 0; j < [...modify].length; j++) {
+            const item = [...modify][j];
+            if (item.length === length)
+                return;
+            const index = arr.indexOf(item[item.length - 1]);
+            const m_after = [...arr].slice(index + 1, arr.length + 1 - (length - i - 1));
+            for (let k = 0; k < m_after.length; k++) {
+                const it = m_after[k];
+                const temp = [...item];
+                temp.push(it);
+                new_arr.push(temp);
             }
-            if (i < length - 1)
-                modify = [...new_arr];
-            if (i === length - 2)
-                return new_arr;
         }
-    });
+        if (i < length - 1)
+            modify = [...new_arr];
+        if (i === length - 2)
+            return new_arr;
+    }
 }
 exports.getSubsetsWithCertainLength = getSubsetsWithCertainLength;
-function shuffle(array) {
-    return __awaiter(this, void 0, void 0, function* () {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    });
+async function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 exports.shuffle = shuffle;
 function arrayEquals(arr1, arr2) {
@@ -94,36 +77,30 @@ function arrayEquals(arr1, arr2) {
     return true;
 }
 exports.arrayEquals = arrayEquals;
-function verifyMenuApplication(verify) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const cursor = yield (new reglist_1.Mongo('Interaction')).getCur('Pipeline');
-        const user_application = cursor.findOne(verify);
-        if (user_application) {
-            yield cursor.deleteOne(verify);
-            return true;
-        }
-        else {
-            return false;
-        }
-    });
+async function verifyMenuApplication(verify) {
+    const cursor = await (new reglist_1.Mongo('Interaction')).getCur('Pipeline');
+    const user_application = cursor.findOne(verify);
+    if (user_application) {
+        await cursor.deleteOne(verify);
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 exports.verifyMenuApplication = verifyMenuApplication;
-function isItemInArray(item, arr) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (arr.indexOf(item) !== -1) {
-            return true;
-        }
-        else
-            return false;
-    });
+async function isItemInArray(item, arr) {
+    if (arr.indexOf(item) !== -1) {
+        return true;
+    }
+    else
+        return false;
 }
 exports.isItemInArray = isItemInArray;
-function asyncForEach(array, callback) {
-    return __awaiter(this, void 0, void 0, function* () {
-        for (let i = 0; i < array.length; i++) {
-            yield callback(array[i], i, array);
-        }
-    });
+async function asyncForEach(array, callback) {
+    for (let i = 0; i < array.length; i++) {
+        await callback(array[i], i, array);
+    }
 }
 exports.asyncForEach = asyncForEach;
 exports.discord = {
@@ -134,12 +111,10 @@ exports.discord = {
         });
         return rows;
     },
-    getDisabledButton(button) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const new_button = new discord_js_1.MessageButton(button);
-            new_button.setDisabled(true);
-            return new_button;
-        });
+    async getDisabledButton(button) {
+        const new_button = new discord_js_1.MessageButton(button);
+        new_button.setDisabled(true);
+        return new_button;
     },
     getRelativeTimestamp(t) {
         return `<t:${Math.trunc(t / 1000)}:R>`;
