@@ -24,11 +24,10 @@ export class SessionManager extends core.BaseManager {
     private session_name: string;
     private interval_data: IntervalData;
 
-    private cache = new Redis();
-    public event = new EventEmitter();
+    protected cache = new Redis();
+    protected event = new EventEmitter();
 
     private maintaining_data = false;
-    protected connected = false;
 
     constructor(f_platform: core.BasePlatform, session_config: SessionConfig) {
         super(f_platform);
@@ -38,7 +37,6 @@ export class SessionManager extends core.BaseManager {
 
         this.f_platform.f_bot.on('ready', async () => {
             await this.cache.connect();
-            this.connected = true;
 
             await this.checkSession();
         });

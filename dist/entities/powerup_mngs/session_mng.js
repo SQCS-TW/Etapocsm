@@ -19,12 +19,10 @@ class SessionManager extends shortcut_1.core.BaseManager {
         this.cache = new reglist_1.Redis();
         this.event = new events_1.EventEmitter();
         this.maintaining_data = false;
-        this.connected = false;
         this.session_name = session_config.session_name;
         this.interval_data = session_config.interval_data;
         this.f_platform.f_bot.on('ready', () => __awaiter(this, void 0, void 0, function* () {
             yield this.cache.connect();
-            this.connected = true;
             yield this.checkSession();
         }));
     }

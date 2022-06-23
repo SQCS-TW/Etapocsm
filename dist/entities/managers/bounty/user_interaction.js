@@ -33,6 +33,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EndBountySessionManager = exports.SelectBountyAnswerManager = exports.EndBountyManager = exports.ConfirmStartBountyManager = exports.StartBountyManager = exports.BountyAccountManager = void 0;
+/* eslint-disable no-useless-escape */
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 const mongodb_1 = require("mongodb");
@@ -44,9 +45,13 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
+        this.cache = new shortcut_1.db.Redis();
         this.setupListener();
     }
     setupListener() {
+        this.f_platform.f_bot.on('ready', () => __awaiter(this, void 0, void 0, function* () {
+            yield this.cache.connect();
+        }));
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
             if (interaction.isButton())
                 yield this.buttonHandler(interaction);
@@ -68,23 +73,54 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                         return yield interaction.editReply('帳號建立成功！');
                     }
                 }
-                case 'check-main-bounty-account': {
+                case 'check-account-data': {
                     yield interaction.deferReply({ ephemeral: true });
                     const exist_result = yield this.account_op.checkDataExistence({ user_id: interaction.user.id });
                     if (exist_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                         return yield interaction.editReply('你還沒建立過懸賞區主帳號！');
-                    const user_account = yield (yield this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    return yield interaction.editReply(JSON.stringify(user_account, null, "\t"));
+                    const user_acc_data = yield this.getOrCacheUserAccData(interaction.user.id);
+                    const user_acc_embed = new discord_js_1.MessageEmbed()
+                        .setTitle(`用戶 **${interaction.user.username}** 的懸賞區帳號資訊`)
+                        .addField('🕑 帳號創建日期', shortcut_1.core.discord.getRelativeTimestamp(user_acc_data.create_date), true)
+                        .addField('🔰 遊玩權限', `${user_acc_data.auth}`, true)
+                        .addField('✨ 經驗值', `**${user_acc_data.exp}** 點`, true)
+                        .setColor('#ffffff');
+                    return yield interaction.editReply({
+                        embeds: [user_acc_embed]
+                    });
                 }
-                case 'check-bounty-ongoing-info': {
+                case 'check-personal-record': {
                     yield interaction.deferReply({ ephemeral: true });
                     const exist_result = yield this.ongoing_op.checkDataExistence({ user_id: interaction.user.id });
                     if (exist_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                         return yield interaction.editReply('你還沒開啟過懸賞區！');
-                    const user_ongoing_info = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    return yield interaction.editReply(JSON.stringify(user_ongoing_info, null, "\t"));
+                    const user_acc_data = yield this.getOrCacheUserAccData(interaction.user.id);
+                    const qns_count = user_acc_data.qns_record.answered_qns_count;
+                    const crt_count = user_acc_data.qns_record.correct_qns_count;
+                    const user_record_embed = new discord_js_1.MessageEmbed()
+                        .setTitle(`用戶 **${interaction.user.username}** 的懸賞區遊玩紀錄`)
+                        .addField('📜 回答題數', `🟩：**${qns_count.easy}** 次\n🟧：**${qns_count.medium}** 次\n🟥：**${qns_count.hard}** 次\n\u200b`)
+                        .addField('✅ 答對題數', `🟩：**${crt_count.easy}** 次\n🟧：**${crt_count.medium}** 次\n🟥：**${crt_count.hard}** 次\n\u200b`)
+                        .addField('🗂️ 單一難度問題串破關總數', `**${user_acc_data.personal_record.thread_cleared_count}** 次`)
+                        .addField('🗃️ 問題串全破關總數', `**${user_acc_data.personal_record.thread_all_cleared_count}** 次`)
+                        .addField('💪 獲得額外體力的次數', `**${user_acc_data.personal_record.extra_stamina_gained_count}** 次`)
+                        .setColor('#ffffff');
+                    return yield interaction.editReply({
+                        embeds: [user_record_embed]
+                    });
                 }
             }
+        });
+    }
+    getOrCacheUserAccData(user_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const key = `acc-info-cache?id=${user_id}`;
+            const acc_cache_data = yield this.cache.client.GET(key);
+            if (acc_cache_data !== null)
+                return JSON.parse(acc_cache_data);
+            const user_acc_data = yield (yield this.account_op.cursor_promise).findOne({ user_id: user_id });
+            yield this.cache.client.SETEX(key, 60, JSON.stringify(user_acc_data));
+            return user_acc_data;
         });
     }
 }
@@ -839,7 +875,7 @@ class EndBountySessionManager extends session.SessionManager {
     setupCache() {
         return __awaiter(this, void 0, void 0, function* () {
             const self_routine = (t) => setTimeout(() => __awaiter(this, void 0, void 0, function* () { yield this.setupCache(); }), t * 1000);
-            if (!this.connected)
+            if (!this.cache.connected)
                 return self_routine(1);
             let cache_data = yield this.getData();
             if (cache_data === null) {

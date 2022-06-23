@@ -13,6 +13,7 @@ exports.Redis = void 0;
 const redis_1 = require("redis");
 class Redis {
     constructor() {
+        this.connected = false;
         this.client = (0, redis_1.createClient)({
             password: process.env.REDIS_PW
         });
@@ -20,6 +21,7 @@ class Redis {
     connect() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.client.connect();
+            this.connected = true;
         });
     }
 }

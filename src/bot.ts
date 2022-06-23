@@ -21,7 +21,7 @@ export class Etapocsm extends Client {
             new ChatExpPlatform(this),
             new BountyPlatform(this),
             new LvlSysPlatform(this)
-        ]
+        ];
 
         this.setupListener();
     }
