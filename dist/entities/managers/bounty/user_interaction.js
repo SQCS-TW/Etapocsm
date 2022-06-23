@@ -221,11 +221,16 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             try {
                 msg = yield interaction.user.send({
                     embeds: [new_embed],
-                    components: shortcut_1.core.discord.compAdder([default_start_button])
+                    components: shortcut_1.core.discord.compAdder([
+                        [default_start_button]
+                    ])
                 });
             }
             catch (_a) {
-                return yield interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
+                return yield interaction.followUp({
+                    content: '傳送問題資訊錯誤，請確認你是否有開啟私訊權限',
+                    ephemeral: true
+                });
             }
             const button_data = {
                 _id: new mongodb_1.ObjectId(),
@@ -245,16 +250,18 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 return;
             const new_button = yield shortcut_1.core.discord.getDisabledButton(default_start_button);
             yield msg.edit({
-                components: [new_button]
+                components: shortcut_1.core.discord.compAdder([
+                    [new_button]
+                ])
             });
             return yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
         });
     }
     getStartBountyEmbed(diffi, qns_number) {
         return __awaiter(this, void 0, void 0, function* () {
-            const new_embed = yield shortcut_1.core.cloneObj(default_start_embed);
-            new_embed.addField('題目難度', diffi);
-            new_embed.addField('題目編號', qns_number);
+            const new_embed = new discord_js_1.MessageEmbed(default_start_embed);
+            new_embed.addField('題目難度', diffi, true);
+            new_embed.addField('題目編號', qns_number.toString(), true);
             return new_embed;
         });
     }
@@ -388,7 +395,9 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
             const new_button = yield shortcut_1.core.discord.getDisabledButton(default_start_button);
             const msg = interaction.message;
             yield msg.edit({
-                components: [new_button]
+                components: shortcut_1.core.discord.compAdder([
+                    [new_button]
+                ])
             });
             const delete_result = yield (yield this.confirm_start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
             if (!delete_result.acknowledged)
@@ -424,7 +433,9 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
             const qns_msg = yield interaction.user.send({
                 content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
                 files: [local_file_name],
-                components: shortcut_1.core.discord.compAdder([default_end_button])
+                components: shortcut_1.core.discord.compAdder([
+                    [default_end_button]
+                ])
             });
             (0, fs_1.unlink)(local_file_name, () => { return; });
             const end_btn_info = {
@@ -444,9 +455,9 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
     }
     getAnsweringInfoEmbed(start_time, end_time) {
         return __awaiter(this, void 0, void 0, function* () {
-            const new_embed = yield shortcut_1.core.cloneObj(default_answering_info_embed);
-            new_embed.addField('開始時間', start_time);
-            new_embed.addField('結束時間', end_time);
+            const new_embed = new discord_js_1.MessageEmbed(default_answering_info_embed);
+            new_embed.addField('開始時間', start_time, true);
+            new_embed.addField('結束時間', end_time, true);
             return new_embed;
         });
     }
@@ -487,6 +498,8 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
     }
     buttonHandler(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (interaction.customId !== 'end-bounty')
+                return;
             yield interaction.deferReply();
             const stop_answering_time = Date.now();
             const user_end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
@@ -503,7 +516,9 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
             const msg = yield channel.messages.fetch(user_end_btn_data.msg_id);
             const new_button = yield shortcut_1.core.discord.getDisabledButton(default_end_button);
             yield msg.edit({
-                components: shortcut_1.core.discord.compAdder([new_button])
+                components: shortcut_1.core.discord.compAdder([
+                    [new_button]
+                ])
             });
             const user_ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
             const thread_data = yield getQnsThreadData(user_ongoing_data.qns_thread);
@@ -511,7 +526,9 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
             const ans_dropdown = yield this.appendChoicesToDropdown(choices);
             const dp_msg = yield interaction.editReply({
                 content: '請選擇答案（限時30秒）',
-                components: shortcut_1.core.discord.compAdder([ans_dropdown])
+                components: shortcut_1.core.discord.compAdder([
+                    [ans_dropdown]
+                ])
             });
             if (!(dp_msg instanceof discord_js_1.Message))
                 return yield interaction.channel.send('err dealing with types');
@@ -565,7 +582,7 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
     }
     appendChoicesToDropdown(choices) {
         return __awaiter(this, void 0, void 0, function* () {
-            const new_dropdown = yield shortcut_1.core.cloneObj(default_select_ans_dropdown);
+            const new_dropdown = new discord_js_1.MessageSelectMenu(default_select_ans_dropdown);
             const options = [];
             for (let i = 0; i < choices.length; i++) {
                 const choice = choices[i];
@@ -873,7 +890,9 @@ class EndBountySessionManager extends session.SessionManager {
                 yield msg.edit({
                     content: '已超過可回答時間',
                     files: [],
-                    components: [new_button]
+                    components: shortcut_1.core.discord.compAdder([
+                        [new_button]
+                    ])
                 });
                 const status_execute = {
                     $set: {

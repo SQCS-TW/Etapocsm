@@ -219,12 +219,15 @@ export class StartBountyManager extends core.BaseManager {
         try {
             msg = await interaction.user.send({
                 embeds: [new_embed],
-                components: core.discord.compAdder(
+                components: core.discord.compAdder([
                     [default_start_button]
-                )
+                ])
             });
         } catch {
-            return await interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
+            return await interaction.followUp({
+                content: '傳送問題資訊錯誤，請確認你是否有開啟私訊權限',
+                ephemeral: true
+            });
         }
 
         const button_data = {
@@ -248,16 +251,18 @@ export class StartBountyManager extends core.BaseManager {
         const new_button = await core.discord.getDisabledButton(default_start_button);
 
         await msg.edit({
-            components: [new_button]
+            components: core.discord.compAdder([
+                [new_button]
+            ])
         });
 
         return await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
     }
 
     private async getStartBountyEmbed(diffi: string, qns_number: number) {
-        const new_embed = await core.cloneObj(default_start_embed);
-        new_embed.addField('題目難度', diffi);
-        new_embed.addField('題目編號', qns_number);
+        const new_embed = new MessageEmbed(default_start_embed);
+        new_embed.addField('題目難度', diffi, true);
+        new_embed.addField('題目編號', qns_number.toString(), true);
         return new_embed;
     }
 
@@ -409,7 +414,9 @@ export class ConfirmStartBountyManager extends core.BaseManager {
 
         const msg: any = interaction.message;
         await msg.edit({
-            components: [new_button]
+            components: core.discord.compAdder([
+                [new_button]
+            ])
         });
 
         const delete_result = await (await this.confirm_start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
@@ -454,9 +461,9 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         const qns_msg = await interaction.user.send({
             content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
             files: [local_file_name],
-            components: core.discord.compAdder(
+            components: core.discord.compAdder([
                 [default_end_button]
-            )
+            ])
         });
         unlink(local_file_name, () => { return; });
 
@@ -475,9 +482,9 @@ export class ConfirmStartBountyManager extends core.BaseManager {
     }
 
     private async getAnsweringInfoEmbed(start_time: string, end_time: string) {
-        const new_embed = await core.cloneObj(default_answering_info_embed);
-        new_embed.addField('開始時間', start_time);
-        new_embed.addField('結束時間', end_time);
+        const new_embed = new MessageEmbed(default_answering_info_embed);
+        new_embed.addField('開始時間', start_time, true);
+        new_embed.addField('結束時間', end_time, true);
         return new_embed;
     }
 }
@@ -523,6 +530,8 @@ export class EndBountyManager extends core.BaseManager {
     }
 
     private async buttonHandler(interaction: ButtonInteraction) {
+        if (interaction.customId !== 'end-bounty') return;
+
         await interaction.deferReply();
 
         const stop_answering_time = Date.now();
@@ -545,9 +554,9 @@ export class EndBountyManager extends core.BaseManager {
         const msg = await channel.messages.fetch(user_end_btn_data.msg_id);
         const new_button = await core.discord.getDisabledButton(default_end_button);
         await msg.edit({
-            components: core.discord.compAdder(
+            components: core.discord.compAdder([
                 [new_button]
-            )
+            ])
         });
 
         const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
@@ -558,9 +567,9 @@ export class EndBountyManager extends core.BaseManager {
 
         const dp_msg = await interaction.editReply({
             content: '請選擇答案（限時30秒）',
-            components: core.discord.compAdder(
+            components: core.discord.compAdder([
                 [ans_dropdown]
-            )
+            ])
         });
 
         if (!(dp_msg instanceof Message)) return await interaction.channel.send('err dealing with types');
@@ -622,7 +631,7 @@ export class EndBountyManager extends core.BaseManager {
     }
 
     private async appendChoicesToDropdown(choices: string[]) {
-        const new_dropdown = await core.cloneObj(default_select_ans_dropdown);
+        const new_dropdown = new MessageSelectMenu(default_select_ans_dropdown);
 
         const options = [];
         for (let i = 0; i < choices.length; i++) {
@@ -962,7 +971,9 @@ export class EndBountySessionManager extends session.SessionManager {
             await msg.edit({
                 content: '已超過可回答時間',
                 files: [],
-                components: [new_button]
+                components: core.discord.compAdder([
+                    [new_button]
+                ])
             });
 
             const status_execute = {

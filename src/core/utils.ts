@@ -104,7 +104,7 @@ export async function asyncForEach(array, callback) {
 }
 
 export const discord = {
-    compAdder(arr: any[]) {
+    compAdder(arr: any[][]) {
         const rows = [];
         arr.forEach((ele) => {
             rows.push(
@@ -115,7 +115,7 @@ export const discord = {
     },
 
     async getDisabledButton(button: MessageButton) {
-        const new_button = await cloneObj(button);
+        const new_button = new MessageButton(button);
         new_button.setDisabled(true);
         return new_button;
     },

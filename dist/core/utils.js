@@ -136,7 +136,7 @@ exports.discord = {
     },
     getDisabledButton(button) {
         return __awaiter(this, void 0, void 0, function* () {
-            const new_button = yield (0, exports.cloneObj)(button);
+            const new_button = new discord_js_1.MessageButton(button);
             new_button.setDisabled(true);
             return new_button;
         });
