@@ -9,8 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
+exports.discord = exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const reglist_1 = require("../db/reglist");
+const discord_js_1 = require("discord.js");
 const timeAfterSecs = (seconds) => __awaiter(void 0, void 0, void 0, function* () { return Date.now() + seconds * 1000; });
 exports.timeAfterSecs = timeAfterSecs;
 const cloneObj = (obj) => __awaiter(void 0, void 0, void 0, function* () { return JSON.parse(JSON.stringify(obj)); });
@@ -125,3 +126,22 @@ function asyncForEach(array, callback) {
     });
 }
 exports.asyncForEach = asyncForEach;
+exports.discord = {
+    compAdder(arr) {
+        const rows = [];
+        arr.forEach((ele) => {
+            rows.push(new discord_js_1.MessageActionRow().addComponents(...ele));
+        });
+        return rows;
+    },
+    getDisabledButton(button) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_button = yield (0, exports.cloneObj)(button);
+            new_button.setDisabled(true);
+            return new_button;
+        });
+    },
+    getRelativeTimestamp(t) {
+        return `<t:${Math.trunc(t / 1000)}:R>`;
+    }
+};

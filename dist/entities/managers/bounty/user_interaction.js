@@ -32,13 +32,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EndBountySessionManager = exports.BountyEventManager = exports.BountyAccountManager = void 0;
-const discord_js_1 = require("discord.js");
+exports.EndBountySessionManager = exports.SelectBountyAnswerManager = exports.EndBountyManager = exports.ConfirmStartBountyManager = exports.StartBountyManager = exports.BountyAccountManager = void 0;
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 const mongodb_1 = require("mongodb");
-const user_interaction_1 = require("./components/user_interaction");
 const session = __importStar(require("../../powerup_mngs/session_mng"));
+const discord_js_1 = require("discord.js");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -46,17 +45,16 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
         this.setupListener();
-        this.SLCMD_REGISTER_LIST = user_interaction_1.ACCOUNT_MANAGER_SLCMD;
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
-            if (interaction.isCommand())
-                yield this.slcmdHandler(interaction);
+            if (interaction.isButton())
+                yield this.buttonHandler(interaction);
         }));
     }
-    slcmdHandler(interaction) {
+    buttonHandler(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            switch (interaction.commandName) {
+            switch (interaction.customId) {
                 case 'create-main-bounty-account': {
                     yield interaction.deferReply({ ephemeral: true });
                     const exist_result = yield this.account_op.checkDataExistence({ user_id: interaction.user.id });
@@ -93,62 +91,377 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
 exports.BountyAccountManager = BountyAccountManager;
 class QnsThreadBeautifier {
     constructor() {
-        this.len_to_emoji = {
-            2: '🔒 ║ ❓',
-            3: '🔒 ║ ❓ × 2️⃣'
-        };
         this.diffi_to_emoji = {
             'easy': '🟩',
             'medium': '🟧',
             'hard': '🟥'
         };
-        this.ban_repeat = 4;
-        this.ban_line = '═';
-        this.ban_left = '╣';
-        this.ban_right = '╠';
+        this.ban_line = '════';
+        this.diffi_to_cn = {
+            'easy': '簡單',
+            'medium': '普通',
+            'hard': '困難'
+        };
     }
     beautify(thread) {
         return __awaiter(this, void 0, void 0, function* () {
-            const text = [];
             let previous_comp = true;
             const diffi_list = ['easy', 'medium', 'hard'];
+            const basic_embed = new discord_js_1.MessageEmbed()
+                .setTitle('你的闖關狀態')
+                .setColor('#ffffff');
             for (let i = 0; i < diffi_list.length; i++) {
                 const diffi = diffi_list[i];
-                const long_line = this.ban_line.repeat(this.ban_repeat);
-                const banner = `${long_line}${this.ban_left} ${this.diffi_to_emoji[diffi]} ${this.ban_right}${long_line}`;
-                text.push(banner);
+                const embed_title = `${this.ban_line} ${this.diffi_to_emoji[diffi]} ${this.diffi_to_cn[diffi]} ${this.ban_line}`;
+                let embed_content;
                 const thread_len = thread[diffi].length;
                 if (thread_len > 0 && previous_comp) {
                     previous_comp = false;
-                    text.push("👉 ║ ❓");
-                    if (thread_len > 1)
-                        text.push(this.len_to_emoji[thread_len]);
+                    embed_content = `剩餘 ${thread_len} 題\n`;
                 }
                 else if (thread_len > 0 || !previous_comp) {
-                    text.push('🔒');
+                    embed_content = '🔒\n';
                 }
                 else {
-                    text.push('✅');
                     previous_comp = true;
+                    embed_content = '✅\n';
                 }
-                if (diffi !== 'hard')
-                    text.push('\n');
+                basic_embed.addField(embed_title, embed_content);
             }
-            return text.join('\n');
+            return basic_embed;
         });
     }
 }
 const qns_thread_beauty = new QnsThreadBeautifier();
-class BountyEventManager extends shortcut_1.core.BaseManager {
+const default_start_button = new discord_js_1.MessageButton()
+    .setStyle('PRIMARY')
+    .setLabel('確認開始答題')
+    .setCustomId('confirm-start-bounty');
+const default_start_embed = new discord_js_1.MessageEmbed()
+    .setTitle('題目資訊')
+    .setColor('#ffffff')
+    .setFooter({
+    text: '題目將在確認之後發送；確認按鈕將在60秒後過期；如不答題不用按按鈕'
+});
+function getQnsThreadData(qns_thread) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const diffi_list = ['easy', 'medium', 'hard'];
+        let curr_diffi;
+        let curr_qns_number;
+        for (let i = 0; i < diffi_list.length; i++) {
+            const diffi = diffi_list[i];
+            if (qns_thread[diffi].length === 0)
+                continue;
+            curr_diffi = diffi;
+            curr_qns_number = qns_thread[diffi][0];
+            break;
+        }
+        if (curr_diffi === undefined)
+            return {
+                finished: true
+            };
+        return {
+            finished: false,
+            curr_diffi: curr_diffi,
+            curr_qns_number: curr_qns_number
+        };
+    });
+}
+class StartBountyManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
-        this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
         this.start_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'StartButtonPipeline'
         });
+        this.setupListener();
+    }
+    setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
+            if (interaction.isButton())
+                yield this.buttonHandler(interaction);
+        }));
+    }
+    buttonHandler(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (interaction.customId !== 'start-bounty')
+                return;
+            yield interaction.deferReply({ ephemeral: true });
+            const check_main_acc = yield this.account_op.checkDataExistence({ user_id: interaction.user.id });
+            if (check_main_acc.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
+                return yield interaction.editReply('請先建立你的懸賞區資料！');
+            const user_acc = yield (yield this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            if (!user_acc.auth)
+                return yield interaction.editReply('你沒有遊玩懸賞區的權限！');
+            if (user_acc.status)
+                return yield interaction.editReply('你已經在遊玩懸賞區了！');
+            const create_result = yield this.createOrGetOngoingInfo(interaction.user.id, {
+                account_op: this.account_op,
+                ongoing_op: this.ongoing_op
+            });
+            if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+                return yield interaction.editReply('創建問題串失敗！');
+            else if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
+                yield interaction.editReply('問題串已建立！');
+            else if (create_result.status === shortcut_1.db.StatusCode.DATA_FOUND)
+                yield interaction.editReply('找到問題串資料');
+            const beautified_qns_thread = yield qns_thread_beauty.beautify(create_result.qns_thread);
+            yield interaction.followUp({
+                embeds: [beautified_qns_thread],
+                ephemeral: true
+            });
+            const qns_data = yield getQnsThreadData(create_result.qns_thread);
+            if (qns_data.finished)
+                return yield interaction.followUp('你已經回答完所有問題了！');
+            // ==== modify embed -> set difficulty and qns_number
+            const new_embed = yield this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
+            let msg;
+            try {
+                msg = yield interaction.user.send({
+                    embeds: [new_embed],
+                    components: shortcut_1.core.discord.compAdder([default_start_button])
+                });
+            }
+            catch (_a) {
+                return yield interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
+            }
+            const button_data = {
+                _id: new mongodb_1.ObjectId(),
+                user_id: interaction.user.id,
+                channel_id: msg.channelId,
+                msg_id: msg.id,
+                qns_info: {
+                    difficulty: qns_data.curr_diffi,
+                    number: qns_data.curr_qns_number
+                },
+                due_time: Date.now() + 60 * 1000
+            };
+            yield (yield this.start_button_op.cursor_promise).insertOne(button_data);
+            yield shortcut_1.core.sleep(60);
+            const btn_data = yield (yield this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            if (!btn_data)
+                return;
+            const new_button = yield shortcut_1.core.discord.getDisabledButton(default_start_button);
+            yield msg.edit({
+                components: [new_button]
+            });
+            return yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+        });
+    }
+    getStartBountyEmbed(diffi, qns_number) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_embed = yield shortcut_1.core.cloneObj(default_start_embed);
+            new_embed.addField('題目難度', diffi);
+            new_embed.addField('題目編號', qns_number);
+            return new_embed;
+        });
+    }
+    createOrGetOngoingInfo(user_id, ops) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const data_exists = yield ops.ongoing_op.checkDataExistence({ user_id: user_id });
+            if (data_exists.status === shortcut_1.db.StatusCode.DATA_FOUND) {
+                const user_ongoing_info = yield (yield ops.ongoing_op.cursor_promise).findOne({ user_id: user_id });
+                return {
+                    status: data_exists.status,
+                    qns_thread: user_ongoing_info.qns_thread
+                };
+            }
+            const new_qns_thread = yield this.createQnsThread(user_id, ops);
+            const create_result = yield ops.ongoing_op.createDefaultData({
+                user_id: user_id,
+                qns_thread: new_qns_thread
+            });
+            return {
+                status: create_result.status,
+                qns_thread: new_qns_thread
+            };
+        });
+    }
+    createQnsThread(user_id, ops) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user_main_acc = yield (yield ops.account_op.cursor_promise).findOne({ user_id: user_id });
+            const db_cache_operator = new shortcut_1.core.BaseOperator({
+                db: 'Bounty',
+                coll: 'StorjQnsDBCache'
+            });
+            const cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+            const diffi_list = ['easy', 'medium', 'hard'];
+            const new_qns_thread = {
+                easy: undefined,
+                medium: undefined,
+                hard: undefined
+            };
+            yield shortcut_1.core.asyncForEach(diffi_list, (diffi) => __awaiter(this, void 0, void 0, function* () {
+                const max_num = cache[diffi].max_number;
+                const skipped_nums = cache[diffi].skipped_numbers;
+                const not_answered = [];
+                const answered = user_main_acc.qns_record.answered_qns_number[diffi];
+                for (let i = 0; i <= max_num; i++) {
+                    if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
+                        skipped_nums.shift();
+                        continue;
+                    }
+                    if (answered.length !== 0 && i === answered[0]) {
+                        answered.shift();
+                        continue;
+                    }
+                    not_answered.push(i);
+                }
+                yield shortcut_1.core.shuffle(not_answered);
+                const max_qns_count = Math.min(3, not_answered.length);
+                new_qns_thread[diffi] = not_answered.slice(0, max_qns_count);
+            }));
+            return new_qns_thread;
+        });
+    }
+}
+exports.StartBountyManager = StartBountyManager;
+const default_answering_info_embed = new discord_js_1.MessageEmbed()
+    .setTitle('答題資訊')
+    .setColor('#ffffff')
+    .setFooter({
+    text: '如要答題，請在結束時間抵達前按下按鈕'
+});
+const default_end_button = new discord_js_1.MessageButton()
+    .setStyle('SUCCESS')
+    .setLabel('結束答題')
+    .setCustomId('end-bounty');
+class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
+    constructor(f_platform) {
+        super(f_platform);
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.confirm_start_button_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'StartButtonPipeline'
+        });
+        this.end_button_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'EndButtonPipeline'
+        });
+        this.qns_diffi_time = {
+            'easy': 60,
+            'medium': 60 * 2,
+            'hard': 60 * 3
+        };
+        this.setupListener();
+    }
+    setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
+            if (interaction.isButton())
+                yield this.buttonHandler(interaction);
+        }));
+    }
+    buttonHandler(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (interaction.customId !== 'confirm-start-bounty')
+                return;
+            yield interaction.deferReply();
+            const user_btn_data = yield (yield this.confirm_start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            if (!user_btn_data)
+                return yield interaction.editReply('錯誤，找不到驗證資訊');
+            else if (user_btn_data.msg_id !== interaction.message.id)
+                return yield interaction.editReply('驗證資訊錯誤');
+            const ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            let stamina_execute;
+            if (ongoing_data.stamina.regular > 0) {
+                stamina_execute = {
+                    $inc: {
+                        "stamina.regular": -1
+                    }
+                };
+            }
+            else if (ongoing_data.stamina.extra > 0) {
+                stamina_execute = {
+                    $inc: {
+                        "stamina.extra": -1
+                    }
+                };
+            }
+            else {
+                return yield interaction.editReply('錯誤，你沒有足夠的體力！');
+            }
+            yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
+            const diffi = user_btn_data.qns_info.difficulty;
+            const qns_number = user_btn_data.qns_info.number;
+            const new_button = yield shortcut_1.core.discord.getDisabledButton(default_start_button);
+            const msg = interaction.message;
+            yield msg.edit({
+                components: [new_button]
+            });
+            const delete_result = yield (yield this.confirm_start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+            if (!delete_result.acknowledged)
+                return yield interaction.editReply('刪除驗證資訊時發生錯誤！');
+            // download qns pic
+            const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
+            const dl_result = yield shortcut_1.db.storjDownload({
+                bucket_name: 'bounty-questions-db',
+                local_file_name: local_file_name,
+                db_file_name: `${diffi}/${qns_number}.png`
+            });
+            if (!dl_result)
+                return yield interaction.user.send('下載圖片錯誤！');
+            const buffer_time = 10;
+            const process_delay_time = 1;
+            const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
+            const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
+            const execute = {
+                $set: {
+                    status: true
+                }
+            };
+            const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+            if (!update_result.acknowledged) {
+                (0, fs_1.unlink)(local_file_name, () => { return; });
+                return yield interaction.user.send('開始懸賞時發生錯誤！');
+            }
+            const answering_embed = yield this.getAnsweringInfoEmbed(shortcut_1.core.discord.getRelativeTimestamp(start_time), shortcut_1.core.discord.getRelativeTimestamp(end_time));
+            yield interaction.editReply({
+                embeds: [answering_embed]
+            });
+            yield shortcut_1.core.sleep(buffer_time);
+            const qns_msg = yield interaction.user.send({
+                content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+                files: [local_file_name],
+                components: shortcut_1.core.discord.compAdder([default_end_button])
+            });
+            (0, fs_1.unlink)(local_file_name, () => { return; });
+            const end_btn_info = {
+                _id: new mongodb_1.ObjectId(),
+                user_id: interaction.user.id,
+                channel_id: interaction.channelId,
+                msg_id: qns_msg.id,
+                time: {
+                    start: start_time,
+                    end: end_time
+                }
+            };
+            const create_result = yield (yield this.end_button_op.cursor_promise).insertOne(end_btn_info);
+            if (!create_result.acknowledged)
+                return yield interaction.user.send('建立結束資料時發生錯誤！');
+        });
+    }
+    getAnsweringInfoEmbed(start_time, end_time) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const new_embed = yield shortcut_1.core.cloneObj(default_answering_info_embed);
+            new_embed.addField('開始時間', start_time);
+            new_embed.addField('結束時間', end_time);
+            return new_embed;
+        });
+    }
+}
+exports.ConfirmStartBountyManager = ConfirmStartBountyManager;
+const default_select_ans_dropdown = new discord_js_1.MessageSelectMenu()
+    .setCustomId('choose-bounty-answers')
+    .setPlaceholder('選擇答案')
+    .setMinValues(1)
+    .setMaxValues(1);
+class EndBountyManager extends shortcut_1.core.BaseManager {
+    constructor(f_platform) {
+        super(f_platform);
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
         this.end_button_op = new shortcut_1.core.BaseOperator({
             db: 'Bounty',
             coll: 'EndButtonPipeline'
@@ -157,21 +470,6 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             db: 'Bounty',
             coll: 'DropdownPipeline'
         });
-        this.qns_diffi_exp = {
-            'easy': 10,
-            'medium': 10 * 2,
-            'hard': 10 * 3
-        };
-        this.qns_diffi_time = {
-            'easy': 60,
-            'medium': 60 * 2,
-            'hard': 60 * 3
-        };
-        this.qns_ext_stamina_portion = {
-            'easy': 1 / 4,
-            'medium': 1 / 3,
-            'hard': 1 / 3
-        };
         this.alphabet_sequence = [
             'A', 'B', 'C', 'D', 'E',
             'F', 'G', 'H', 'I', 'J',
@@ -180,245 +478,65 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
             'U', 'V', 'W', 'X', 'Y', 'Z'
         ];
         this.setupListener();
-        this.SLCMD_REGISTER_LIST = user_interaction_1.EVENT_MANAGER_SLCMD;
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
-            if (interaction.isCommand())
-                yield this.slcmdHandler(interaction);
-            else if (interaction.isButton())
+            if (interaction.isButton())
                 yield this.buttonHandler(interaction);
-            else if (interaction.isSelectMenu())
-                yield this.dropdownHandler(interaction);
         }));
-    }
-    slcmdHandler(interaction) {
-        return __awaiter(this, void 0, void 0, function* () {
-            switch (interaction.commandName) {
-                case 'start-bounty': {
-                    yield interaction.deferReply({ ephemeral: true });
-                    const check_main_acc = yield this.account_op.checkDataExistence({ user_id: interaction.user.id });
-                    if (check_main_acc.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
-                        return yield interaction.editReply('請先建立你的懸賞區資料！');
-                    const user_acc = yield (yield this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    if (!user_acc.auth)
-                        return yield interaction.editReply('你沒有遊玩懸賞區的權限！');
-                    if (user_acc.status)
-                        return yield interaction.editReply('你已經在遊玩懸賞區了！');
-                    const create_result = yield SB_functions.autoCreateAndGetOngoingInfo(interaction.user.id, {
-                        account_op: this.account_op,
-                        ongoing_op: this.ongoing_op
-                    });
-                    if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
-                        return yield interaction.editReply('創建問題串失敗！');
-                    else if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
-                        yield interaction.editReply('問題串已建立！');
-                    else if (create_result.status === shortcut_1.db.StatusCode.DATA_FOUND)
-                        yield interaction.editReply('找到問題串資料');
-                    const beautified_qns_thread = yield qns_thread_beauty.beautify(create_result.qns_thread);
-                    yield interaction.followUp({
-                        content: `你的答題狀態：\n\n${beautified_qns_thread}`,
-                        ephemeral: true
-                    });
-                    const qns_data = yield SB_functions.getQnsThreadData(create_result.qns_thread);
-                    if (qns_data.finished)
-                        return yield interaction.followUp('你已經回答完所有問題了！');
-                    // ==== modify embed -> set difficulty and qns_number
-                    const new_embed = yield this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
-                    let msg;
-                    try {
-                        msg = yield interaction.user.send({
-                            components: [user_interaction_1.START_BOUNTY_COMPONENTS.button],
-                            embeds: [new_embed]
-                        });
-                    }
-                    catch (_a) {
-                        return yield interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
-                    }
-                    const button_data = {
-                        _id: new mongodb_1.ObjectId(),
-                        user_id: interaction.user.id,
-                        channel_id: msg.channelId,
-                        msg_id: msg.id,
-                        qns_info: {
-                            difficulty: qns_data.curr_diffi,
-                            number: qns_data.curr_qns_number
-                        },
-                        due_time: Date.now() + 60 * 1000
-                    };
-                    yield (yield this.start_button_op.cursor_promise).insertOne(button_data);
-                    yield shortcut_1.core.sleep(60);
-                    const btn_data = yield (yield this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    if (!btn_data)
-                        return;
-                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
-                    yield msg.edit({
-                        components: [new_button]
-                    });
-                    return yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                }
-            }
-        });
-    }
-    getStartBountyEmbed(diffi, qns_number) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const new_embed = yield shortcut_1.core.cloneObj(user_interaction_1.START_BOUNTY_COMPONENTS.embed);
-            new_embed.fields[0].value = diffi;
-            new_embed.fields[1].value = qns_number.toString();
-            return new_embed;
-        });
     }
     buttonHandler(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            switch (interaction.customId) {
-                case 'start_bounty': {
-                    yield interaction.deferReply();
-                    const user_btn_data = yield (yield this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    if (!user_btn_data)
-                        return yield interaction.editReply('錯誤，找不到驗證資訊');
-                    else if (user_btn_data.msg_id !== interaction.message.id)
-                        return yield interaction.editReply('驗證資訊錯誤');
-                    const ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    let stamina_execute;
-                    if (ongoing_data.stamina.regular > 0) {
-                        stamina_execute = {
-                            $inc: {
-                                "stamina.regular": -1
-                            }
-                        };
-                    }
-                    else if (ongoing_data.stamina.extra > 0) {
-                        stamina_execute = {
-                            $inc: {
-                                "stamina.extra": -1
-                            }
-                        };
-                    }
-                    else {
-                        return yield interaction.editReply('錯誤，你沒有足夠的體力！');
-                    }
-                    yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
-                    const diffi = user_btn_data.qns_info.difficulty;
-                    const qns_number = user_btn_data.qns_info.number;
-                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.START_BOUNTY_COMPONENTS.button);
-                    const msg = interaction.message;
-                    yield msg.edit({
-                        components: [new_button]
-                    });
-                    const delete_result = yield (yield this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                    if (!delete_result.acknowledged)
-                        return yield interaction.editReply('刪除驗證資訊時發生錯誤！');
-                    // download qns pic
-                    const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
-                    const dl_result = yield shortcut_1.db.storjDownload({
-                        bucket_name: 'bounty-questions-db',
-                        local_file_name: local_file_name,
-                        db_file_name: `${diffi}/${qns_number}.png`
-                    });
-                    if (!dl_result)
-                        return yield interaction.user.send('下載圖片錯誤！');
-                    const buffer_time = 10;
-                    const process_delay_time = 1;
-                    const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
-                    const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
-                    const execute = {
-                        $set: {
-                            status: true
-                        }
-                    };
-                    const update_result = yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-                    if (!update_result.acknowledged) {
-                        (0, fs_1.unlink)(local_file_name, () => { return; });
-                        return yield interaction.user.send('開始懸賞時發生錯誤！');
-                    }
-                    const relativeDiscordTimestamp = (t) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
-                    const answering_embed = yield this.getAnsweringInfoEmbed(relativeDiscordTimestamp(start_time), relativeDiscordTimestamp(end_time));
-                    yield interaction.editReply({
-                        embeds: [answering_embed]
-                    });
-                    yield shortcut_1.core.sleep(buffer_time);
-                    const qns_msg = yield interaction.user.send({
-                        content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
-                        files: [local_file_name],
-                        components: [user_interaction_1.END_BOUNTY_COMPONENTS.button]
-                    });
-                    (0, fs_1.unlink)(local_file_name, () => { return; });
-                    const end_btn_info = {
-                        _id: new mongodb_1.ObjectId(),
-                        user_id: interaction.user.id,
-                        channel_id: interaction.channelId,
-                        msg_id: qns_msg.id,
-                        time: {
-                            start: start_time,
-                            end: end_time
-                        }
-                    };
-                    const create_result = yield (yield this.end_button_op.cursor_promise).insertOne(end_btn_info);
-                    if (!create_result.acknowledged)
-                        return yield interaction.user.send('建立結束資料時發生錯誤！');
-                    break;
+            yield interaction.deferReply();
+            const stop_answering_time = Date.now();
+            const user_end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+            const channel = yield this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
+            if (!(channel instanceof discord_js_1.DMChannel))
+                return;
+            const start_bounty_execute = {
+                $set: {
+                    status: false
                 }
-                case 'end_bounty': {
-                    yield interaction.deferReply();
-                    const stop_answering_time = Date.now();
-                    const user_end_btn_data = yield (yield this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    yield (yield this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                    const channel = yield this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
-                    if (!(channel instanceof discord_js_1.DMChannel))
-                        return;
-                    const start_bounty_execute = {
-                        $set: {
-                            status: false
-                        }
-                    };
-                    yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
-                    const msg = yield channel.messages.fetch(user_end_btn_data.msg_id);
-                    const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
-                    yield msg.edit({
-                        components: [new_button]
-                    });
-                    const user_ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    const thread_data = yield SB_functions.getQnsThreadData(user_ongoing_data.qns_thread);
-                    const choices = yield this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
-                    const ans_dropdown = yield this.appendChoicesToDropdown(choices);
-                    const dp_msg = yield interaction.editReply({
-                        content: '請選擇答案（限時30秒）',
-                        components: [ans_dropdown]
-                    });
-                    if (!(dp_msg instanceof discord_js_1.Message))
-                        return yield interaction.channel.send('err dealing with types');
-                    const dp_data = {
-                        _id: new mongodb_1.ObjectId(),
-                        user_id: interaction.user.id,
-                        channel_id: dp_msg.channelId,
-                        msg_id: dp_msg.id,
-                        ans_duration: stop_answering_time - user_end_btn_data.time.start
-                    };
-                    const create_result = yield (yield this.dropdown_op.cursor_promise).insertOne(dp_data);
-                    if (!create_result.acknowledged)
-                        return yield interaction.channel.send('新增dp驗證時發生錯誤！');
-                    yield shortcut_1.core.sleep(30);
-                    try {
-                        if (!(dp_msg instanceof discord_js_1.Message))
-                            return;
-                        yield dp_msg.edit({
-                            content: '選擇答案時間已過時',
-                            components: []
-                        });
-                    }
-                    catch (_a) {
-                        return;
-                    }
-                }
+            };
+            yield (yield this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
+            const msg = yield channel.messages.fetch(user_end_btn_data.msg_id);
+            const new_button = yield shortcut_1.core.discord.getDisabledButton(default_end_button);
+            yield msg.edit({
+                components: shortcut_1.core.discord.compAdder([new_button])
+            });
+            const user_ongoing_data = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            const thread_data = yield getQnsThreadData(user_ongoing_data.qns_thread);
+            const choices = yield this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
+            const ans_dropdown = yield this.appendChoicesToDropdown(choices);
+            const dp_msg = yield interaction.editReply({
+                content: '請選擇答案（限時30秒）',
+                components: shortcut_1.core.discord.compAdder([ans_dropdown])
+            });
+            if (!(dp_msg instanceof discord_js_1.Message))
+                return yield interaction.channel.send('err dealing with types');
+            const dp_data = {
+                _id: new mongodb_1.ObjectId(),
+                user_id: interaction.user.id,
+                channel_id: dp_msg.channelId,
+                msg_id: dp_msg.id,
+                ans_duration: stop_answering_time - user_end_btn_data.time.start
+            };
+            const create_result = yield (yield this.dropdown_op.cursor_promise).insertOne(dp_data);
+            if (!create_result.acknowledged)
+                return yield interaction.channel.send('新增dp驗證時發生錯誤！');
+            yield shortcut_1.core.sleep(30);
+            try {
+                if (!(dp_msg instanceof discord_js_1.Message))
+                    return;
+                yield dp_msg.edit({
+                    content: '選擇答案時間已過時',
+                    components: []
+                });
             }
-        });
-    }
-    getAnsweringInfoEmbed(start_time, end_time) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const new_embed = yield shortcut_1.core.cloneObj(user_interaction_1.END_BOUNTY_COMPONENTS.embed);
-            new_embed.fields[0].value = start_time;
-            new_embed.fields[1].value = end_time;
-            return new_embed;
+            catch (_a) {
+                return;
+            }
         });
     }
     generateQuestionChoices(qns_diffi, qns_number) {
@@ -447,73 +565,108 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
     }
     appendChoicesToDropdown(choices) {
         return __awaiter(this, void 0, void 0, function* () {
-            const new_dropdown = yield shortcut_1.core.cloneObj(user_interaction_1.END_BOUNTY_COMPONENTS.dropdown);
+            const new_dropdown = yield shortcut_1.core.cloneObj(default_select_ans_dropdown);
+            const options = [];
             for (let i = 0; i < choices.length; i++) {
                 const choice = choices[i];
-                const new_option = yield shortcut_1.core.cloneObj(user_interaction_1.END_BOUNTY_COMPONENTS.dropdown_option);
-                new_option.label = choice;
-                new_option.value = choice;
-                new_dropdown.components[0].options.push(new_option);
+                options.push({
+                    label: choice,
+                    value: choice
+                });
             }
+            new_dropdown.addOptions(options);
             return new_dropdown;
         });
     }
+}
+exports.EndBountyManager = EndBountyManager;
+class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
+    constructor(f_platform) {
+        super(f_platform);
+        this.account_op = new shortcut_1.core.BountyUserAccountOperator();
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
+        this.dropdown_op = new shortcut_1.core.BaseOperator({
+            db: 'Bounty',
+            coll: 'DropdownPipeline'
+        });
+        this.qns_diffi_exp = {
+            'easy': 10,
+            'medium': 10 * 2,
+            'hard': 10 * 3
+        };
+        this.qns_diffi_time = {
+            'easy': 60,
+            'medium': 60 * 2,
+            'hard': 60 * 3
+        };
+        this.qns_ext_stamina_portion = {
+            'easy': 1 / 4,
+            'medium': 1 / 3,
+            'hard': 1 / 3
+        };
+        this.setupListener();
+    }
+    setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', (interaction) => __awaiter(this, void 0, void 0, function* () {
+            if (interaction.isSelectMenu())
+                yield this.dropdownHandler(interaction);
+        }));
+    }
     dropdownHandler(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            switch (interaction.customId) {
-                case 'bounty_answers': {
-                    yield interaction.deferReply();
-                    // auth
-                    const user_dp_data = yield (yield this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    if (!user_dp_data)
-                        return yield interaction.editReply('找不到驗證資訊！');
-                    if (user_dp_data.channel_id !== interaction.channelId)
-                        return yield interaction.editReply('驗證資訊錯誤！');
-                    if (user_dp_data.msg_id !== interaction.message.id)
-                        return yield interaction.editReply('驗證資訊錯誤！');
-                    yield (yield this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                    //
-                    // fetch data
-                    const user_ongoing_info = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                    const thread_data = yield SB_functions.getQnsThreadData(user_ongoing_info.qns_thread);
-                    const qns_data = yield (yield this.qns_op.cursor_promise).findOne({
-                        difficulty: thread_data.curr_diffi,
-                        number: thread_data.curr_qns_number
-                    });
-                    //
-                    yield interaction.editReply({
-                        content: `你選擇的答案是：${interaction.values[0]}`,
-                        components: []
-                    });
-                    const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
-                    if (correct)
-                        yield interaction.channel.send('這是正確答案');
-                    else
-                        yield interaction.channel.send('這不是正確答案！');
-                    const give_result = yield this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
-                    if (give_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
-                        yield interaction.channel.send(`恭喜獲得 ${give_result.delta_exp} exp`);
-                    else
-                        yield interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
-                    let new_thread = undefined;
-                    if (correct) {
-                        const result = yield this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi);
-                        if (result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
-                            yield interaction.channel.send('更新問題串時發生錯誤');
-                        new_thread = result.new_thread;
-                    }
-                    const stat_result = yield this.updateStatistics(interaction.user.id, correct, thread_data.curr_diffi, thread_data.curr_qns_number, new_thread);
-                    if (!stat_result)
-                        yield interaction.channel.send('更新統計資料時發生錯誤');
-                    if (!correct)
-                        return;
-                    // extra stamina
-                    const can_gain_ext_stamina = yield this.canUserGainExtraStamina(user_dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
-                    if (!can_gain_ext_stamina)
-                        return;
-                    return yield this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
-                }
+            if (interaction.customId !== 'choose-bounty-answers')
+                return;
+            yield interaction.deferReply();
+            // auth
+            const user_dp_data = yield (yield this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            if (!user_dp_data)
+                return yield interaction.editReply('找不到驗證資訊！');
+            if (user_dp_data.channel_id !== interaction.channelId)
+                return yield interaction.editReply('驗證資訊錯誤！');
+            if (user_dp_data.msg_id !== interaction.message.id)
+                return yield interaction.editReply('驗證資訊錯誤！');
+            yield (yield this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+            //
+            // fetch data
+            const user_ongoing_info = yield (yield this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            const thread_data = yield getQnsThreadData(user_ongoing_info.qns_thread);
+            const qns_data = yield (yield this.qns_op.cursor_promise).findOne({
+                difficulty: thread_data.curr_diffi,
+                number: thread_data.curr_qns_number
+            });
+            //
+            yield interaction.editReply({
+                content: `你選擇的答案是：${interaction.values[0]}`,
+                components: []
+            });
+            const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
+            if (correct)
+                yield interaction.channel.send('這是正確答案');
+            else
+                yield interaction.channel.send('這不是正確答案！');
+            const give_result = yield this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
+            if (give_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
+                yield interaction.channel.send(`恭喜獲得 ${give_result.delta_exp} exp`);
+            else
+                yield interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
+            let new_thread = undefined;
+            if (correct) {
+                const result = yield this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi);
+                if (result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+                    yield interaction.channel.send('更新問題串時發生錯誤');
+                new_thread = result.new_thread;
             }
+            const stat_result = yield this.updateStatistics(interaction.user.id, correct, thread_data.curr_diffi, thread_data.curr_qns_number, new_thread);
+            if (!stat_result)
+                yield interaction.channel.send('更新統計資料時發生錯誤');
+            if (!correct)
+                return;
+            // extra stamina
+            const can_gain_ext_stamina = yield this.canUserGainExtraStamina(user_dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
+            if (!can_gain_ext_stamina)
+                return;
+            return yield this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
         });
     }
     isUserCorrect(interaction, correct_ans) {
@@ -642,100 +795,7 @@ class BountyEventManager extends shortcut_1.core.BaseManager {
         });
     }
 }
-exports.BountyEventManager = BountyEventManager;
-const SB_functions = {
-    autoCreateAndGetOngoingInfo(user_id, ops) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const data_exists = yield ops.ongoing_op.checkDataExistence({ user_id: user_id });
-            if (data_exists.status === shortcut_1.db.StatusCode.DATA_FOUND) {
-                const user_ongoing_info = yield (yield ops.ongoing_op.cursor_promise).findOne({ user_id: user_id });
-                return {
-                    status: data_exists.status,
-                    qns_thread: user_ongoing_info.qns_thread
-                };
-            }
-            const new_qns_thread = yield this.createQnsThread(user_id, ops);
-            const create_result = yield ops.ongoing_op.createDefaultData({
-                user_id: user_id,
-                qns_thread: new_qns_thread
-            });
-            return {
-                status: create_result.status,
-                qns_thread: new_qns_thread
-            };
-        });
-    },
-    createQnsThread(user_id, ops) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user_main_acc = yield (yield ops.account_op.cursor_promise).findOne({ user_id: user_id });
-            const db_cache_operator = new shortcut_1.core.BaseOperator({
-                db: 'Bounty',
-                coll: 'StorjQnsDBCache'
-            });
-            const cache = yield (yield db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-            const diffi_list = ['easy', 'medium', 'hard'];
-            const new_qns_thread = {
-                easy: undefined,
-                medium: undefined,
-                hard: undefined
-            };
-            yield shortcut_1.core.asyncForEach(diffi_list, (diffi) => __awaiter(this, void 0, void 0, function* () {
-                const max_num = cache[diffi].max_number;
-                const skipped_nums = cache[diffi].skipped_numbers;
-                const not_answered = [];
-                const answered = user_main_acc.qns_record.answered_qns_number[diffi];
-                for (let i = 0; i <= max_num; i++) {
-                    if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
-                        skipped_nums.shift();
-                        continue;
-                    }
-                    if (answered.length !== 0 && i === answered[0]) {
-                        answered.shift();
-                        continue;
-                    }
-                    not_answered.push(i);
-                }
-                yield shortcut_1.core.shuffle(not_answered);
-                const max_qns_count = Math.min(3, not_answered.length);
-                new_qns_thread[diffi] = not_answered.slice(0, max_qns_count);
-            }));
-            return new_qns_thread;
-        });
-    },
-    getQnsThreadData(qns_thread) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const diffi_list = ['easy', 'medium', 'hard'];
-            let curr_diffi;
-            let curr_qns_number;
-            for (let i = 0; i < diffi_list.length; i++) {
-                const diffi = diffi_list[i];
-                if (qns_thread[diffi].length === 0)
-                    continue;
-                curr_diffi = diffi;
-                curr_qns_number = qns_thread[diffi][0];
-                break;
-            }
-            if (curr_diffi === undefined)
-                return {
-                    finished: true
-                };
-            return {
-                finished: false,
-                curr_diffi: curr_diffi,
-                curr_qns_number: curr_qns_number
-            };
-        });
-    }
-};
-const common_functions = {
-    getDisabledButton(obj) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const new_button = yield shortcut_1.core.cloneObj(obj);
-            new_button.components[0].disabled = true;
-            return new_button;
-        });
-    }
-};
+exports.SelectBountyAnswerManager = SelectBountyAnswerManager;
 class EndBountySessionManager extends session.SessionManager {
     constructor(f_platform) {
         const session_config = {
@@ -809,7 +869,7 @@ class EndBountySessionManager extends session.SessionManager {
                 if (!(channel instanceof discord_js_1.DMChannel))
                     return;
                 const msg = yield channel.messages.fetch(end_btn_data.msg_id);
-                const new_button = yield common_functions.getDisabledButton(user_interaction_1.END_BOUNTY_COMPONENTS.button);
+                const new_button = yield shortcut_1.core.discord.getDisabledButton(default_end_button);
                 yield msg.edit({
                     content: '已超過可回答時間',
                     files: [],

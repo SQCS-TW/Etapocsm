@@ -1,0 +1,389 @@
+51:C 23 Jun 2022 10:07:24.376 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+51:C 23 Jun 2022 10:07:24.377 # Redis version=5.0.7, bits=64, commit=00000000, modified=0, pid=51, just started
+51:C 23 Jun 2022 10:07:24.379 # Configuration loaded
+52:M 23 Jun 2022 10:07:24.430 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+52:M 23 Jun 2022 10:07:24.467 * Running mode=standalone, port=6379.
+52:M 23 Jun 2022 10:07:24.470 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+52:M 23 Jun 2022 10:07:24.474 # Server initialized
+52:M 23 Jun 2022 10:07:24.476 # WARNING overcommit_memory is set to 0! Background save may fail under low memory condition. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+52:M 23 Jun 2022 10:07:24.478 * Ready to accept connections
+52:M 23 Jun 2022 10:08:25.064 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:08:25.195 * Background saving started by pid 65
+65:C 23 Jun 2022 10:08:25.209 * DB saved on disk
+52:M 23 Jun 2022 10:08:25.299 * Background saving terminated with success
+52:M 23 Jun 2022 10:09:26.080 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:09:26.138 * Background saving started by pid 66
+66:C 23 Jun 2022 10:09:26.148 * DB saved on disk
+52:M 23 Jun 2022 10:09:26.246 * Background saving terminated with success
+52:M 23 Jun 2022 10:10:27.087 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:10:27.142 * Background saving started by pid 67
+67:C 23 Jun 2022 10:10:27.152 * DB saved on disk
+52:M 23 Jun 2022 10:10:27.248 * Background saving terminated with success
+52:M 23 Jun 2022 10:11:28.032 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:11:28.094 * Background saving started by pid 68
+68:C 23 Jun 2022 10:11:28.104 * DB saved on disk
+52:M 23 Jun 2022 10:11:28.200 * Background saving terminated with success
+52:M 23 Jun 2022 10:12:29.004 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:12:29.076 * Background saving started by pid 69
+69:C 23 Jun 2022 10:12:29.092 * DB saved on disk
+52:M 23 Jun 2022 10:12:29.181 * Background saving terminated with success
+52:M 23 Jun 2022 10:13:30.031 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:13:30.094 * Background saving started by pid 70
+70:C 23 Jun 2022 10:13:30.112 * DB saved on disk
+52:M 23 Jun 2022 10:13:30.198 * Background saving terminated with success
+52:M 23 Jun 2022 10:14:31.081 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:14:31.147 * Background saving started by pid 71
+71:C 23 Jun 2022 10:14:31.161 * DB saved on disk
+52:M 23 Jun 2022 10:14:31.250 * Background saving terminated with success
+52:M 23 Jun 2022 10:15:32.065 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:15:32.190 * Background saving started by pid 72
+72:C 23 Jun 2022 10:15:32.219 * DB saved on disk
+52:M 23 Jun 2022 10:15:32.315 * Background saving terminated with success
+52:M 23 Jun 2022 10:16:33.019 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:16:33.129 * Background saving started by pid 73
+73:C 23 Jun 2022 10:16:33.159 * DB saved on disk
+52:M 23 Jun 2022 10:16:33.265 * Background saving terminated with success
+52:M 23 Jun 2022 10:17:34.085 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:17:34.165 * Background saving started by pid 74
+74:C 23 Jun 2022 10:17:34.176 * DB saved on disk
+52:M 23 Jun 2022 10:17:34.269 * Background saving terminated with success
+52:M 23 Jun 2022 10:18:35.061 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:18:35.122 * Background saving started by pid 75
+75:C 23 Jun 2022 10:18:35.131 * DB saved on disk
+52:M 23 Jun 2022 10:18:35.227 * Background saving terminated with success
+52:M 23 Jun 2022 10:19:36.030 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:19:36.084 * Background saving started by pid 76
+76:C 23 Jun 2022 10:19:36.094 * DB saved on disk
+52:M 23 Jun 2022 10:19:36.187 * Background saving terminated with success
+52:M 23 Jun 2022 10:20:37.058 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:20:37.147 * Background saving started by pid 77
+77:C 23 Jun 2022 10:20:37.199 * DB saved on disk
+52:M 23 Jun 2022 10:20:37.291 * Background saving terminated with success
+52:M 23 Jun 2022 10:21:38.082 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:21:38.140 * Background saving started by pid 78
+78:C 23 Jun 2022 10:21:38.149 * DB saved on disk
+52:M 23 Jun 2022 10:21:38.243 * Background saving terminated with success
+52:M 23 Jun 2022 10:22:39.016 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:22:39.079 * Background saving started by pid 79
+79:C 23 Jun 2022 10:22:39.090 * DB saved on disk
+52:M 23 Jun 2022 10:22:39.185 * Background saving terminated with success
+52:M 23 Jun 2022 10:23:40.092 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:23:40.145 * Background saving started by pid 80
+80:C 23 Jun 2022 10:23:40.154 * DB saved on disk
+52:M 23 Jun 2022 10:23:40.247 * Background saving terminated with success
+52:M 23 Jun 2022 10:24:41.075 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:24:41.122 * Background saving started by pid 81
+81:C 23 Jun 2022 10:24:41.136 * DB saved on disk
+52:M 23 Jun 2022 10:24:41.227 * Background saving terminated with success
+52:M 23 Jun 2022 10:25:42.001 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:25:42.153 * Background saving started by pid 82
+82:C 23 Jun 2022 10:25:42.174 * DB saved on disk
+52:M 23 Jun 2022 10:25:42.269 * Background saving terminated with success
+52:M 23 Jun 2022 10:26:43.071 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:26:43.137 * Background saving started by pid 83
+83:C 23 Jun 2022 10:26:43.147 * DB saved on disk
+52:M 23 Jun 2022 10:26:43.241 * Background saving terminated with success
+52:M 23 Jun 2022 10:27:44.094 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:27:44.169 * Background saving started by pid 84
+84:C 23 Jun 2022 10:27:44.179 * DB saved on disk
+52:M 23 Jun 2022 10:27:44.275 * Background saving terminated with success
+52:M 23 Jun 2022 10:28:45.019 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:28:45.069 * Background saving started by pid 85
+85:C 23 Jun 2022 10:28:45.080 * DB saved on disk
+52:M 23 Jun 2022 10:28:45.173 * Background saving terminated with success
+52:M 23 Jun 2022 10:29:46.093 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:29:46.140 * Background saving started by pid 86
+86:C 23 Jun 2022 10:29:46.148 * DB saved on disk
+52:M 23 Jun 2022 10:29:46.243 * Background saving terminated with success
+52:M 23 Jun 2022 10:30:47.000 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:30:47.056 * Background saving started by pid 87
+87:C 23 Jun 2022 10:30:47.071 * DB saved on disk
+52:M 23 Jun 2022 10:30:47.164 * Background saving terminated with success
+52:M 23 Jun 2022 10:31:48.002 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:31:48.049 * Background saving started by pid 88
+88:C 23 Jun 2022 10:31:48.057 * DB saved on disk
+52:M 23 Jun 2022 10:31:48.152 * Background saving terminated with success
+52:M 23 Jun 2022 10:32:49.034 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:32:49.080 * Background saving started by pid 89
+89:C 23 Jun 2022 10:32:49.089 * DB saved on disk
+52:M 23 Jun 2022 10:32:49.182 * Background saving terminated with success
+52:M 23 Jun 2022 10:33:50.090 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:33:50.140 * Background saving started by pid 90
+90:C 23 Jun 2022 10:33:50.148 * DB saved on disk
+52:M 23 Jun 2022 10:33:50.242 * Background saving terminated with success
+52:M 23 Jun 2022 10:34:51.083 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:34:51.159 * Background saving started by pid 91
+91:C 23 Jun 2022 10:34:51.172 * DB saved on disk
+52:M 23 Jun 2022 10:34:51.263 * Background saving terminated with success
+52:M 23 Jun 2022 10:35:52.055 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:35:52.127 * Background saving started by pid 92
+92:C 23 Jun 2022 10:35:52.136 * DB saved on disk
+52:M 23 Jun 2022 10:35:52.230 * Background saving terminated with success
+52:M 23 Jun 2022 10:36:53.061 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:36:53.109 * Background saving started by pid 93
+93:C 23 Jun 2022 10:36:53.118 * DB saved on disk
+52:M 23 Jun 2022 10:36:53.212 * Background saving terminated with success
+52:M 23 Jun 2022 10:37:54.045 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:37:54.107 * Background saving started by pid 94
+94:C 23 Jun 2022 10:37:54.118 * DB saved on disk
+52:M 23 Jun 2022 10:37:54.213 * Background saving terminated with success
+52:M 23 Jun 2022 10:38:55.088 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:38:55.135 * Background saving started by pid 95
+95:C 23 Jun 2022 10:38:55.143 * DB saved on disk
+52:M 23 Jun 2022 10:38:55.238 * Background saving terminated with success
+52:M 23 Jun 2022 10:39:56.022 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:39:56.110 * Background saving started by pid 96
+96:C 23 Jun 2022 10:39:56.120 * DB saved on disk
+52:M 23 Jun 2022 10:39:56.216 * Background saving terminated with success
+52:M 23 Jun 2022 10:40:57.029 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:40:57.121 * Background saving started by pid 97
+97:C 23 Jun 2022 10:40:57.155 * DB saved on disk
+52:M 23 Jun 2022 10:40:57.265 * Background saving terminated with success
+52:M 23 Jun 2022 10:41:58.107 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:41:58.183 * Background saving started by pid 98
+98:C 23 Jun 2022 10:41:58.206 * DB saved on disk
+52:M 23 Jun 2022 10:41:58.326 * Background saving terminated with success
+52:M 23 Jun 2022 10:42:59.036 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:42:59.098 * Background saving started by pid 99
+99:C 23 Jun 2022 10:42:59.111 * DB saved on disk
+52:M 23 Jun 2022 10:42:59.200 * Background saving terminated with success
+52:M 23 Jun 2022 10:44:00.038 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:44:00.099 * Background saving started by pid 100
+100:C 23 Jun 2022 10:44:00.108 * DB saved on disk
+52:M 23 Jun 2022 10:44:00.204 * Background saving terminated with success
+52:M 23 Jun 2022 10:45:01.039 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:45:01.084 * Background saving started by pid 101
+101:C 23 Jun 2022 10:45:01.092 * DB saved on disk
+52:M 23 Jun 2022 10:45:01.187 * Background saving terminated with success
+52:M 23 Jun 2022 10:46:02.009 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:46:02.059 * Background saving started by pid 102
+102:C 23 Jun 2022 10:46:02.068 * DB saved on disk
+52:M 23 Jun 2022 10:46:02.161 * Background saving terminated with success
+52:M 23 Jun 2022 10:47:03.094 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:47:03.147 * Background saving started by pid 103
+103:C 23 Jun 2022 10:47:03.157 * DB saved on disk
+52:M 23 Jun 2022 10:47:03.253 * Background saving terminated with success
+52:M 23 Jun 2022 10:48:04.053 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:48:04.131 * Background saving started by pid 104
+104:C 23 Jun 2022 10:48:04.141 * DB saved on disk
+52:M 23 Jun 2022 10:48:04.255 * Background saving terminated with success
+52:M 23 Jun 2022 10:49:05.057 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:49:05.191 * Background saving started by pid 105
+105:C 23 Jun 2022 10:49:05.212 * DB saved on disk
+52:M 23 Jun 2022 10:49:05.323 * Background saving terminated with success
+52:M 23 Jun 2022 10:50:06.025 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:50:06.103 * Background saving started by pid 106
+106:C 23 Jun 2022 10:50:06.113 * DB saved on disk
+52:M 23 Jun 2022 10:50:06.228 * Background saving terminated with success
+52:M 23 Jun 2022 10:51:07.067 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:51:07.174 * Background saving started by pid 107
+107:C 23 Jun 2022 10:51:07.200 * DB saved on disk
+52:M 23 Jun 2022 10:51:07.292 * Background saving terminated with success
+52:M 23 Jun 2022 10:52:08.096 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:52:08.228 * Background saving started by pid 108
+108:C 23 Jun 2022 10:52:08.241 * DB saved on disk
+52:M 23 Jun 2022 10:52:08.343 * Background saving terminated with success
+52:M 23 Jun 2022 10:53:09.041 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:53:09.110 * Background saving started by pid 109
+109:C 23 Jun 2022 10:53:09.119 * DB saved on disk
+52:M 23 Jun 2022 10:53:09.212 * Background saving terminated with success
+52:M 23 Jun 2022 10:54:10.015 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:54:10.097 * Background saving started by pid 110
+110:C 23 Jun 2022 10:54:10.124 * DB saved on disk
+52:M 23 Jun 2022 10:54:10.203 * Background saving terminated with success
+52:M 23 Jun 2022 10:55:11.089 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:55:11.141 * Background saving started by pid 111
+111:C 23 Jun 2022 10:55:11.154 * DB saved on disk
+52:M 23 Jun 2022 10:55:11.248 * Background saving terminated with success
+52:M 23 Jun 2022 10:56:12.066 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:56:12.140 * Background saving started by pid 112
+112:C 23 Jun 2022 10:56:12.154 * DB saved on disk
+52:M 23 Jun 2022 10:56:12.247 * Background saving terminated with success
+52:M 23 Jun 2022 10:57:13.069 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:57:13.336 * Background saving started by pid 113
+113:C 23 Jun 2022 10:57:13.394 * DB saved on disk
+52:M 23 Jun 2022 10:57:13.521 * Background saving terminated with success
+52:M 23 Jun 2022 10:58:14.106 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:58:14.379 * Background saving started by pid 114
+114:C 23 Jun 2022 10:58:14.656 * DB saved on disk
+52:M 23 Jun 2022 10:58:14.765 * Background saving terminated with success
+52:M 23 Jun 2022 10:59:15.054 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 10:59:15.112 * Background saving started by pid 115
+115:C 23 Jun 2022 10:59:15.128 * DB saved on disk
+52:M 23 Jun 2022 10:59:15.215 * Background saving terminated with success
+52:M 23 Jun 2022 11:00:16.043 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:00:16.216 * Background saving started by pid 116
+116:C 23 Jun 2022 11:00:16.259 * DB saved on disk
+52:M 23 Jun 2022 11:00:16.359 * Background saving terminated with success
+52:M 23 Jun 2022 11:01:17.089 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:01:17.145 * Background saving started by pid 117
+117:C 23 Jun 2022 11:01:17.155 * DB saved on disk
+52:M 23 Jun 2022 11:01:17.249 * Background saving terminated with success
+52:M 23 Jun 2022 11:02:18.075 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:02:18.147 * Background saving started by pid 118
+118:C 23 Jun 2022 11:02:18.162 * DB saved on disk
+52:M 23 Jun 2022 11:02:18.252 * Background saving terminated with success
+52:M 23 Jun 2022 11:03:19.032 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:03:19.103 * Background saving started by pid 119
+119:C 23 Jun 2022 11:03:19.116 * DB saved on disk
+52:M 23 Jun 2022 11:03:19.213 * Background saving terminated with success
+52:M 23 Jun 2022 11:04:20.009 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:04:20.097 * Background saving started by pid 120
+120:C 23 Jun 2022 11:04:20.115 * DB saved on disk
+52:M 23 Jun 2022 11:04:20.216 * Background saving terminated with success
+52:M 23 Jun 2022 11:05:21.075 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:05:21.189 * Background saving started by pid 121
+121:C 23 Jun 2022 11:05:21.233 * DB saved on disk
+52:M 23 Jun 2022 11:05:21.316 * Background saving terminated with success
+52:M 23 Jun 2022 11:06:22.006 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:06:22.060 * Background saving started by pid 122
+122:C 23 Jun 2022 11:06:22.071 * DB saved on disk
+52:M 23 Jun 2022 11:06:22.164 * Background saving terminated with success
+52:M 23 Jun 2022 11:07:23.013 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:07:23.108 * Background saving started by pid 123
+123:C 23 Jun 2022 11:07:23.125 * DB saved on disk
+52:M 23 Jun 2022 11:07:23.221 * Background saving terminated with success
+52:M 23 Jun 2022 11:08:24.020 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:08:24.115 * Background saving started by pid 124
+124:C 23 Jun 2022 11:08:24.202 * DB saved on disk
+52:M 23 Jun 2022 11:08:24.270 * Background saving terminated with success
+52:M 23 Jun 2022 11:09:25.029 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:09:25.093 * Background saving started by pid 125
+125:C 23 Jun 2022 11:09:25.118 * DB saved on disk
+52:M 23 Jun 2022 11:09:25.196 * Background saving terminated with success
+52:M 23 Jun 2022 11:10:26.029 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:10:26.080 * Background saving started by pid 126
+126:C 23 Jun 2022 11:10:26.090 * DB saved on disk
+52:M 23 Jun 2022 11:10:26.183 * Background saving terminated with success
+52:M 23 Jun 2022 11:11:27.062 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:11:27.143 * Background saving started by pid 127
+127:C 23 Jun 2022 11:11:27.156 * DB saved on disk
+52:M 23 Jun 2022 11:11:27.248 * Background saving terminated with success
+52:M 23 Jun 2022 11:12:28.028 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:12:28.117 * Background saving started by pid 128
+128:C 23 Jun 2022 11:12:28.136 * DB saved on disk
+52:M 23 Jun 2022 11:12:28.227 * Background saving terminated with success
+52:M 23 Jun 2022 11:13:29.027 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:13:29.149 * Background saving started by pid 129
+129:C 23 Jun 2022 11:13:29.174 * DB saved on disk
+52:M 23 Jun 2022 11:13:29.255 * Background saving terminated with success
+52:M 23 Jun 2022 11:14:30.062 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:14:30.157 * Background saving started by pid 130
+130:C 23 Jun 2022 11:14:30.178 * DB saved on disk
+52:M 23 Jun 2022 11:14:30.272 * Background saving terminated with success
+52:M 23 Jun 2022 11:15:31.072 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:15:31.177 * Background saving started by pid 131
+131:C 23 Jun 2022 11:15:31.194 * DB saved on disk
+52:M 23 Jun 2022 11:15:31.294 * Background saving terminated with success
+52:M 23 Jun 2022 11:16:32.037 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:16:32.090 * Background saving started by pid 132
+132:C 23 Jun 2022 11:16:32.099 * DB saved on disk
+52:M 23 Jun 2022 11:16:32.194 * Background saving terminated with success
+52:M 23 Jun 2022 11:17:33.096 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:17:33.157 * Background saving started by pid 133
+133:C 23 Jun 2022 11:17:33.167 * DB saved on disk
+52:M 23 Jun 2022 11:17:33.263 * Background saving terminated with success
+52:M 23 Jun 2022 11:18:34.078 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:18:34.128 * Background saving started by pid 134
+134:C 23 Jun 2022 11:18:34.138 * DB saved on disk
+52:M 23 Jun 2022 11:18:34.231 * Background saving terminated with success
+52:M 23 Jun 2022 11:19:35.018 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:19:35.086 * Background saving started by pid 135
+135:C 23 Jun 2022 11:19:35.100 * DB saved on disk
+52:M 23 Jun 2022 11:19:35.188 * Background saving terminated with success
+52:M 23 Jun 2022 11:20:36.073 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:20:36.122 * Background saving started by pid 136
+136:C 23 Jun 2022 11:20:36.132 * DB saved on disk
+52:M 23 Jun 2022 11:20:36.225 * Background saving terminated with success
+52:M 23 Jun 2022 11:21:37.003 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:21:37.082 * Background saving started by pid 137
+137:C 23 Jun 2022 11:21:37.146 * DB saved on disk
+52:M 23 Jun 2022 11:21:37.234 * Background saving terminated with success
+52:M 23 Jun 2022 11:22:38.072 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:22:38.147 * Background saving started by pid 138
+138:C 23 Jun 2022 11:22:38.159 * DB saved on disk
+52:M 23 Jun 2022 11:22:38.251 * Background saving terminated with success
+52:M 23 Jun 2022 11:23:39.113 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:23:39.241 * Background saving started by pid 139
+139:C 23 Jun 2022 11:23:39.274 * DB saved on disk
+52:M 23 Jun 2022 11:23:39.346 * Background saving terminated with success
+52:M 23 Jun 2022 11:24:40.036 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:24:40.089 * Background saving started by pid 140
+140:C 23 Jun 2022 11:24:40.100 * DB saved on disk
+52:M 23 Jun 2022 11:24:40.195 * Background saving terminated with success
+52:M 23 Jun 2022 11:25:41.076 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:25:41.148 * Background saving started by pid 141
+141:C 23 Jun 2022 11:25:41.175 * DB saved on disk
+52:M 23 Jun 2022 11:25:41.259 * Background saving terminated with success
+52:M 23 Jun 2022 11:26:42.098 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:26:42.157 * Background saving started by pid 142
+142:C 23 Jun 2022 11:26:42.166 * DB saved on disk
+52:M 23 Jun 2022 11:26:42.261 * Background saving terminated with success
+52:M 23 Jun 2022 11:27:43.085 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:27:43.178 * Background saving started by pid 143
+143:C 23 Jun 2022 11:27:43.194 * DB saved on disk
+52:M 23 Jun 2022 11:27:43.303 * Background saving terminated with success
+52:M 23 Jun 2022 11:28:44.056 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:28:44.173 * Background saving started by pid 144
+144:C 23 Jun 2022 11:28:44.225 * DB saved on disk
+52:M 23 Jun 2022 11:28:44.303 * Background saving terminated with success
+52:M 23 Jun 2022 11:29:45.044 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:29:45.239 * Background saving started by pid 145
+145:C 23 Jun 2022 11:29:45.314 * DB saved on disk
+52:M 23 Jun 2022 11:29:45.387 * Background saving terminated with success
+52:M 23 Jun 2022 11:30:46.002 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:30:46.092 * Background saving started by pid 146
+146:C 23 Jun 2022 11:30:46.115 * DB saved on disk
+52:M 23 Jun 2022 11:30:46.229 * Background saving terminated with success
+52:M 23 Jun 2022 11:31:47.083 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:31:47.257 * Background saving started by pid 147
+147:C 23 Jun 2022 11:31:47.331 * DB saved on disk
+52:M 23 Jun 2022 11:31:47.462 * Background saving terminated with success
+52:M 23 Jun 2022 11:32:48.000 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:32:48.053 * Background saving started by pid 148
+148:C 23 Jun 2022 11:32:48.062 * DB saved on disk
+52:M 23 Jun 2022 11:32:48.157 * Background saving terminated with success
+52:M 23 Jun 2022 11:33:49.011 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:33:49.061 * Background saving started by pid 149
+149:C 23 Jun 2022 11:33:49.070 * DB saved on disk
+52:M 23 Jun 2022 11:33:49.163 * Background saving terminated with success
+52:M 23 Jun 2022 11:34:50.042 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:34:50.093 * Background saving started by pid 150
+150:C 23 Jun 2022 11:34:50.102 * DB saved on disk
+52:M 23 Jun 2022 11:34:50.197 * Background saving terminated with success
+52:M 23 Jun 2022 11:35:51.028 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:35:51.125 * Background saving started by pid 151
+151:C 23 Jun 2022 11:35:51.141 * DB saved on disk
+52:M 23 Jun 2022 11:35:51.228 * Background saving terminated with success
+52:M 23 Jun 2022 11:36:52.135 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:36:52.273 * Background saving started by pid 152
+152:C 23 Jun 2022 11:36:52.293 * DB saved on disk
+52:M 23 Jun 2022 11:36:52.440 * Background saving terminated with success
+52:M 23 Jun 2022 11:37:53.073 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:37:53.144 * Background saving started by pid 153
+153:C 23 Jun 2022 11:37:53.158 * DB saved on disk
+52:M 23 Jun 2022 11:37:53.250 * Background saving terminated with success
+52:M 23 Jun 2022 11:38:54.090 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:38:54.138 * Background saving started by pid 154
+154:C 23 Jun 2022 11:38:54.147 * DB saved on disk
+52:M 23 Jun 2022 11:38:54.242 * Background saving terminated with success
+52:M 23 Jun 2022 11:39:55.030 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:39:55.100 * Background saving started by pid 155
+155:C 23 Jun 2022 11:39:55.113 * DB saved on disk
+52:M 23 Jun 2022 11:39:55.207 * Background saving terminated with success
+52:M 23 Jun 2022 11:40:56.102 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:40:56.181 * Background saving started by pid 156
+156:C 23 Jun 2022 11:40:56.197 * DB saved on disk
+52:M 23 Jun 2022 11:40:56.287 * Background saving terminated with success
+52:M 23 Jun 2022 11:41:57.002 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:41:57.070 * Background saving started by pid 157
+157:C 23 Jun 2022 11:41:57.081 * DB saved on disk
+52:M 23 Jun 2022 11:41:57.174 * Background saving terminated with success
+52:M 23 Jun 2022 11:44:56.668 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:44:56.767 * Background saving started by pid 158
+158:C 23 Jun 2022 11:44:56.792 * DB saved on disk
+52:M 23 Jun 2022 11:44:56.882 * Background saving terminated with success
+52:M 23 Jun 2022 11:45:57.082 * 1 changes in 60 seconds. Saving...
+52:M 23 Jun 2022 11:45:57.148 * Background saving started by pid 159
+159:C 23 Jun 2022 11:45:57.157 * DB saved on disk
+52:M 23 Jun 2022 11:45:57.250 * Background saving terminated with success

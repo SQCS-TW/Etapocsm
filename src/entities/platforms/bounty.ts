@@ -3,10 +3,17 @@ import { Etapocsm } from '../../bot';
 
 import {
     BountyQnsDBManager,
+
     BountyAccountManager,
-    BountyEventManager,
+    StartBountyManager,
+    ConfirmStartBountyManager,
+    EndBountyManager,
+    SelectBountyAnswerManager,
     EndBountySessionManager,
-    BountyUserManiManager
+
+    BountyUserManiManager,
+
+    BountyUIManager
 } from '../managers/bounty/reglist';
 
 export class BountyPlatform extends core.BasePlatform {
@@ -15,10 +22,17 @@ export class BountyPlatform extends core.BasePlatform {
 
         this.managers = [
             new BountyQnsDBManager(this),
+
             new BountyAccountManager(this),
-            new BountyEventManager(this),
+            new StartBountyManager(this),
+            new ConfirmStartBountyManager(this),
+            new EndBountyManager(this),
+            new SelectBountyAnswerManager(this),
             new EndBountySessionManager(this),
-            new BountyUserManiManager(this)
-        ]
+
+            new BountyUserManiManager(this),
+
+            new BountyUIManager(this)
+        ];
     }
 }

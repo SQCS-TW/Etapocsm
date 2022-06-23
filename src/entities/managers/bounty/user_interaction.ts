@@ -1,17 +1,17 @@
-import { ButtonInteraction, CommandInteraction, DMChannel, Message, SelectMenuInteraction } from 'discord.js';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
 import { ObjectId } from 'mongodb';
-
-import {
-    ACCOUNT_MANAGER_SLCMD,
-    EVENT_MANAGER_SLCMD,
-    START_BOUNTY_COMPONENTS,
-    END_BOUNTY_COMPONENTS
-} from './components/user_interaction';
-
 import * as session from '../../powerup_mngs/session_mng';
 
+import {
+    ButtonInteraction,
+    DMChannel,
+    Message,
+    MessageButton,
+    MessageEmbed,
+    MessageSelectMenu,
+    SelectMenuInteraction
+} from 'discord.js';
 
 export class BountyAccountManager extends core.BaseManager {
     private account_op = new core.BountyUserAccountOperator();
@@ -20,21 +20,19 @@ export class BountyAccountManager extends core.BaseManager {
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
-        
-        this.setupListener();
 
-        this.SLCMD_REGISTER_LIST = ACCOUNT_MANAGER_SLCMD;
+        this.setupListener();
     }
 
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
-            if (interaction.isCommand()) await this.slcmdHandler(interaction);
+            if (interaction.isButton()) await this.buttonHandler(interaction);
         });
     }
 
-    private async slcmdHandler(interaction: CommandInteraction) {
+    private async buttonHandler(interaction: ButtonInteraction) {
 
-        switch (interaction.commandName) {
+        switch (interaction.customId) {
             case 'create-main-bounty-account': {
                 await interaction.deferReply({ ephemeral: true });
 
@@ -72,6 +70,7 @@ export class BountyAccountManager extends core.BaseManager {
     }
 }
 
+
 type QnsThread = {
     easy: number[],
     medium: number[],
@@ -79,65 +78,421 @@ type QnsThread = {
 }
 
 class QnsThreadBeautifier {
-    private len_to_emoji = {
-        2: '🔒 ║ ❓',
-        3: '🔒 ║ ❓ × 2️⃣'
-    };
     private diffi_to_emoji = {
         'easy': '🟩',
         'medium': '🟧',
         'hard': '🟥'
     };
-    private ban_repeat = 4;
-    private ban_line = '═';
-    private ban_left = '╣';
-    private ban_right = '╠';
+    private ban_line = '════';
+    private diffi_to_cn = {
+        'easy': '簡單',
+        'medium': '普通',
+        'hard': '困難'
+    };
 
-    async beautify(thread: QnsThread): Promise<string> {
-        const text: string[] = [];
-
+    async beautify(thread: QnsThread): Promise<MessageEmbed> {
         let previous_comp = true;
         const diffi_list = ['easy', 'medium', 'hard'];
+
+        const basic_embed = new MessageEmbed()
+            .setTitle('你的闖關狀態')
+            .setColor('#ffffff');
 
         for (let i = 0; i < diffi_list.length; i++) {
             const diffi = diffi_list[i];
 
-            const long_line = this.ban_line.repeat(this.ban_repeat);
-            const banner = `${long_line}${this.ban_left} ${this.diffi_to_emoji[diffi]} ${this.ban_right}${long_line}`;
-            text.push(banner);
+            const embed_title = `${this.ban_line} ${this.diffi_to_emoji[diffi]} ${this.diffi_to_cn[diffi]} ${this.ban_line}`;
+            let embed_content: string;
 
             const thread_len = thread[diffi].length;
             if (thread_len > 0 && previous_comp) {
                 previous_comp = false;
-
-                text.push("👉 ║ ❓");
-                if (thread_len > 1) text.push(this.len_to_emoji[thread_len]);
-
+                embed_content = `剩餘 ${thread_len} 題\n`;
             } else if (thread_len > 0 || !previous_comp) {
-                text.push('🔒');
+                embed_content = '🔒\n';
             } else {
-                text.push('✅');
-
                 previous_comp = true;
+                embed_content = '✅\n';
             }
-
-            if (diffi !== 'hard') text.push('\n');
+            basic_embed.addField(embed_title, embed_content);
         }
-        return text.join('\n');
+        return basic_embed;
     }
 }
 
 const qns_thread_beauty = new QnsThreadBeautifier();
 
-export class BountyEventManager extends core.BaseManager {
+const default_start_button = new MessageButton()
+    .setStyle('PRIMARY')
+    .setLabel('確認開始答題')
+    .setCustomId('confirm-start-bounty')
+
+const default_start_embed = new MessageEmbed()
+    .setTitle('題目資訊')
+    .setColor('#ffffff')
+    .setFooter({
+        text: '題目將在確認之後發送；確認按鈕將在60秒後過期；如不答題不用按按鈕'
+    });
+
+async function getQnsThreadData(qns_thread: QnsThread) {
+    const diffi_list = ['easy', 'medium', 'hard'];
+
+    let curr_diffi: string;
+    let curr_qns_number: number;
+    for (let i = 0; i < diffi_list.length; i++) {
+        const diffi = diffi_list[i];
+        if (qns_thread[diffi].length === 0) continue;
+
+        curr_diffi = diffi;
+        curr_qns_number = qns_thread[diffi][0];
+        break;
+    }
+    if (curr_diffi === undefined) return {
+        finished: true
+    };
+
+    return {
+        finished: false,
+        curr_diffi: curr_diffi,
+        curr_qns_number: curr_qns_number
+    };
+}
+
+
+export class StartBountyManager extends core.BaseManager {
     private account_op = new core.BountyUserAccountOperator();
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
-    private qns_op = new core.BountyQnsDBOperator();
 
     private start_button_op = new core.BaseOperator({
         db: 'Bounty',
         coll: 'StartButtonPipeline'
     });
+
+
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
+
+        this.setupListener();
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
+            if (interaction.isButton()) await this.buttonHandler(interaction);
+        });
+    }
+
+    private async buttonHandler(interaction: ButtonInteraction) {
+        if (interaction.customId !== 'start-bounty') return;
+
+        await interaction.deferReply({ ephemeral: true });
+
+        const check_main_acc = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
+        if (check_main_acc.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('請先建立你的懸賞區資料！');
+
+        const user_acc = await (await this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        if (!user_acc.auth) return await interaction.editReply('你沒有遊玩懸賞區的權限！');
+        if (user_acc.status) return await interaction.editReply('你已經在遊玩懸賞區了！');
+
+        const create_result = await this.createOrGetOngoingInfo(interaction.user.id, {
+            account_op: this.account_op,
+            ongoing_op: this.ongoing_op
+        });
+
+        if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('創建問題串失敗！');
+        else if (create_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.editReply('問題串已建立！');
+        else if (create_result.status === db.StatusCode.DATA_FOUND) await interaction.editReply('找到問題串資料');
+
+        const beautified_qns_thread = await qns_thread_beauty.beautify(create_result.qns_thread);
+        await interaction.followUp({
+            embeds: [beautified_qns_thread],
+            ephemeral: true
+        });
+
+        const qns_data = await getQnsThreadData(create_result.qns_thread);
+
+        if (qns_data.finished) return await interaction.followUp('你已經回答完所有問題了！');
+
+        // ==== modify embed -> set difficulty and qns_number
+        const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
+
+        let msg;
+        try {
+            msg = await interaction.user.send({
+                embeds: [new_embed],
+                components: core.discord.compAdder(
+                    [default_start_button]
+                )
+            });
+        } catch {
+            return await interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
+        }
+
+        const button_data = {
+            _id: new ObjectId(),
+            user_id: interaction.user.id,
+            channel_id: msg.channelId,
+            msg_id: msg.id,
+            qns_info: {
+                difficulty: qns_data.curr_diffi,
+                number: qns_data.curr_qns_number
+            },
+            due_time: Date.now() + 60 * 1000
+        }
+        await (await this.start_button_op.cursor_promise).insertOne(button_data);
+
+        await core.sleep(60);
+
+        const btn_data = await (await this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        if (!btn_data) return;
+
+        const new_button = await core.discord.getDisabledButton(default_start_button);
+
+        await msg.edit({
+            components: [new_button]
+        });
+
+        return await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+    }
+
+    private async getStartBountyEmbed(diffi: string, qns_number: number) {
+        const new_embed = await core.cloneObj(default_start_embed);
+        new_embed.addField('題目難度', diffi);
+        new_embed.addField('題目編號', qns_number);
+        return new_embed;
+    }
+
+    async createOrGetOngoingInfo(user_id: string, ops) {
+        const data_exists = await ops.ongoing_op.checkDataExistence({ user_id: user_id });
+        if (data_exists.status === db.StatusCode.DATA_FOUND) {
+            const user_ongoing_info = await (await ops.ongoing_op.cursor_promise).findOne({ user_id: user_id });
+
+            return {
+                status: data_exists.status,
+                qns_thread: user_ongoing_info.qns_thread
+            };
+        }
+
+        const new_qns_thread = await this.createQnsThread(user_id, ops);
+        const create_result = await ops.ongoing_op.createDefaultData({
+            user_id: user_id,
+            qns_thread: new_qns_thread
+        });
+
+        return {
+            status: create_result.status,
+            qns_thread: new_qns_thread
+        }
+    }
+
+    private async createQnsThread(user_id: string, ops) {
+        const user_main_acc = await (await ops.account_op.cursor_promise).findOne({ user_id: user_id });
+
+        const db_cache_operator = new core.BaseOperator({
+            db: 'Bounty',
+            coll: 'StorjQnsDBCache'
+        });
+
+        const cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+
+        const diffi_list = ['easy', 'medium', 'hard'];
+        const new_qns_thread = {
+            easy: undefined,
+            medium: undefined,
+            hard: undefined
+        }
+        await core.asyncForEach(diffi_list, async (diffi) => {
+            const max_num: number = cache[diffi].max_number;
+            const skipped_nums: number[] = cache[diffi].skipped_numbers;
+
+            const not_answered = []
+            const answered: number[] = user_main_acc.qns_record.answered_qns_number[diffi];
+            for (let i = 0; i <= max_num; i++) {
+                if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
+                    skipped_nums.shift();
+                    continue;
+                }
+
+                if (answered.length !== 0 && i === answered[0]) {
+                    answered.shift();
+                    continue;
+                }
+
+                not_answered.push(i);
+            }
+            await core.shuffle(not_answered);
+
+            const max_qns_count = Math.min(3, not_answered.length);
+            new_qns_thread[diffi] = not_answered.slice(0, max_qns_count);
+        });
+
+        return new_qns_thread;
+    }
+}
+
+
+const default_answering_info_embed = new MessageEmbed()
+    .setTitle('答題資訊')
+    .setColor('#ffffff')
+    .setFooter({
+        text: '如要答題，請在結束時間抵達前按下按鈕'
+    });
+
+const default_end_button = new MessageButton()
+    .setStyle('SUCCESS')
+    .setLabel('結束答題')
+    .setCustomId('end-bounty');
+
+export class ConfirmStartBountyManager extends core.BaseManager {
+    private ongoing_op = new core.BountyUserOngoingInfoOperator();
+
+    private confirm_start_button_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'StartButtonPipeline'
+    });
+
+    private end_button_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'EndButtonPipeline'
+    });
+
+    private qns_diffi_time = {
+        'easy': 60,
+        'medium': 60 * 2,
+        'hard': 60 * 3
+    };
+
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
+
+        this.setupListener();
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
+            if (interaction.isButton()) await this.buttonHandler(interaction);
+        });
+    }
+
+    private async buttonHandler(interaction: ButtonInteraction) {
+        if (interaction.customId !== 'confirm-start-bounty') return;
+
+        await interaction.deferReply();
+
+        const user_btn_data = await (await this.confirm_start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        if (!user_btn_data) return await interaction.editReply('錯誤，找不到驗證資訊');
+        else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤');
+
+        const ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+
+        let stamina_execute: object;
+        if (ongoing_data.stamina.regular > 0) {
+            stamina_execute = {
+                $inc: {
+                    "stamina.regular": -1
+                }
+            }
+        } else if (ongoing_data.stamina.extra > 0) {
+            stamina_execute = {
+                $inc: {
+                    "stamina.extra": -1
+                }
+            }
+        } else {
+            return await interaction.editReply('錯誤，你沒有足夠的體力！');
+        }
+        await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
+
+        const diffi = user_btn_data.qns_info.difficulty;
+        const qns_number = user_btn_data.qns_info.number;
+
+        const new_button = await core.discord.getDisabledButton(default_start_button);
+
+        const msg: any = interaction.message;
+        await msg.edit({
+            components: [new_button]
+        });
+
+        const delete_result = await (await this.confirm_start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+        if (!delete_result.acknowledged) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+
+        // download qns pic
+        const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
+        const dl_result = await db.storjDownload({
+            bucket_name: 'bounty-questions-db',
+            local_file_name: local_file_name,
+            db_file_name: `${diffi}/${qns_number}.png`
+        });
+        if (!dl_result) return await interaction.user.send('下載圖片錯誤！');
+
+        const buffer_time = 10;
+        const process_delay_time = 1;
+
+        const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
+        const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
+
+        const execute = {
+            $set: {
+                status: true
+            }
+        }
+        const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+        if (!update_result.acknowledged) {
+            unlink(local_file_name, () => { return; });
+            return await interaction.user.send('開始懸賞時發生錯誤！');
+        }
+
+        const answering_embed = await this.getAnsweringInfoEmbed(
+            core.discord.getRelativeTimestamp(start_time),
+            core.discord.getRelativeTimestamp(end_time)
+        );
+        await interaction.editReply({
+            embeds: [answering_embed]
+        });
+
+        await core.sleep(buffer_time);
+
+        const qns_msg = await interaction.user.send({
+            content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+            files: [local_file_name],
+            components: core.discord.compAdder(
+                [default_end_button]
+            )
+        });
+        unlink(local_file_name, () => { return; });
+
+        const end_btn_info = {
+            _id: new ObjectId(),
+            user_id: interaction.user.id,
+            channel_id: interaction.channelId,
+            msg_id: qns_msg.id,
+            time: {
+                start: start_time,
+                end: end_time
+            }
+        }
+        const create_result = await (await this.end_button_op.cursor_promise).insertOne(end_btn_info);
+        if (!create_result.acknowledged) return await interaction.user.send('建立結束資料時發生錯誤！');
+    }
+
+    private async getAnsweringInfoEmbed(start_time: string, end_time: string) {
+        const new_embed = await core.cloneObj(default_answering_info_embed);
+        new_embed.addField('開始時間', start_time);
+        new_embed.addField('結束時間', end_time);
+        return new_embed;
+    }
+}
+
+
+const default_select_ans_dropdown = new MessageSelectMenu()
+    .setCustomId('choose-bounty-answers')
+    .setPlaceholder('選擇答案')
+    .setMinValues(1)
+    .setMaxValues(1);
+
+export class EndBountyManager extends core.BaseManager {
+    private ongoing_op = new core.BountyUserOngoingInfoOperator();
+    private qns_op = new core.BountyQnsDBOperator();
+
     private end_button_op = new core.BaseOperator({
         db: 'Bounty',
         coll: 'EndButtonPipeline'
@@ -147,21 +502,6 @@ export class BountyEventManager extends core.BaseManager {
         coll: 'DropdownPipeline'
     });
 
-    private qns_diffi_exp = {
-        'easy': 10,
-        'medium': 10 * 2,
-        'hard': 10 * 3
-    };
-    private qns_diffi_time = {
-        'easy': 60,
-        'medium': 60 * 2,
-        'hard': 60 * 3
-    };
-    private qns_ext_stamina_portion = {
-        'easy': 1/4,
-        'medium': 1/3,
-        'hard': 1/3
-    };
     private alphabet_sequence = [
         'A', 'B', 'C', 'D', 'E',
         'F', 'G', 'H', 'I', 'J',
@@ -174,272 +514,79 @@ export class BountyEventManager extends core.BaseManager {
         super(f_platform);
 
         this.setupListener();
-
-        this.SLCMD_REGISTER_LIST = EVENT_MANAGER_SLCMD;
     }
 
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
-            if (interaction.isCommand()) await this.slcmdHandler(interaction);
-            else if (interaction.isButton()) await this.buttonHandler(interaction);
-            else if (interaction.isSelectMenu()) await this.dropdownHandler(interaction);
+            if (interaction.isButton()) await this.buttonHandler(interaction);
         });
     }
 
-    private async slcmdHandler(interaction: CommandInteraction) {
-
-        switch (interaction.commandName) {
-            case 'start-bounty': {
-                await interaction.deferReply({ ephemeral: true });
-
-                const check_main_acc = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
-                if (check_main_acc.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('請先建立你的懸賞區資料！');
-
-                const user_acc = await (await this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                if (!user_acc.auth) return await interaction.editReply('你沒有遊玩懸賞區的權限！');
-                if (user_acc.status) return await interaction.editReply('你已經在遊玩懸賞區了！');
-
-                const create_result = await SB_functions.autoCreateAndGetOngoingInfo(interaction.user.id, {
-                    account_op: this.account_op,
-                    ongoing_op: this.ongoing_op
-                });
-
-                if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('創建問題串失敗！');
-                else if (create_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.editReply('問題串已建立！');
-                else if (create_result.status === db.StatusCode.DATA_FOUND) await interaction.editReply('找到問題串資料');
-
-                const beautified_qns_thread = await qns_thread_beauty.beautify(create_result.qns_thread);
-                await interaction.followUp({
-                    content: `你的答題狀態：\n\n${beautified_qns_thread}`,
-                    ephemeral: true
-                });
-
-                const qns_data = await SB_functions.getQnsThreadData(create_result.qns_thread);
-
-                if (qns_data.finished) return await interaction.followUp('你已經回答完所有問題了！');
-
-                // ==== modify embed -> set difficulty and qns_number
-                const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number);
-
-                let msg;
-                try {
-                    msg = await interaction.user.send({
-                        components: [START_BOUNTY_COMPONENTS.button],
-                        embeds: [new_embed]
-                    });
-                } catch {
-                    return await interaction.followUp('私訊時發生錯誤，請檢察你是否有開啟此功能');
-                }
-
-                const button_data = {
-                    _id: new ObjectId(),
-                    user_id: interaction.user.id,
-                    channel_id: msg.channelId,
-                    msg_id: msg.id,
-                    qns_info: {
-                        difficulty: qns_data.curr_diffi,
-                        number: qns_data.curr_qns_number
-                    },
-                    due_time: Date.now() + 60 * 1000
-                }
-                await (await this.start_button_op.cursor_promise).insertOne(button_data);
-
-                await core.sleep(60);
-
-                const btn_data = await (await this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                if (!btn_data) return;
-
-                const new_button = await common_functions.getDisabledButton(START_BOUNTY_COMPONENTS.button);
-
-                await msg.edit({
-                    components: [new_button]
-                });
-
-                return await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-            }
-        }
-    }
-
-    private async getStartBountyEmbed(diffi: string, qns_number: number) {
-        const new_embed = await core.cloneObj(START_BOUNTY_COMPONENTS.embed);
-        new_embed.fields[0].value = diffi;
-        new_embed.fields[1].value = qns_number.toString();
-        return new_embed;
-    }
-
     private async buttonHandler(interaction: ButtonInteraction) {
-        switch (interaction.customId) {
-            case 'start_bounty': {
-                await interaction.deferReply();
+        await interaction.deferReply();
 
-                const user_btn_data = await (await this.start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                if (!user_btn_data) return await interaction.editReply('錯誤，找不到驗證資訊');
-                else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤');
+        const stop_answering_time = Date.now();
 
-                const ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        const user_end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
 
-                let stamina_execute: object;
-                if (ongoing_data.stamina.regular > 0) {
-                    stamina_execute = {
-                        $inc: {
-                            "stamina.regular": -1
-                        }
-                    }
-                } else if (ongoing_data.stamina.extra > 0) {
-                    stamina_execute = {
-                        $inc: {
-                            "stamina.extra": -1
-                        }
-                    }
-                } else {
-                    return await interaction.editReply('錯誤，你沒有足夠的體力！');
-                }
-                await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
+        await (await this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
 
-                const diffi = user_btn_data.qns_info.difficulty;
-                const qns_number = user_btn_data.qns_info.number;
+        const channel = await this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
+        if (!(channel instanceof DMChannel)) return;
 
-                const new_button = await common_functions.getDisabledButton(START_BOUNTY_COMPONENTS.button);
-
-                const msg: any = interaction.message;
-                await msg.edit({
-                    components: [new_button]
-                });
-
-                const delete_result = await (await this.start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                if (!delete_result.acknowledged) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
-
-                // download qns pic
-                const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
-                const dl_result = await db.storjDownload({
-                    bucket_name: 'bounty-questions-db',
-                    local_file_name: local_file_name,
-                    db_file_name: `${diffi}/${qns_number}.png`
-                });
-                if (!dl_result) return await interaction.user.send('下載圖片錯誤！');
-
-                const buffer_time = 10;
-                const process_delay_time = 1;
-
-                const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
-                const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
-
-                const execute = {
-                    $set: {
-                        status: true
-                    }
-                }
-                const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-                if (!update_result.acknowledged) {
-                    unlink(local_file_name, () => { return; });
-                    return await interaction.user.send('開始懸賞時發生錯誤！');
-                }
-
-                const relativeDiscordTimestamp = (t: number) => { return `<t:${Math.trunc(t / 1000)}:R>`; };
-
-                const answering_embed = await this.getAnsweringInfoEmbed(
-                    relativeDiscordTimestamp(start_time),
-                    relativeDiscordTimestamp(end_time)
-                );
-                await interaction.editReply({
-                    embeds: [answering_embed]
-                });
-
-                await core.sleep(buffer_time);
-
-                const qns_msg = await interaction.user.send({
-                    content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
-                    files: [local_file_name],
-                    components: [END_BOUNTY_COMPONENTS.button]
-                });
-                unlink(local_file_name, () => { return; });
-
-                const end_btn_info = {
-                    _id: new ObjectId(),
-                    user_id: interaction.user.id,
-                    channel_id: interaction.channelId,
-                    msg_id: qns_msg.id,
-                    time: {
-                        start: start_time,
-                        end: end_time
-                    }
-                }
-                const create_result = await (await this.end_button_op.cursor_promise).insertOne(end_btn_info);
-                if (!create_result.acknowledged) return await interaction.user.send('建立結束資料時發生錯誤！');
-
-                break;
-            }
-
-            case 'end_bounty': {
-                await interaction.deferReply();
-
-                const stop_answering_time = Date.now();
-
-                const user_end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-
-                await (await this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-
-                const channel = await this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
-                if (!(channel instanceof DMChannel)) return;
-
-                const start_bounty_execute = {
-                    $set: {
-                        status: false
-                    }
-                }
-                await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
-
-
-                const msg = await channel.messages.fetch(user_end_btn_data.msg_id);
-                const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
-                await msg.edit({
-                    components: [new_button]
-                });
-
-                const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-
-                const thread_data = await SB_functions.getQnsThreadData(user_ongoing_data.qns_thread);
-                const choices = await this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
-                const ans_dropdown = await this.appendChoicesToDropdown(choices);
-
-                const dp_msg = await interaction.editReply({
-                    content: '請選擇答案（限時30秒）',
-                    components: [ans_dropdown]
-                });
-
-                if (!(dp_msg instanceof Message)) return await interaction.channel.send('err dealing with types');
-
-                const dp_data = {
-                    _id: new ObjectId(),
-                    user_id: interaction.user.id,
-                    channel_id: dp_msg.channelId,
-                    msg_id: dp_msg.id,
-                    ans_duration: stop_answering_time - user_end_btn_data.time.start
-                }
-
-                const create_result = await (await this.dropdown_op.cursor_promise).insertOne(dp_data);
-                if (!create_result.acknowledged) return await interaction.channel.send('新增dp驗證時發生錯誤！');
-
-                await core.sleep(30);
-
-                try {
-                    if (!(dp_msg instanceof Message)) return;
-                    await dp_msg.edit({
-                        content: '選擇答案時間已過時',
-                        components: []
-                    });
-                } catch {
-                    return;
-                }
+        const start_bounty_execute = {
+            $set: {
+                status: false
             }
         }
-    }
+        await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
 
-    private async getAnsweringInfoEmbed(start_time: string, end_time: string) {
-        const new_embed = await core.cloneObj(END_BOUNTY_COMPONENTS.embed);
-        new_embed.fields[0].value = start_time;
-        new_embed.fields[1].value = end_time;
-        return new_embed;
+
+        const msg = await channel.messages.fetch(user_end_btn_data.msg_id);
+        const new_button = await core.discord.getDisabledButton(default_end_button);
+        await msg.edit({
+            components: core.discord.compAdder(
+                [new_button]
+            )
+        });
+
+        const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+
+        const thread_data = await getQnsThreadData(user_ongoing_data.qns_thread);
+        const choices = await this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
+        const ans_dropdown = await this.appendChoicesToDropdown(choices);
+
+        const dp_msg = await interaction.editReply({
+            content: '請選擇答案（限時30秒）',
+            components: core.discord.compAdder(
+                [ans_dropdown]
+            )
+        });
+
+        if (!(dp_msg instanceof Message)) return await interaction.channel.send('err dealing with types');
+
+        const dp_data = {
+            _id: new ObjectId(),
+            user_id: interaction.user.id,
+            channel_id: dp_msg.channelId,
+            msg_id: dp_msg.id,
+            ans_duration: stop_answering_time - user_end_btn_data.time.start
+        }
+
+        const create_result = await (await this.dropdown_op.cursor_promise).insertOne(dp_data);
+        if (!create_result.acknowledged) return await interaction.channel.send('新增dp驗證時發生錯誤！');
+
+        await core.sleep(30);
+
+        try {
+            if (!(dp_msg instanceof Message)) return;
+            await dp_msg.edit({
+                content: '選擇答案時間已過時',
+                components: []
+            });
+        } catch {
+            return;
+        }
     }
 
     private async generateQuestionChoices(qns_diffi: string, qns_number: number) {
@@ -475,87 +622,127 @@ export class BountyEventManager extends core.BaseManager {
     }
 
     private async appendChoicesToDropdown(choices: string[]) {
-        const new_dropdown = await core.cloneObj(END_BOUNTY_COMPONENTS.dropdown);
+        const new_dropdown = await core.cloneObj(default_select_ans_dropdown);
 
+        const options = [];
         for (let i = 0; i < choices.length; i++) {
             const choice = choices[i];
 
-            const new_option = await core.cloneObj(END_BOUNTY_COMPONENTS.dropdown_option);
-            new_option.label = choice;
-            new_option.value = choice;
-
-            new_dropdown.components[0].options.push(new_option)
+            options.push({
+                label: choice,
+                value: choice
+            });
         }
+        new_dropdown.addOptions(options);
+
         return new_dropdown;
+    }
+}
+
+
+export class SelectBountyAnswerManager extends core.BaseManager {
+    private account_op = new core.BountyUserAccountOperator();
+    private ongoing_op = new core.BountyUserOngoingInfoOperator();
+    private qns_op = new core.BountyQnsDBOperator();
+
+    private dropdown_op = new core.BaseOperator({
+        db: 'Bounty',
+        coll: 'DropdownPipeline'
+    });
+
+    private qns_diffi_exp = {
+        'easy': 10,
+        'medium': 10 * 2,
+        'hard': 10 * 3
+    };
+    private qns_diffi_time = {
+        'easy': 60,
+        'medium': 60 * 2,
+        'hard': 60 * 3
+    };
+    private qns_ext_stamina_portion = {
+        'easy': 1 / 4,
+        'medium': 1 / 3,
+        'hard': 1 / 3
+    };
+    
+    constructor(f_platform: core.BasePlatform) {
+        super(f_platform);
+
+        this.setupListener();
+    }
+
+    private setupListener() {
+        this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
+            if (interaction.isSelectMenu()) await this.dropdownHandler(interaction);
+        });
     }
 
     private async dropdownHandler(interaction: SelectMenuInteraction) {
-        switch (interaction.customId) {
-            case 'bounty_answers': {
-                await interaction.deferReply();
+        if (interaction.customId !== 'choose-bounty-answers') return;
 
-                // auth
-                const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        await interaction.deferReply();
 
-                if (!user_dp_data) return await interaction.editReply('找不到驗證資訊！');
-                if (user_dp_data.channel_id !== interaction.channelId) return await interaction.editReply('驗證資訊錯誤！');
-                if (user_dp_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤！');
+        // auth
+        const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
 
-                await (await this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                //
+        if (!user_dp_data) return await interaction.editReply('找不到驗證資訊！');
+        if (user_dp_data.channel_id !== interaction.channelId) return await interaction.editReply('驗證資訊錯誤！');
+        if (user_dp_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤！');
 
-                // fetch data
-                const user_ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-                const thread_data = await SB_functions.getQnsThreadData(user_ongoing_info.qns_thread);
-                const qns_data = await (await this.qns_op.cursor_promise).findOne({
-                    difficulty: thread_data.curr_diffi,
-                    number: thread_data.curr_qns_number
-                });
-                //
+        await (await this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+        //
 
-                await interaction.editReply({
-                    content: `你選擇的答案是：${interaction.values[0]}`,
-                    components: []
-                });
+        // fetch data
+        const user_ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        const thread_data = await getQnsThreadData(user_ongoing_info.qns_thread);
+        const qns_data = await (await this.qns_op.cursor_promise).findOne({
+            difficulty: thread_data.curr_diffi,
+            number: thread_data.curr_qns_number
+        });
+        //
+
+        await interaction.editReply({
+            content: `你選擇的答案是：${interaction.values[0]}`,
+            components: []
+        });
 
 
-                const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
-                if (correct) await interaction.channel.send('這是正確答案');
-                else await interaction.channel.send('這不是正確答案！');
+        const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
+        if (correct) await interaction.channel.send('這是正確答案');
+        else await interaction.channel.send('這不是正確答案！');
 
-                const give_result = await this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
-                if (give_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.channel.send(`恭喜獲得 ${give_result.delta_exp} exp`);
-                else await interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
+        const give_result = await this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
+        if (give_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.channel.send(`恭喜獲得 ${give_result.delta_exp} exp`);
+        else await interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
 
-                let new_thread = undefined;
-                if (correct) {
-                    const result = await this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi)
-                    if (result.status === db.StatusCode.WRITE_DATA_ERROR) await interaction.channel.send('更新問題串時發生錯誤');
-                    new_thread = result.new_thread;
-                }
-
-                const stat_result = await this.updateStatistics(
-                    interaction.user.id,
-                    correct,
-                    thread_data.curr_diffi,
-                    thread_data.curr_qns_number,
-                    new_thread
-                );
-                if (!stat_result) await interaction.channel.send('更新統計資料時發生錯誤');
-
-                if (!correct) return;
-
-                // extra stamina
-                const can_gain_ext_stamina = await this.canUserGainExtraStamina(
-                    user_dp_data.ans_duration,
-                    this.qns_diffi_time[thread_data.curr_diffi],
-                    this.qns_ext_stamina_portion[thread_data.curr_diffi]
-                );
-                if (!can_gain_ext_stamina) return;
-
-                return await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
-            }
+        let new_thread = undefined;
+        if (correct) {
+            const result = await this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi)
+            if (result.status === db.StatusCode.WRITE_DATA_ERROR) await interaction.channel.send('更新問題串時發生錯誤');
+            new_thread = result.new_thread;
         }
+
+        const stat_result = await this.updateStatistics(
+            interaction.user.id,
+            correct,
+            thread_data.curr_diffi,
+            thread_data.curr_qns_number,
+            new_thread
+        );
+        if (!stat_result) await interaction.channel.send('更新統計資料時發生錯誤');
+
+        if (!correct) return;
+
+        // extra stamina
+        const can_gain_ext_stamina = await this.canUserGainExtraStamina(
+            user_dp_data.ans_duration,
+            this.qns_diffi_time[thread_data.curr_diffi],
+            this.qns_ext_stamina_portion[thread_data.curr_diffi]
+        );
+        if (!can_gain_ext_stamina) return;
+
+        return await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
     }
 
     private isUserCorrect(interaction, correct_ans) {
@@ -684,106 +871,6 @@ export class BountyEventManager extends core.BaseManager {
     }
 }
 
-const SB_functions = {
-    async autoCreateAndGetOngoingInfo(user_id: string, ops) {
-        const data_exists = await ops.ongoing_op.checkDataExistence({ user_id: user_id });
-        if (data_exists.status === db.StatusCode.DATA_FOUND) {
-            const user_ongoing_info = await (await ops.ongoing_op.cursor_promise).findOne({ user_id: user_id });
-
-            return {
-                status: data_exists.status,
-                qns_thread: user_ongoing_info.qns_thread
-            };
-        }
-
-        const new_qns_thread = await this.createQnsThread(user_id, ops);
-        const create_result = await ops.ongoing_op.createDefaultData({
-            user_id: user_id,
-            qns_thread: new_qns_thread
-        });
-
-        return {
-            status: create_result.status,
-            qns_thread: new_qns_thread
-        }
-    },
-
-    async createQnsThread(user_id: string, ops) {
-        const user_main_acc = await (await ops.account_op.cursor_promise).findOne({ user_id: user_id });
-
-        const db_cache_operator = new core.BaseOperator({
-            db: 'Bounty',
-            coll: 'StorjQnsDBCache'
-        });
-
-        const cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
-
-        const diffi_list = ['easy', 'medium', 'hard'];
-        const new_qns_thread = {
-            easy: undefined,
-            medium: undefined,
-            hard: undefined
-        }
-        await core.asyncForEach(diffi_list, async (diffi) => {
-            const max_num: number = cache[diffi].max_number;
-            const skipped_nums: number[] = cache[diffi].skipped_numbers;
-
-            const not_answered = []
-            const answered: number[] = user_main_acc.qns_record.answered_qns_number[diffi];
-            for (let i = 0; i <= max_num; i++) {
-                if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
-                    skipped_nums.shift();
-                    continue;
-                }
-
-                if (answered.length !== 0 && i === answered[0]) {
-                    answered.shift();
-                    continue;
-                }
-
-                not_answered.push(i);
-            }
-            await core.shuffle(not_answered);
-
-            const max_qns_count = Math.min(3, not_answered.length);
-            new_qns_thread[diffi] = not_answered.slice(0, max_qns_count);
-        });
-
-        return new_qns_thread;
-    },
-
-    async getQnsThreadData(qns_thread: QnsThread) {
-        const diffi_list = ['easy', 'medium', 'hard'];
-
-        let curr_diffi: string;
-        let curr_qns_number: number;
-        for (let i = 0; i < diffi_list.length; i++) {
-            const diffi = diffi_list[i];
-            if (qns_thread[diffi].length === 0) continue;
-
-            curr_diffi = diffi;
-            curr_qns_number = qns_thread[diffi][0];
-            break;
-        }
-        if (curr_diffi === undefined) return {
-            finished: true
-        };
-
-        return {
-            finished: false,
-            curr_diffi: curr_diffi,
-            curr_qns_number: curr_qns_number
-        };
-    }
-}
-
-const common_functions = {
-    async getDisabledButton(obj: object) {
-        const new_button = await core.cloneObj(obj);
-        new_button.components[0].disabled = true;
-        return new_button;
-    }
-}
 
 export class EndBountySessionManager extends session.SessionManager {
 
@@ -792,7 +879,7 @@ export class EndBountySessionManager extends session.SessionManager {
         db: 'Bounty',
         coll: 'EndButtonPipeline'
     });
-    
+
     constructor(f_platform: core.BasePlatform) {
         const session_config: session.SessionConfig = {
             session_name: 'end_bounty',
@@ -802,7 +889,7 @@ export class EndBountySessionManager extends session.SessionManager {
                 fast: 1
             }
         }
-        
+
         super(f_platform, session_config);
 
         this.event.on('sessionExpired', async (session_data: session.SessionData) => {
@@ -818,7 +905,7 @@ export class EndBountySessionManager extends session.SessionManager {
         const self_routine = (t: number) => setTimeout(async () => { await this.setupCache(); }, t * 1000);
 
         if (!this.connected) return self_routine(1);
-        
+
         let cache_data = await this.getData();
 
         if (cache_data === null) {
@@ -871,7 +958,7 @@ export class EndBountySessionManager extends session.SessionManager {
             if (!(channel instanceof DMChannel)) return;
 
             const msg = await channel.messages.fetch(end_btn_data.msg_id);
-            const new_button = await common_functions.getDisabledButton(END_BOUNTY_COMPONENTS.button);
+            const new_button = await core.discord.getDisabledButton(default_end_button);
             await msg.edit({
                 content: '已超過可回答時間',
                 files: [],

@@ -1,5 +1,5 @@
 import { Mongo } from '../db/reglist';
-
+import { MessageActionRow, MessageButton } from 'discord.js';
 
 export const timeAfterSecs = async (seconds: number) => { return Date.now() + seconds * 1000; };
 
@@ -100,5 +100,27 @@ export async function isItemInArray<T>(item: T, arr: Array<T>) {
 export async function asyncForEach(array, callback) {
     for (let i = 0; i < array.length; i++) {
         await callback(array[i], i, array);
+    }
+}
+
+export const discord = {
+    compAdder(arr: any[]) {
+        const rows = [];
+        arr.forEach((ele) => {
+            rows.push(
+                new MessageActionRow().addComponents(...ele)
+            )
+        });
+        return rows;
+    },
+
+    async getDisabledButton(button: MessageButton) {
+        const new_button = await cloneObj(button);
+        new_button.setDisabled(true);
+        return new_button;
+    },
+
+    getRelativeTimestamp(t: number) {
+        return `<t:${Math.trunc(t / 1000)}:R>`;
     }
 }
