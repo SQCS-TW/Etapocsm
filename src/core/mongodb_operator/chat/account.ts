@@ -1,12 +1,12 @@
-import { BaseOperator, OperatorResponse } from '../base';
+import { BaseMongoOperator, OperatorResponse } from '../base';
 import { getDefaultChatAccount } from '../../../constants/reglist';
 import { isItemInArray } from '../../reglist';
 import * as core from '../../reglist';
 
 
-export class ChatAccountOperator extends BaseOperator {
+export class ChatAccountOperator extends BaseMongoOperator {
     private mainlvlacc_op: core.MainLevelAccountOperator;
-    
+
     constructor() {
         super({
             db: "Chat",

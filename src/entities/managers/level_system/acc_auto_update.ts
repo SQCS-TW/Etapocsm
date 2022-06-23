@@ -7,7 +7,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     private bounty_acc_op = new core.BountyUserAccountOperator();
     private chat_acc_op = new core.ChatAccountOperator();
 
-    private mainlvl_data_op = new core.BaseOperator({
+    private mainlvl_data_op = new core.BaseMongoOperator({
         db: 'Level',
         coll: 'Data'
     });

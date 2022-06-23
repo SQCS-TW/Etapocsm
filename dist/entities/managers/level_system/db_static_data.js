@@ -33,7 +33,7 @@ class StaticDataSetter extends shortcut_1.core.BaseManager {
                     type: 'exp-role-id-dict',
                     role_id_dict: role_dict
                 };
-                const cursor = new shortcut_1.core.BaseOperator({
+                const cursor = new shortcut_1.core.BaseMongoOperator({
                     db: 'Level',
                     coll: 'Data'
                 });

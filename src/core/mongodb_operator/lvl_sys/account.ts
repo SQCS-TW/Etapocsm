@@ -1,7 +1,7 @@
-import { BaseOperator } from '../base';
+import { BaseMongoOperator } from '../base';
 import { getDefaultMainLevelAccount } from '../../../constants/reglist';
 
-export class MainLevelAccountOperator extends BaseOperator {
+export class MainLevelAccountOperator extends BaseMongoOperator {
     constructor() {
         super({
             db: "Level",

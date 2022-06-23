@@ -32,7 +32,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 const max_choices = inner_values.max_choices;
                 const correct_ans = inner_values.correct_ans;
                 // create operator
-                const db_cache_operator = new shortcut_1.core.BaseOperator({
+                const db_cache_operator = new shortcut_1.core.BaseMongoOperator({
                     db: 'Bounty',
                     coll: 'StorjQnsDBCache'
                 });
@@ -145,7 +145,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 const inner_values = await DCBQA_functions.getInputData(interaction);
                 const diffi = inner_values.diffi;
                 const qns_number = inner_values.qns_number;
-                const logs_operator = new shortcut_1.core.BaseOperator({
+                const logs_operator = new shortcut_1.core.BaseMongoOperator({
                     db: 'Bounty',
                     coll: 'AdminLogs'
                 });
@@ -308,7 +308,7 @@ const CBQ_functions = {
         return upload_status;
     },
     async createManipulationLog(interaction, finish_time, difficulty, qns_number) {
-        const logs_operator = new shortcut_1.core.BaseOperator({
+        const logs_operator = new shortcut_1.core.BaseMongoOperator({
             db: 'Bounty',
             coll: 'AdminLogs'
         });
@@ -351,7 +351,7 @@ const EBQA_functions = {
 };
 const LCBQA_functions = {
     async getLogs(user_id) {
-        const logs_operator = new shortcut_1.core.BaseOperator({
+        const logs_operator = new shortcut_1.core.BaseMongoOperator({
             db: 'Bounty',
             coll: 'AdminLogs'
         });

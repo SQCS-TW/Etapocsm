@@ -1,8 +1,8 @@
 import { getDefaultBountyQnsInfo } from '../../../constants/reglist';
-import { BaseOperator, OperatorResponse } from '../base';
+import { BaseMongoOperator, OperatorResponse } from '../base';
 import { StatusCode } from '../../../db/reglist';
 
-export class BountyQnsDBOperator extends BaseOperator {
+export class BountyQnsDBOperator extends BaseMongoOperator {
     constructor() {
         super({
             db: "Bounty",

@@ -37,7 +37,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const correct_ans: string[] = inner_values.correct_ans;
 
                 // create operator
-                const db_cache_operator = new core.BaseOperator({
+                const db_cache_operator = new core.BaseMongoOperator({
                     db: 'Bounty',
                     coll: 'StorjQnsDBCache'
                 });
@@ -165,7 +165,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const diffi = inner_values.diffi;
                 const qns_number = inner_values.qns_number;
 
-                const logs_operator = new core.BaseOperator({
+                const logs_operator = new core.BaseMongoOperator({
                     db: 'Bounty',
                     coll: 'AdminLogs'
                 });
@@ -351,7 +351,7 @@ const CBQ_functions = {
     },
 
     async createManipulationLog(interaction: CommandInteraction, finish_time: number, difficulty: string, qns_number: number) {
-        const logs_operator = new core.BaseOperator({
+        const logs_operator = new core.BaseMongoOperator({
             db: 'Bounty',
             coll: 'AdminLogs'
         });
@@ -401,7 +401,7 @@ const EBQA_functions = {
 
 const LCBQA_functions = {
     async getLogs(user_id: string) {
-        const logs_operator = new core.BaseOperator({
+        const logs_operator = new core.BaseMongoOperator({
             db: 'Bounty',
             coll: 'AdminLogs'
         });

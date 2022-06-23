@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainLevelAccountOperator = void 0;
 const base_1 = require("../base");
 const reglist_1 = require("../../../constants/reglist");
-class MainLevelAccountOperator extends base_1.BaseOperator {
+class MainLevelAccountOperator extends base_1.BaseMongoOperator {
     constructor() {
         super({
             db: "Level",

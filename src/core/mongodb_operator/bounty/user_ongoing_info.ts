@@ -1,8 +1,8 @@
 import { getDefaultUserOngoingData } from '../../../constants/reglist';
-import { BaseOperator, OperatorResponse } from '../base';
+import { BaseMongoOperator, OperatorResponse } from '../base';
 import { StatusCode } from '../../../db/reglist';
 
-export class BountyUserOngoingInfoOperator extends BaseOperator {
+export class BountyUserOngoingInfoOperator extends BaseMongoOperator {
     constructor() {
         super({
             db: "Bounty",

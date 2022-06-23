@@ -38,7 +38,7 @@ export class StaticDataSetter extends core.BaseManager {
                     role_id_dict: role_dict
                 }
 
-                const cursor = new core.BaseOperator({
+                const cursor = new core.BaseMongoOperator({
                     db: 'Level',
                     coll: 'Data'
                 });

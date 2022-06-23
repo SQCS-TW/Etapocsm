@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseOperator = void 0;
+exports.BaseMongoOperator = void 0;
 const reglist_1 = require("../../db/reglist");
 const reglist_2 = require("../../db/reglist");
-class BaseOperator {
+class BaseMongoOperator {
     constructor(payload) {
         // use promise here due to non-async constructor
         this.cursor_promise = (new reglist_1.Mongo(payload.db)).getCur(payload.coll);
@@ -44,4 +44,4 @@ class BaseOperator {
         }
     }
 }
-exports.BaseOperator = BaseOperator;
+exports.BaseMongoOperator = BaseMongoOperator;

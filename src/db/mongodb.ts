@@ -6,12 +6,13 @@ const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD;
 const uri = `mongodb+srv://${MONGODB_ACCOUNT}:${MONGODB_PASSWORD}@atlas.i38es.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri);
 
-client.connect();
-
-
 export type MongoData = {
     _id: ObjectId
     [key: string]: any
+}
+
+export async function connectMongoDB() {
+    await client.connect();
 }
 
 export class Mongo {

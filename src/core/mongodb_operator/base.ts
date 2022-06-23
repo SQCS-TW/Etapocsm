@@ -18,7 +18,7 @@ export type OperatorConstructPayload = {
     default_data_function?: any
 }
 
-export class BaseOperator {
+export class BaseMongoOperator {
     // use promise here due to non-async constructor
     public cursor_promise: Promise<Collection>;
 

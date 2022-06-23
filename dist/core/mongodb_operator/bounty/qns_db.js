@@ -4,7 +4,7 @@ exports.BountyQnsDBOperator = void 0;
 const reglist_1 = require("../../../constants/reglist");
 const base_1 = require("../base");
 const reglist_2 = require("../../../db/reglist");
-class BountyQnsDBOperator extends base_1.BaseOperator {
+class BountyQnsDBOperator extends base_1.BaseMongoOperator {
     constructor() {
         super({
             db: "Bounty",

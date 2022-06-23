@@ -28,7 +28,7 @@ const base_1 = require("../base");
 const reglist_1 = require("../../../constants/reglist");
 const reglist_2 = require("../../reglist");
 const core = __importStar(require("../../reglist"));
-class ChatAccountOperator extends base_1.BaseOperator {
+class ChatAccountOperator extends base_1.BaseMongoOperator {
     constructor() {
         super({
             db: "Chat",

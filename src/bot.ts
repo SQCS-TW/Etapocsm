@@ -10,7 +10,6 @@ import {
     LvlSysPlatform
 } from './entities/platforms/reglist';
 
-
 export class Etapocsm extends Client {
     private platforms: Array<BasePlatform>;
 

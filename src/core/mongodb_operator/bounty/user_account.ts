@@ -1,8 +1,8 @@
 import { getDefaultBountyAccount } from '../../../constants/reglist';
-import { BaseOperator, OperatorResponse } from '../base';
+import { BaseMongoOperator, OperatorResponse } from '../base';
 import { StatusCode } from '../../../db/reglist';
 
-export class BountyUserAccountOperator extends BaseOperator {
+export class BountyUserAccountOperator extends BaseMongoOperator {
     constructor() {
         super({
             db: "Bounty",
@@ -10,7 +10,7 @@ export class BountyUserAccountOperator extends BaseOperator {
             default_data_function: getDefaultBountyAccount
         });
     }
-    
+
     public async setAuth(user_id: string, new_auth: boolean): Promise<OperatorResponse> {
         const check_result = await this.checkDataExistence({ user_id: user_id });
         if (check_result.status === StatusCode.DATA_NOT_FOUND) return check_result;

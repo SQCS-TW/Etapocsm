@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-escape */
 import { core, db } from '../../shortcut';
-import { unlink } from 'fs';
+import { unlink, existsSync } from 'fs';
 import { ObjectId } from 'mongodb';
 import * as session from '../../powerup_mngs/session_mng';
 
@@ -100,7 +100,7 @@ export class BountyAccountManager extends core.BaseManager {
     }
 
     private async getOrCacheUserAccData(user_id: string) {
-        const key = `acc-info-cache?id=${user_id}`;
+        const key = `bounty-acc-info?id=${user_id}`;
         const acc_cache_data = await this.cache.client.GET(key);
 
         if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
@@ -205,7 +205,7 @@ export class StartBountyManager extends core.BaseManager {
     private account_op = new core.BountyUserAccountOperator();
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
 
-    private start_button_op = new core.BaseOperator({
+    private start_button_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'StartButtonPipeline'
     });
@@ -334,7 +334,7 @@ export class StartBountyManager extends core.BaseManager {
     private async createQnsThread(user_id: string, ops) {
         const user_main_acc = await (await ops.account_op.cursor_promise).findOne({ user_id: user_id });
 
-        const db_cache_operator = new core.BaseOperator({
+        const db_cache_operator = new core.BaseMongoOperator({
             db: 'Bounty',
             coll: 'StorjQnsDBCache'
         });
@@ -392,12 +392,12 @@ const default_end_button = new MessageButton()
 export class ConfirmStartBountyManager extends core.BaseManager {
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
 
-    private confirm_start_button_op = new core.BaseOperator({
+    private confirm_start_button_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'StartButtonPipeline'
     });
 
-    private end_button_op = new core.BaseOperator({
+    private end_button_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'EndButtonPipeline'
     });
@@ -464,15 +464,6 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         const delete_result = await (await this.confirm_start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
         if (!delete_result.acknowledged) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
 
-        // download qns pic
-        const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}_${qns_number}.png`;
-        const dl_result = await db.storjDownload({
-            bucket_name: 'bounty-questions-db',
-            local_file_name: local_file_name,
-            db_file_name: `${diffi}/${qns_number}.png`
-        });
-        if (!dl_result) return await interaction.user.send('下載圖片錯誤！');
-
         const buffer_time = 10;
         const process_delay_time = 1;
 
@@ -485,20 +476,29 @@ export class ConfirmStartBountyManager extends core.BaseManager {
             }
         }
         const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-        if (!update_result.acknowledged) {
-            unlink(local_file_name, () => { return; });
-            return await interaction.user.send('開始懸賞時發生錯誤！');
-        }
+        if (!update_result.acknowledged) return await interaction.user.send('開始懸賞時發生錯誤！');
 
         const answering_embed = await this.getAnsweringInfoEmbed(
             core.discord.getRelativeTimestamp(start_time),
             core.discord.getRelativeTimestamp(end_time)
         );
+
         await interaction.editReply({
             embeds: [answering_embed]
         });
 
-        await core.sleep(buffer_time);
+        const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}.png`;
+        const async_tasks = [
+            core.sleep(buffer_time),
+            db.storjDownload({
+                bucket_name: 'bounty-questions-db',
+                local_file_name: local_file_name,
+                db_file_name: `${diffi}/${qns_number}.png`
+            })
+        ];
+
+        await Promise.all(async_tasks);
+        if (!existsSync(local_file_name)) return await interaction.editReply('下載圖片錯誤！');
 
         const qns_msg = await interaction.user.send({
             content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
@@ -520,7 +520,7 @@ export class ConfirmStartBountyManager extends core.BaseManager {
             }
         }
         const create_result = await (await this.end_button_op.cursor_promise).insertOne(end_btn_info);
-        if (!create_result.acknowledged) return await interaction.user.send('建立結束資料時發生錯誤！');
+        if (!create_result.acknowledged) await interaction.user.send('建立結束資料時發生錯誤！');
     }
 
     private async getAnsweringInfoEmbed(start_time: string, end_time: string) {
@@ -542,11 +542,13 @@ export class EndBountyManager extends core.BaseManager {
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
     private qns_op = new core.BountyQnsDBOperator();
 
-    private end_button_op = new core.BaseOperator({
+    private cache = new db.Redis();
+
+    private end_button_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'EndButtonPipeline'
     });
-    private dropdown_op = new core.BaseOperator({
+    private dropdown_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'DropdownPipeline'
     });
@@ -566,6 +568,10 @@ export class EndBountyManager extends core.BaseManager {
     }
 
     private setupListener() {
+        this.f_platform.f_bot.on('ready', async () => {
+            await this.cache.connect();
+        });
+
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.isButton()) await this.buttonHandler(interaction);
         });
@@ -645,30 +651,70 @@ export class EndBountyManager extends core.BaseManager {
         // const qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
         // const qns_ans = ['A', 'C'];
 
-        const qns_data = await (await this.qns_op.cursor_promise).findOne({
-            difficulty: qns_diffi,
-            number: qns_number
-        });
+        const sd = Date.now();
+        const qns_data = await this.getOrSetQnsCache(qns_diffi, qns_number);
+        const ed = Date.now();
+
+        const sp = Date.now();
 
         const qns_choices = this.alphabet_sequence.slice(0, qns_data.max_choices);
         const qns_ans = qns_data.correct_ans;
 
         if (qns_ans.length === 1) return qns_choices;
 
-        let result: Array<any> = await core.getSubsetsWithCertainLength(qns_choices, qns_ans.length);
+        let result: Array<any> = await this.getOrSetSubsetsCache(qns_choices, qns_ans.length);
 
         result = result.filter((item) => { return !(core.arrayEquals(item, qns_ans)) });
         result = await core.shuffle(result);
 
-        const random_choices_count = Math.min(
+        let random_choices_count = Math.min(
             Math.pow(2, qns_ans.length) + 2,
             await core.binomialCoefficient(qns_choices.length, qns_ans.length)
-        ) - 1;
+        );
+
+        // discord dropdown choices limit: 25 (1 slot for push qns_ans)
+        random_choices_count = Math.min(random_choices_count, 24);
 
         result = result.slice(0, random_choices_count);
         result.push(qns_ans);
         result = await core.shuffle(result);
         result = result.map((item) => { return item.join(', ') });
+
+        console.log(result);
+
+        const ep = Date.now();
+
+        console.log('fetch db', ed - sd);
+        console.log('pro data', qns_choices.length, qns_ans.length);
+        console.log('pro time', ep - sp);
+
+        return result;
+    }
+
+    private async getOrSetQnsCache(diffi: string, qns_number: number) {
+        const key = `bounty-qns-data?diffi=${diffi}&number=${qns_number}`;
+        const acc_cache_data = await this.cache.client.GET(key);
+        
+        if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
+        
+        const qns_data = await (await this.qns_op.cursor_promise).findOne({
+            difficulty: diffi,
+            number: qns_number
+        });
+
+        await this.cache.client.SETEX(key, 1800, JSON.stringify(qns_data));
+        return qns_data;
+    }
+
+    private async getOrSetSubsetsCache(options: string[], ans_length: number) {
+        const key = `subsets-with-length?op_len=${options.length}&ans_len=${ans_length}`;
+        const acc_cache_data = await this.cache.client.GET(key);
+        
+        if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
+        
+        const result = await core.getSubsetsWithCertainLength(options, ans_length);
+
+        await this.cache.client.SETEX(key, 1800, JSON.stringify(result));
         return result;
     }
 
@@ -696,10 +742,12 @@ export class SelectBountyAnswerManager extends core.BaseManager {
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
     private qns_op = new core.BountyQnsDBOperator();
 
-    private dropdown_op = new core.BaseOperator({
+    private dropdown_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'DropdownPipeline'
     });
+
+    private cache = new db.Redis();
 
     private qns_diffi_exp = {
         'easy': 10,
@@ -724,6 +772,10 @@ export class SelectBountyAnswerManager extends core.BaseManager {
     }
 
     private setupListener() {
+        this.f_platform.f_bot.on('ready', async () => {
+            await this.cache.connect();
+        });
+        
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.isSelectMenu()) await this.dropdownHandler(interaction);
         });
@@ -747,10 +799,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         // fetch data
         const user_ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
         const thread_data = await getQnsThreadData(user_ongoing_info.qns_thread);
-        const qns_data = await (await this.qns_op.cursor_promise).findOne({
-            difficulty: thread_data.curr_diffi,
-            number: thread_data.curr_qns_number
-        });
+        const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
         //
 
         await interaction.editReply({
@@ -794,6 +843,21 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         if (!can_gain_ext_stamina) return;
 
         return await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
+    }
+
+    private async getOrSetQnsCache(diffi: string, qns_number: number) {
+        const key = `bounty-qns-data?diffi=${diffi}&number=${qns_number}`;
+        const acc_cache_data = await this.cache.client.GET(key);
+        
+        if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
+        
+        const qns_data = await (await this.qns_op.cursor_promise).findOne({
+            difficulty: diffi,
+            number: qns_number
+        });
+
+        await this.cache.client.SETEX(key, 1800, JSON.stringify(qns_data));
+        return qns_data;
     }
 
     private isUserCorrect(interaction, correct_ans) {
@@ -900,14 +964,21 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
     private async giveExtraStamina(interaction, gained_extra_stamina) {
         if (gained_extra_stamina < 2) {
-            const execute = {
+            const ongoing_update = {
                 $inc: {
                     "stamina.extra": 1,
                     "stamina.extra_gained": 1
                 }
             };
 
-            await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+            const main_statistics_update = {
+                $inc: {
+                    "personal_record.extra_stamina_gained_count": 1
+                }
+            };
+
+            await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, ongoing_update);
+            await (await this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, main_statistics_update);
             await interaction.channel.send('恭喜獲得1個額外體力！');
 
         } else {
@@ -926,14 +997,14 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 export class EndBountySessionManager extends session.SessionManager {
 
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
-    private end_button_op = new core.BaseOperator({
+    private end_button_op = new core.BaseMongoOperator({
         db: 'Bounty',
         coll: 'EndButtonPipeline'
     });
 
     constructor(f_platform: core.BasePlatform) {
         const session_config: session.SessionConfig = {
-            session_name: 'end_bounty',
+            session_name: 'end-bounty-btn-cd',
             interval_data: {
                 idle: 4,
                 normal: 2,

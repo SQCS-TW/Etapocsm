@@ -9,7 +9,7 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
         this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
         this.bounty_acc_op = new shortcut_1.core.BountyUserAccountOperator();
         this.chat_acc_op = new shortcut_1.core.ChatAccountOperator();
-        this.mainlvl_data_op = new shortcut_1.core.BaseOperator({
+        this.mainlvl_data_op = new shortcut_1.core.BaseMongoOperator({
             db: 'Level',
             coll: 'Data'
         });

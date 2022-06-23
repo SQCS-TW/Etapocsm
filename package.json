@@ -6,7 +6,8 @@
   "scripts": {
     "comp": "tsc",
     "test": "node ./dist/main.js",
-    "build": "tsc && node ./dist/main.js"
+    "build": "tsc && node ./dist/main.js",
+    "dir": "npx ts-node ./src/main.ts"
   },
   "keywords": [],
   "author": "@SQCS-TW",
