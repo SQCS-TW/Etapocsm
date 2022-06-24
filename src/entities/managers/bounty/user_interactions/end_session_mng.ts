@@ -93,15 +93,19 @@ export class EndBountySessionManager extends session.SessionManager {
             const channel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
             if (!(channel instanceof DMChannel)) return;
 
-            const msg = await channel.messages.fetch(end_btn_data.msg_id);
-            const new_button = await core.discord.getDisabledButton(default_end_button);
-            await msg.edit({
-                content: '已超過可回答時間',
-                files: [],
-                components: core.discord.compAdder([
-                    [new_button]
-                ])
-            });
+            try {
+                const msg = await channel.messages.fetch(end_btn_data.msg_id);
+                const new_button = await core.discord.getDisabledButton(default_end_button);
+                await msg.edit({
+                    content: '已超過可回答時間',
+                    files: [],
+                    components: core.discord.compAdder([
+                        [new_button]
+                    ])
+                });
+            } catch {
+                console.log(`err deleting msg ${end_btn_data.msg_id}`);
+            }
 
             const status_execute = {
                 $set: {

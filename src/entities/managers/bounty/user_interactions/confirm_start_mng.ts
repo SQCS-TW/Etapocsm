@@ -10,8 +10,10 @@ import {
 import {
     default_start_button,
     default_end_button,
-    default_answering_info_embed
+    default_answering_info_embed,
+    default_destroy_qns_button
 } from './components';
+
 
 export class ConfirmStartBountyManager extends core.BaseManager {
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
@@ -68,8 +70,6 @@ export class ConfirmStartBountyManager extends core.BaseManager {
                     "stamina.extra": -1
                 }
             }
-        } else {
-            return await interaction.editReply('錯誤，你沒有足夠的體力！');
         }
         await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
 
@@ -125,10 +125,10 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         if (!existsSync(local_file_name)) return await interaction.editReply('下載圖片錯誤！');
 
         const qns_msg = await interaction.user.send({
-            content: '**【題目】**注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+            content: '📝 注意，請勿將題目外流給他人，且答題過後建議銷毀。',
             files: [local_file_name],
             components: core.discord.compAdder([
-                [default_end_button]
+                [default_end_button, default_destroy_qns_button]
             ])
         });
         unlink(local_file_name, () => { return; });
@@ -149,8 +149,8 @@ export class ConfirmStartBountyManager extends core.BaseManager {
 
     private async getAnsweringInfoEmbed(start_time: string, end_time: string) {
         const new_embed = new MessageEmbed(default_answering_info_embed);
-        new_embed.addField('開始時間', start_time, true);
-        new_embed.addField('結束時間', end_time, true);
+        new_embed.addField('⏳ 開始時間', start_time, true);
+        new_embed.addField('⌛ 結束時間', end_time, true);
         return new_embed;
     }
 }

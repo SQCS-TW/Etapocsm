@@ -64,9 +64,9 @@ export class SessionManager extends core.BaseManager {
         
         if (data[0].expired_date <= Date.now()) {
             this.event.emit('sessionExpired', data[0]);
+            console.log('cache del', data[0]);
             data.shift();
             await this.writeData(data);
-            console.log('cache del', data[0]);
         }
 
         return self_routine(this.interval_data.normal);
