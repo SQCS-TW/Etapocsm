@@ -7,6 +7,7 @@ class BountyUserManiManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
+        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.setupListener();
         this.SLCMD_REGISTER_LIST = user_mani_1.REGISTER_LIST;
     }
@@ -27,7 +28,14 @@ class BountyUserManiManager extends shortcut_1.core.BaseManager {
                 const user_id = interaction.options.getString('id');
                 const new_auth = interaction.options.getBoolean('new-auth');
                 const result = await this.account_op.setAuth(user_id, new_auth);
-                await interaction.editReply(result.message);
+                return await interaction.editReply(result.message);
+            }
+            case 'mani-bounty-status': {
+                await interaction.deferReply();
+                const user_id = interaction.options.getString('id');
+                const new_status = interaction.options.getBoolean('new-status');
+                const result = await this.ongoing_op.setStatus(user_id, new_status);
+                return await interaction.editReply(result.message);
             }
         }
     }

@@ -87,9 +87,7 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
                 if (dp_msg instanceof discord_js_1.Message)
                     await dp_msg.delete();
             }
-            catch (e) {
-                console.log(e);
-            }
+            catch (e) { /*pass*/ }
             const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
             if (!user_dp_data)
                 return;
@@ -97,15 +95,13 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
                 if (msg instanceof discord_js_1.Message)
                     await msg.delete();
             }
-            catch (e) {
-                console.log(e);
-            }
+            catch (e) { /*pass*/ }
         }
         else if (interaction.customId === 'destroy-bounty-qns') {
-            if (!(interaction.message instanceof discord_js_1.Message))
-                return;
-            await interaction.message.delete();
-            await interaction.reply('✅ 圖片已銷毀');
+            await interaction.deferReply();
+            if (interaction.message instanceof discord_js_1.Message)
+                await interaction.message.delete();
+            await interaction.editReply('✅ 圖片已銷毀');
         }
     }
     async generateQuestionChoices(qns_diffi, qns_number) {

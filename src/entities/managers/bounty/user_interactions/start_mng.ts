@@ -64,16 +64,19 @@ export class StartBountyManager extends core.BaseManager {
         if (!user_acc.auth) return await interaction.editReply('你沒有遊玩懸賞區的權限！');
 
         const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-        if (user_ongoing_data.status) return await interaction.editReply('你已經在遊玩懸賞區了！');
+        if (user_ongoing_data && user_ongoing_data.status) return await interaction.editReply('你已經在遊玩懸賞區了！');
 
-        // delete all user remained data
+        const user_btn_data = await (await this.confirm_start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        if (user_btn_data) return await interaction.editReply('問題資訊已發送，請查看私訊！');
+
+        // delete all remained data of user
         try {
             await (await this.start_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
             await (await this.confirm_start_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
             await (await this.end_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
             await (await this.dropdown_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
         } catch (e) { /*pass*/ }
-
+        //
 
         const create_result = await this.createOrGetOngoingInfo(interaction.user.id, {
             account_op: this.account_op,
@@ -81,8 +84,8 @@ export class StartBountyManager extends core.BaseManager {
         });
 
         if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('創建問題串失敗！');
-        else if (create_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.editReply('問題串已建立！');
-        else if (create_result.status === db.StatusCode.DATA_FOUND) await interaction.editReply('找到資料');
+        else if (create_result.status === db.StatusCode.WRITE_DATA_SUCCESS) await interaction.editReply('問題串已建立，請查看私訊！');
+        else if (create_result.status === db.StatusCode.DATA_FOUND) await interaction.editReply('找到資料，請查看私訊！');
 
         let stamina_consume_type: string;
         if (create_result.stamina.regular > 0) {
@@ -101,7 +104,10 @@ export class StartBountyManager extends core.BaseManager {
 
         const qns_data = await getQnsThreadData(create_result.qns_thread);
 
-        if (qns_data.finished) return await interaction.followUp('✅ 你已經回答完所有問題了！');
+        if (qns_data.finished) return await interaction.followUp({
+            content: '✅ 你已經回答完所有問題了，故未私訊！',
+            ephemeral: true
+        });
 
         // ==== modify embed -> set difficulty and qns_number
         const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number, stamina_consume_type);
@@ -178,7 +184,11 @@ export class StartBountyManager extends core.BaseManager {
 
         return {
             status: create_result.status,
-            qns_thread: new_qns_thread
+            qns_thread: new_qns_thread,
+            stamina: {
+                regular: 3,
+                extra: 0
+            }
         }
     }
 
@@ -202,8 +212,9 @@ export class StartBountyManager extends core.BaseManager {
             const max_num: number = cache[diffi].max_number;
             const skipped_nums: number[] = cache[diffi].skipped_numbers;
 
-            const not_answered = []
+            const not_answered = [];
             const answered: number[] = user_main_acc.qns_record.answered_qns_number[diffi];
+            answered.sort((a, b) => a - b);
             for (let i = 0; i <= max_num; i++) {
                 if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
                     skipped_nums.shift();

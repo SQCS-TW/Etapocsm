@@ -11,7 +11,8 @@ import {
     default_start_button,
     default_end_button,
     default_answering_info_embed,
-    default_destroy_qns_button
+    default_destroy_qns_button,
+    default_qns_info_embed
 } from './components';
 
 
@@ -74,15 +75,10 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         }
         await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
         //
-        
+
         // activate user ongoing status
-        const execute = {
-            $set: {
-                status: true
-            }
-        }
-        const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-        if (!update_result.acknowledged) return await interaction.user.send('開始懸賞時發生錯誤！');
+        const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
+        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.user.send('開始懸賞時發生錯誤！');
         //
 
         const diffi = user_btn_data.qns_info.difficulty;
@@ -129,7 +125,7 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         if (!existsSync(local_file_name)) return await interaction.editReply('下載圖片錯誤！');
 
         const qns_msg = await interaction.user.send({
-            content: '📝 注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+            embeds: [default_qns_info_embed],
             files: [local_file_name],
             components: core.discord.compAdder([
                 [default_end_button, default_destroy_qns_button]

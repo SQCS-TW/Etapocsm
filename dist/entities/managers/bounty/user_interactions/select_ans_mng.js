@@ -62,18 +62,17 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         //
         if (interaction.message instanceof discord_js_1.Message)
             await interaction.message.delete();
-        await interaction.editReply({
-            content: `你選擇的答案是：${interaction.values[0]}`,
-            components: []
-        });
+        const bounty_result_embed = new discord_js_1.MessageEmbed()
+            .setTitle(`🚩｜你選擇了 ${interaction.values[0]}`)
+            .setColor('#ffffff');
         const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
         if (correct)
-            await interaction.channel.send('這是正確答案');
+            bounty_result_embed.setDescription('恭喜，這是正確答案！');
         else
-            await interaction.channel.send('這不是正確答案！');
+            bounty_result_embed.setDescription('可惜，這不是正確答案');
         const give_result = await this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
         if (give_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
-            await interaction.channel.send(`恭喜獲得 ${give_result.delta_exp} exp`);
+            bounty_result_embed.addField('✨ 獲得經驗值', `**${give_result.delta_exp}** exp`, true);
         else
             await interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
         let new_thread = undefined;
@@ -83,16 +82,24 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
                 await interaction.channel.send('更新問題串時發生錯誤');
             new_thread = result.new_thread;
         }
+        if (correct) {
+            // extra stamina
+            const can_gain_ext_stamina = await this.canUserGainExtraStamina(user_dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
+            if (!can_gain_ext_stamina)
+                return;
+            const give_result = await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
+            if (give_result.result === 'gave')
+                bounty_result_embed.addField('⚡ 獲得額外體力', `${give_result.gave} 格`, true);
+            if (give_result.result === 'overflow')
+                bounty_result_embed.addField('⚡ 獲得額外體力', `可獲得數量已到上限\n自動轉為 **${give_result.overflow_exp}** exp`, true);
+        }
+        await interaction.editReply({
+            embeds: [bounty_result_embed]
+        });
         const stat_result = await this.updateStatistics(interaction.user.id, correct, thread_data.curr_diffi, thread_data.curr_qns_number, new_thread);
         if (!stat_result)
             await interaction.channel.send('更新統計資料時發生錯誤');
-        if (!correct)
-            return;
-        // extra stamina
-        const can_gain_ext_stamina = await this.canUserGainExtraStamina(user_dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
-        if (!can_gain_ext_stamina)
-            return;
-        return await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
+        return;
     }
     async getOrSetQnsCache(diffi, qns_number) {
         const key = `bounty-qns-data?diffi=${diffi}&number=${qns_number}`;
@@ -215,7 +222,10 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             };
             await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, ongoing_update);
             await (await this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, main_statistics_update);
-            await interaction.channel.send('恭喜獲得1個額外體力！');
+            return {
+                result: 'gave',
+                gave: 1
+            };
         }
         else {
             const execute = {
@@ -224,7 +234,10 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
                 }
             };
             await (await this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-            await interaction.channel.send(`因為你的額外體力已經爆滿，因此自動將新的額外體力轉化成 10 exp`);
+            return {
+                result: 'overflow',
+                overflow_exp: 10
+            };
         }
     }
 }

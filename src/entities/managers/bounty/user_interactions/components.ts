@@ -18,10 +18,17 @@ export const default_start_embed = new MessageEmbed()
     });
 
 export const default_answering_info_embed = new MessageEmbed()
-    .setTitle('答題資訊')
+    .setTitle('🔔｜答題時間')
     .setColor('#ffffff')
     .setFooter({
         text: '如要答題，請在結束時間抵達前按下按鈕'
+    });
+
+export const default_qns_info_embed = new MessageEmbed()
+    .setTitle('📝｜題目')
+    .setColor('#ffffff')
+    .setFooter({
+        text: '注意，請勿將題目外流給他人，且答題過後建議銷毀',
     });
 
 export const default_end_button = new MessageButton()

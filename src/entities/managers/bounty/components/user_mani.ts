@@ -19,5 +19,23 @@ export const REGISTER_LIST: ApplicationCommandData[] = [
                 required: true
             }
         ]
+    },
+    {
+        name: 'mani-bounty-status',
+        description: '修改用戶懸賞題的進行狀態',
+        options: [
+            {
+                name: 'id',
+                description: '用戶的 discord id',
+                type: Constants.ApplicationCommandOptionTypes.STRING,
+                required: true
+            },
+            {
+                name: 'new-status',
+                description: '新的狀態',
+                type: Constants.ApplicationCommandOptionTypes.BOOLEAN,
+                required: true
+            }
+        ]
     }
 ]

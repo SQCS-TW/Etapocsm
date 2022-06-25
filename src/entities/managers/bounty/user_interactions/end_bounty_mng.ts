@@ -123,9 +123,9 @@ export class EndBountyManager extends core.BaseManager {
 
 
         } else if (interaction.customId === 'destroy-bounty-qns') {
-            if (!(interaction.message instanceof Message)) return;
-            await interaction.message.delete();
-            await interaction.reply('✅ 圖片已銷毀')
+            await interaction.deferReply();
+            if (interaction.message instanceof Message) await interaction.message.delete();
+            await interaction.editReply('✅ 圖片已銷毀')
         }
     }
 

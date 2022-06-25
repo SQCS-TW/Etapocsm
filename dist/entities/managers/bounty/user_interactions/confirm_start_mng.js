@@ -60,13 +60,8 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
         //
         // activate user ongoing status
-        const execute = {
-            $set: {
-                status: true
-            }
-        };
-        const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-        if (!update_result.acknowledged)
+        const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
+        if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
             return await interaction.user.send('開始懸賞時發生錯誤！');
         //
         const diffi = user_btn_data.qns_info.difficulty;
@@ -102,7 +97,7 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         if (!(0, fs_1.existsSync)(local_file_name))
             return await interaction.editReply('下載圖片錯誤！');
         const qns_msg = await interaction.user.send({
-            content: '📝 注意，請勿將題目外流給他人，且答題過後建議銷毀。',
+            embeds: [components_1.default_qns_info_embed],
             files: [local_file_name],
             components: shortcut_1.core.discord.compAdder([
                 [components_1.default_end_button, components_1.default_destroy_qns_button]
