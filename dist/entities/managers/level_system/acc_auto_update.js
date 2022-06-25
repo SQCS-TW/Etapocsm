@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AutoUpdateAccountManager = void 0;
+const discord_js_1 = require("discord.js");
 const shortcut_1 = require("../../shortcut");
 class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
@@ -97,16 +98,23 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
         }
         const member = await this.sqcs_main_guild.members.fetch(user_id);
         try {
+            let notif_embed;
             if (old_lvl < new_lvl) {
-                await member.send(`恭喜！你升級啦！\nLV.${old_lvl} -> LV.${new_lvl}`);
+                notif_embed = new discord_js_1.MessageEmbed()
+                    .setTitle('📈｜你升級了！')
+                    .setDescription(`LV.**${old_lvl}** -> LV.**${new_lvl}**`);
             }
             else {
-                await member.send(`可惜，你降級了...\nLV.${old_lvl} -> LV.${new_lvl}`);
+                notif_embed = new discord_js_1.MessageEmbed()
+                    .setTitle('📉｜你降級了...')
+                    .setDescription(`LV.**${old_lvl}** -> LV.**${new_lvl}**`);
             }
+            notif_embed.setColor('#ffffff');
+            await member.send({
+                embeds: [notif_embed]
+            });
         }
-        catch {
-            return;
-        }
+        catch { /*pass*/ }
     }
     async updateGuildRole() {
         const self_routine = () => setTimeout(async () => { await this.updateGuildRole(); }, 3 * this.mins_in_mili_secs);

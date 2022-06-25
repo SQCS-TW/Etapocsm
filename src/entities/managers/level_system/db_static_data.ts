@@ -1,6 +1,6 @@
 /* eslint-disable no-inner-declarations */
 import { Message } from 'discord.js';
-import { core, db } from '../../shortcut';
+import { core } from '../../shortcut';
 import { ObjectId } from 'mongodb';
 
 

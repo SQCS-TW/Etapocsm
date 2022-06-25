@@ -1,4 +1,4 @@
-import { Guild } from 'discord.js';
+import { Guild, MessageEmbed } from 'discord.js';
 import { core } from '../../shortcut';
 
 export class AutoUpdateAccountManager extends core.BaseManager {
@@ -117,14 +117,22 @@ export class AutoUpdateAccountManager extends core.BaseManager {
 
         const member = await this.sqcs_main_guild.members.fetch(user_id);
         try {
+            let notif_embed: MessageEmbed;
             if (old_lvl < new_lvl) {
-                await member.send(`恭喜！你升級啦！\nLV.${old_lvl} -> LV.${new_lvl}`);
+                notif_embed = new MessageEmbed()
+                    .setTitle('📈｜你升級了！')
+                    .setDescription(`LV.**${old_lvl}** -> LV.**${new_lvl}**`);
             } else {
-                await member.send(`可惜，你降級了...\nLV.${old_lvl} -> LV.${new_lvl}`);
+                notif_embed = new MessageEmbed()
+                    .setTitle('📉｜你降級了...')
+                    .setDescription(`LV.**${old_lvl}** -> LV.**${new_lvl}**`);
             }
-        } catch {
-            return;
-        }
+            notif_embed.setColor('#ffffff');
+
+            await member.send({
+                embeds: [notif_embed]
+            });
+        } catch { /*pass*/ }
     }
 
     private async updateGuildRole() {

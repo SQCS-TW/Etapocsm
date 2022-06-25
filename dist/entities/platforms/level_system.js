@@ -8,7 +8,8 @@ class LvlSysPlatform extends shortcut_1.core.BasePlatform {
         super(f_bot);
         this.managers = [
             new reglist_1.StaticDataSetter(this),
-            new reglist_1.AutoUpdateAccountManager(this)
+            new reglist_1.AutoUpdateAccountManager(this),
+            new reglist_1.UserInteractionHandler(this)
         ];
     }
 }
