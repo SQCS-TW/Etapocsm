@@ -11,26 +11,31 @@ export class BountyUIManager extends core.BaseManager {
         .setFooter({ text: '如要開始遊玩，請先註冊帳號' });
 
     private reg_btn = new MessageButton()
+        .setEmoji('🧾')
         .setLabel('註冊帳號')
         .setCustomId('create-main-bounty-account')
         .setStyle('PRIMARY');
 
     private start_btn = new MessageButton()
+        .setEmoji('🕹️')
         .setLabel('開始遊玩')
         .setCustomId('start-bounty')
         .setStyle('SUCCESS');
 
     private data_btn = new MessageButton()
+        .setEmoji('📑')
         .setLabel('查看帳號數據')
         .setCustomId('check-account-data')
         .setStyle('PRIMARY');
 
     private acc_btn = new MessageButton()
+        .setEmoji('📜')
         .setLabel('查看遊玩紀錄')
         .setCustomId('check-personal-record')
         .setStyle('PRIMARY');
 
     private play_info_btn = new MessageButton()
+        .setEmoji('🤔')
         .setLabel('遊玩方式')
         .setStyle('LINK')
         .setURL('https://www.youtube.com/watch?v=dQw4w9WgXcQ');

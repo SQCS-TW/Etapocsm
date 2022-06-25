@@ -25,6 +25,20 @@ export class StartBountyManager extends core.BaseManager {
 
     private qns_thread_beauty = new QnsThreadBeautifier();
 
+    // for reseting user data
+    private confirm_start_button_op = new core.BaseMongoOperator({
+        db: 'Bounty',
+        coll: 'StartButtonPipeline'
+    });
+    private end_button_op = new core.BaseMongoOperator({
+        db: 'Bounty',
+        coll: 'EndButtonPipeline'
+    });
+    private dropdown_op = new core.BaseMongoOperator({
+        db: 'Bounty',
+        coll: 'DropdownPipeline'
+    });
+
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
@@ -48,7 +62,18 @@ export class StartBountyManager extends core.BaseManager {
 
         const user_acc = await (await this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
         if (!user_acc.auth) return await interaction.editReply('你沒有遊玩懸賞區的權限！');
-        if (user_acc.status) return await interaction.editReply('你已經在遊玩懸賞區了！');
+
+        const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        if (user_ongoing_data.status) return await interaction.editReply('你已經在遊玩懸賞區了！');
+
+        // delete all user remained data
+        try {
+            await (await this.start_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.confirm_start_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.end_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.dropdown_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+        } catch (e) { /*pass*/ }
+
 
         const create_result = await this.createOrGetOngoingInfo(interaction.user.id, {
             account_op: this.account_op,

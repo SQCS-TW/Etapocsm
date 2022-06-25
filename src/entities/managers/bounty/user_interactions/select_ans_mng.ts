@@ -1,7 +1,8 @@
 import { core, db } from '../../../shortcut';
 
 import {
-    SelectMenuInteraction
+    SelectMenuInteraction,
+    Message
 } from 'discord.js';
 
 import { getQnsThreadData } from './utils';
@@ -71,6 +72,8 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         const thread_data = await getQnsThreadData(user_ongoing_info.qns_thread);
         const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
         //
+
+        if (interaction.message instanceof Message) await interaction.message.delete();
 
         await interaction.editReply({
             content: `你選擇的答案是：${interaction.values[0]}`,

@@ -41,6 +41,7 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         else if (user_btn_data.msg_id !== interaction.message.id)
             return await interaction.editReply('驗證資訊錯誤');
         const ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        // take stamina from user
         let stamina_execute;
         if (ongoing_data.stamina.regular > 0) {
             stamina_execute = {
@@ -57,6 +58,17 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
             };
         }
         await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
+        //
+        // activate user ongoing status
+        const execute = {
+            $set: {
+                status: true
+            }
+        };
+        const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+        if (!update_result.acknowledged)
+            return await interaction.user.send('開始懸賞時發生錯誤！');
+        //
         const diffi = user_btn_data.qns_info.difficulty;
         const qns_number = user_btn_data.qns_info.number;
         const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_start_button);
@@ -73,14 +85,6 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         const process_delay_time = 1;
         const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
         const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
-        const execute = {
-            $set: {
-                status: true
-            }
-        };
-        const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
-        if (!update_result.acknowledged)
-            return await interaction.user.send('開始懸賞時發生錯誤！');
         const answering_embed = await this.getAnsweringInfoEmbed(shortcut_1.core.discord.getRelativeTimestamp(start_time), shortcut_1.core.discord.getRelativeTimestamp(end_time));
         await interaction.editReply({
             embeds: [answering_embed]

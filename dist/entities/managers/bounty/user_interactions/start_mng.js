@@ -16,6 +16,19 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             coll: 'StartButtonPipeline'
         });
         this.qns_thread_beauty = new utils_1.QnsThreadBeautifier();
+        // for reseting user data
+        this.confirm_start_button_op = new shortcut_1.core.BaseMongoOperator({
+            db: 'Bounty',
+            coll: 'StartButtonPipeline'
+        });
+        this.end_button_op = new shortcut_1.core.BaseMongoOperator({
+            db: 'Bounty',
+            coll: 'EndButtonPipeline'
+        });
+        this.dropdown_op = new shortcut_1.core.BaseMongoOperator({
+            db: 'Bounty',
+            coll: 'DropdownPipeline'
+        });
         this.setupListener();
     }
     setupListener() {
@@ -34,8 +47,19 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         const user_acc = await (await this.account_op.cursor_promise).findOne({ user_id: interaction.user.id });
         if (!user_acc.auth)
             return await interaction.editReply('你沒有遊玩懸賞區的權限！');
-        if (user_acc.status)
+        const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        if (user_ongoing_data.status)
             return await interaction.editReply('你已經在遊玩懸賞區了！');
+        // delete all user remained data
+        try {
+            await (await this.start_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.confirm_start_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.end_button_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.dropdown_op.cursor_promise).findOneAndDelete({ user_id: interaction.user.id });
+        }
+        catch (e) {
+            console.log(e);
+        }
         const create_result = await this.createOrGetOngoingInfo(interaction.user.id, {
             account_op: this.account_op,
             ongoing_op: this.ongoing_op
@@ -63,7 +87,7 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         });
         const qns_data = await (0, utils_1.getQnsThreadData)(create_result.qns_thread);
         if (qns_data.finished)
-            return await interaction.followUp('✔️ 你已經回答完所有問題了！');
+            return await interaction.followUp('✅ 你已經回答完所有問題了！');
         // ==== modify embed -> set difficulty and qns_number
         const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number, stamina_consume_type);
         let msg;

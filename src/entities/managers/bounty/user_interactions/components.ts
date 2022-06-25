@@ -6,7 +6,8 @@ import {
 
 export const default_start_button = new MessageButton()
     .setStyle('PRIMARY')
-    .setLabel('✅確認開始答題')
+    .setEmoji('✅')
+    .setLabel('確認開始答題')
     .setCustomId('confirm-start-bounty')
 
 export const default_start_embed = new MessageEmbed()
@@ -25,16 +26,18 @@ export const default_answering_info_embed = new MessageEmbed()
 
 export const default_end_button = new MessageButton()
     .setStyle('SUCCESS')
-    .setLabel('🚩結束答題')
+    .setEmoji('🏁')
+    .setLabel('結束答題')
     .setCustomId('end-bounty');
 
 export const default_destroy_qns_button = new MessageButton()
     .setStyle('DANGER')
-    .setLabel('⚠️ 銷毀題目')
+    .setEmoji('⚠️')
+    .setLabel('銷毀題目')
     .setCustomId('destroy-bounty-qns');
 
 export const default_select_ans_dropdown = new MessageSelectMenu()
     .setCustomId('choose-bounty-answers')
-    .setPlaceholder('👉選擇答案')
+    .setPlaceholder('👉 選擇答案')
     .setMinValues(1)
     .setMaxValues(1);

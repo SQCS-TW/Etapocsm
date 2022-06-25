@@ -57,7 +57,7 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
             const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_end_button);
             await msg.edit({
                 components: shortcut_1.core.discord.compAdder([
-                    [new_button]
+                    [new_button, components_1.default_destroy_qns_button]
                 ])
             });
             const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
@@ -84,16 +84,21 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
                 return await interaction.channel.send('新增dp驗證時發生錯誤！');
             await shortcut_1.core.sleep(30);
             try {
-                if (!(dp_msg instanceof discord_js_1.Message))
-                    return;
-                await (await this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                await dp_msg.edit({
-                    content: '選擇答案時間已過時',
-                    components: []
-                });
+                if (dp_msg instanceof discord_js_1.Message)
+                    await dp_msg.delete();
             }
-            catch {
+            catch (e) {
+                console.log(e);
+            }
+            const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            if (!user_dp_data)
                 return;
+            try {
+                if (msg instanceof discord_js_1.Message)
+                    await msg.delete();
+            }
+            catch (e) {
+                console.log(e);
             }
         }
         else if (interaction.customId === 'destroy-bounty-qns') {

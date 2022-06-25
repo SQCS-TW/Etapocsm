@@ -10,7 +10,8 @@ import {
 
 import {
     default_end_button,
-    default_select_ans_dropdown
+    default_select_ans_dropdown,
+    default_destroy_qns_button
 } from './components';
 
 import { getQnsThreadData } from './utils';
@@ -57,47 +58,47 @@ export class EndBountyManager extends core.BaseManager {
     private async buttonHandler(interaction: ButtonInteraction) {
         if (interaction.customId === 'end-bounty') {
             await interaction.deferReply();
-    
+
             const stop_answering_time = Date.now();
-    
+
             const user_end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-    
+
             await (await this.end_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-    
+
             const channel = await this.f_platform.f_bot.channels.fetch(user_end_btn_data.channel_id);
             if (!(channel instanceof DMChannel)) return;
-    
+
             const start_bounty_execute = {
                 $set: {
                     status: false
                 }
             }
             await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, start_bounty_execute);
-    
-    
+
+
             const msg = await channel.messages.fetch(user_end_btn_data.msg_id);
             const new_button = await core.discord.getDisabledButton(default_end_button);
             await msg.edit({
                 components: core.discord.compAdder([
-                    [new_button]
+                    [new_button, default_destroy_qns_button]
                 ])
             });
-    
+
             const user_ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-    
+
             const thread_data = await getQnsThreadData(user_ongoing_data.qns_thread);
             const choices = await this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
             const ans_dropdown = await this.appendChoicesToDropdown(choices);
-    
+
             const dp_msg = await interaction.editReply({
                 content: '請選擇答案（限時30秒）',
                 components: core.discord.compAdder([
                     [ans_dropdown]
                 ])
             });
-    
+
             if (!(dp_msg instanceof Message)) return await interaction.channel.send('err dealing with types');
-    
+
             const dp_data = {
                 _id: new ObjectId(),
                 user_id: interaction.user.id,
@@ -105,22 +106,22 @@ export class EndBountyManager extends core.BaseManager {
                 msg_id: dp_msg.id,
                 ans_duration: stop_answering_time - user_end_btn_data.time.start
             }
-    
+
             const create_result = await (await this.dropdown_op.cursor_promise).insertOne(dp_data);
             if (!create_result.acknowledged) return await interaction.channel.send('新增dp驗證時發生錯誤！');
-    
+
             await core.sleep(30);
-    
-            try {
-                if (!(dp_msg instanceof Message)) return;
-                await (await this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-                await dp_msg.edit({
-                    content: '選擇答案時間已過時',
-                    components: []
-                });
-            } catch {
-                return;
-            }
+
+            try { if (dp_msg instanceof Message) await dp_msg.delete(); }
+            catch (e) { /*pass*/ }
+
+            const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            if (!user_dp_data) return;
+
+            try { if (msg instanceof Message) await msg.delete(); }
+            catch (e) { /*pass*/ }
+
+
         } else if (interaction.customId === 'destroy-bounty-qns') {
             if (!(interaction.message instanceof Message)) return;
             await interaction.message.delete();

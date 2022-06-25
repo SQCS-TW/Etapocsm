@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SelectBountyAnswerManager = void 0;
 const shortcut_1 = require("../../../shortcut");
+const discord_js_1 = require("discord.js");
 const utils_1 = require("./utils");
 class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
@@ -59,6 +60,8 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         const thread_data = await (0, utils_1.getQnsThreadData)(user_ongoing_info.qns_thread);
         const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
         //
+        if (interaction.message instanceof discord_js_1.Message)
+            await interaction.message.delete();
         await interaction.editReply({
             content: `你選擇的答案是：${interaction.values[0]}`,
             components: []
