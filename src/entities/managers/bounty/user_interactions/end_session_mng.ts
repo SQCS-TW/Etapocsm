@@ -44,9 +44,9 @@ export class EndBountySessionManager extends session.SessionManager {
 
         let cache_data = await this.getData();
 
-        if (cache_data === null) {
+        if (!cache_data) {
             await this.writeData([]);
-            cache_data = await this.getData();
+            cache_data = [];
         }
 
         const cached_user_id: string[] = [];

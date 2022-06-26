@@ -49,7 +49,7 @@ export class BountyAccountManager extends core.BaseManager {
 
                 const user_acc_data = await this.getOrCacheUserAccData(interaction.user.id);
                 const user_acc_embed = new MessageEmbed()
-                    .setTitle(`用戶 **${interaction.user.username}** 的懸賞區帳號資訊`)
+                    .setTitle(`你（**${interaction.user.username}**）的懸賞區帳號資訊`)
                     .addField('🕑 帳號創建日期', core.discord.getRelativeTimestamp(user_acc_data.create_date), true)
                     .addField('🔰 遊玩權限', `${user_acc_data.auth}`, true)
                     .addField('✨ 經驗值', `**${user_acc_data.exp}** 點`, true)
@@ -78,7 +78,7 @@ export class BountyAccountManager extends core.BaseManager {
                 const qns_count = user_acc_data.qns_record.answered_qns_count;
                 const crt_count = user_acc_data.qns_record.correct_qns_count;
                 const user_record_embed = new MessageEmbed()
-                    .setTitle(`用戶 **${interaction.user.username}** 的懸賞區遊玩紀錄`)
+                    .setTitle(`你（**${interaction.user.username}**）的懸賞區遊玩紀錄`)
                     .addField('📜 回答題數', `🟩：**${qns_count.easy}** 次\n🟧：**${qns_count.medium}** 次\n🟥：**${qns_count.hard}** 次\n\u200b`, true)
                     .addField('✅ 答對題數', `🟩：**${crt_count.easy}** 次\n🟧：**${crt_count.medium}** 次\n🟥：**${crt_count.hard}** 次\n\u200b`, true)
                     .addField('🗂️ 單一難度問題串破關總數', `**${user_acc_data.personal_record.thread_cleared_count}** 次`)

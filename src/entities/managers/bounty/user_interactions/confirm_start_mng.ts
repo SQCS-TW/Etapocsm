@@ -53,8 +53,8 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         await interaction.deferReply();
 
         const user_btn_data = await (await this.confirm_start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
-        if (!user_btn_data) return await interaction.editReply('錯誤，找不到驗證資訊');
-        else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('驗證資訊錯誤');
+        if (!user_btn_data) return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
+        else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('抱歉，你的驗證資訊是錯的...');
 
         const ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
 
@@ -78,7 +78,7 @@ export class ConfirmStartBountyManager extends core.BaseManager {
 
         // activate user ongoing status
         const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
-        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.user.send('開始懸賞時發生錯誤！');
+        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
         //
 
         const diffi = user_btn_data.qns_info.difficulty;

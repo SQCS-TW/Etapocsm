@@ -56,8 +56,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                 const cursor = other_acc_cursors[j];
                 const user_acc_data = await (await cursor.cursor_promise).findOne({ user_id: user_mainlvl_data.user_id });
 
-                if (!user_acc_data) continue;
-                user_exps += user_acc_data.exp;
+                if (user_acc_data) user_exps += user_acc_data.exp;
             }
 
             const update_exp = {
@@ -95,25 +94,19 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     }
 
     private async getUserLevel(exp: number) {
-        if (this.lvl_exp_dict === undefined) {
+        if (!this.lvl_exp_dict) {
             const lvl_exp_data = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'level-exp-dict' });
             this.lvl_exp_dict = lvl_exp_data.exp_dict;
         }
 
-        let cur_lvl = 0;
-        while (cur_lvl <= 60) {
-            if (cur_lvl === 60) break;
-            else if (this.lvl_exp_dict[cur_lvl] <= exp && exp < this.lvl_exp_dict[cur_lvl + 1]) break;
-
-            cur_lvl++;
+        for (let cur_lvl = 0; cur_lvl <= 60; cur_lvl++) {
+            if (cur_lvl === 60) return cur_lvl;
+            else if (this.lvl_exp_dict[cur_lvl] <= exp && exp < this.lvl_exp_dict[cur_lvl + 1]) return cur_lvl;
         }
-        return cur_lvl;
     }
 
     private async sendUserLevelUpdate(user_id: string, old_lvl: number, new_lvl: number) {
-        if (this.sqcs_main_guild === undefined) {
-            this.sqcs_main_guild = await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
-        }
+        this.sqcs_main_guild = this.sqcs_main_guild ?? await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
 
         const member = await this.sqcs_main_guild.members.fetch(user_id);
         try {
@@ -138,12 +131,12 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     private async updateGuildRole() {
         const self_routine = () => setTimeout(async () => { await this.updateGuildRole() }, 3 * this.mins_in_mili_secs);
 
-        if (this.exp_role_id_dict === undefined) {
+        if (!this.exp_role_id_dict) {
             const exp_role_id_data = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'exp-role-id-dict' });
             this.exp_role_id_dict = exp_role_id_data.role_id_dict;
         }
 
-        if (this.sqcs_main_guild === undefined) {
+        if (!this.sqcs_main_guild) {
             this.sqcs_main_guild = await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
         }
 

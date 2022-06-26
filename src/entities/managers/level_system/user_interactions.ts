@@ -46,7 +46,7 @@ export class UserInteractionHandler extends core.BaseManager {
                 });
             }
 
-            if (this.lvl_exp_dict === undefined) {
+            if (!this.lvl_exp_dict) {
                 const lvl_exp_dict = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'level-exp-dict' });
                 this.lvl_exp_dict = lvl_exp_dict.exp_dict;
             }

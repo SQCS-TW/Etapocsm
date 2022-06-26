@@ -106,7 +106,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
             const give_result = await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
             if (give_result.result === 'gave') bounty_result_embed.addField('⚡ 獲得額外體力', `${give_result.gave} 格`, true);
-            if (give_result.result === 'overflow') bounty_result_embed.addField('⚡ 獲得額外體力', `可獲得數量已到上限\n自動轉為 **${give_result.overflow_exp}** exp`, true);
+            else if (give_result.result === 'overflow') bounty_result_embed.addField('⚡ 獲得額外體力', `可獲得數量已到上限\n自動轉為 **${give_result.overflow_exp}** exp`, true);
         }
 
         await interaction.editReply({
@@ -225,7 +225,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         }
 
         let final_result: boolean;
-        if (cleared_execute === undefined) {
+        if (!cleared_execute) {
             const execute_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
             final_result = execute_result.acknowledged;
         } else {
@@ -274,7 +274,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
             return {
                 result: 'overflow',
                 overflow_exp: 10
-            }
+            };
         }
     }
 }

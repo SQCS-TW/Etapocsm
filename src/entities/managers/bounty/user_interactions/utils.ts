@@ -62,9 +62,7 @@ export async function getQnsThreadData(qns_thread: QnsThread) {
         curr_qns_number = qns_thread[diffi][0];
         break;
     }
-    if (curr_diffi === undefined) return {
-        finished: true
-    };
+    if (!curr_diffi) return { finished: true };
 
     return {
         finished: false,
