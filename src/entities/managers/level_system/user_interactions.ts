@@ -35,7 +35,7 @@ export class UserInteractionHandler extends core.BaseManager {
         if (interaction.commandName === 'check-lvl-data') {
 
             await interaction.deferReply({ ephemeral: true });
-            const user_data = await (await this.mainlvl_acc_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            const user_data = await (await this.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
             if (!user_data) {
                 const resp_embed = new MessageEmbed()
                     .setTitle('😥｜找無資料')
@@ -47,7 +47,7 @@ export class UserInteractionHandler extends core.BaseManager {
             }
 
             if (!this.lvl_exp_dict) {
-                const lvl_exp_dict = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'level-exp-dict' });
+                const lvl_exp_dict = await (await this.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
                 this.lvl_exp_dict = lvl_exp_dict.exp_dict;
             }
 
@@ -68,7 +68,7 @@ export class UserInteractionHandler extends core.BaseManager {
             });
         } else if (interaction.commandName === 'check-lvl-rank') {
             await interaction.deferReply();
-            const server_lvl_data = await (await this.mainlvl_acc_op.cursor_promise).find().sort({ total_exp: -1 }).limit(10).toArray();
+            const server_lvl_data = await (await this.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
 
             const user_data_beautify: string[] = [];
             await core.asyncForEach(server_lvl_data, async (user_data) => {
@@ -82,8 +82,8 @@ export class UserInteractionHandler extends core.BaseManager {
                 .setTitle('🥇｜經驗前10排行榜')
                 .setDescription(user_data_beautify.join('\n'))
                 .setColor('#ffffff');
-            
-                return await interaction.editReply({
+
+            return await interaction.editReply({
                 embeds: [rank_embed]
             });
         }

@@ -43,12 +43,12 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                     return await interaction.editReply('你還沒建立過懸賞區主帳號！');
                 const user_acc_data = await this.getOrCacheUserAccData(interaction.user.id);
                 const user_acc_embed = new discord_js_1.MessageEmbed()
-                    .setTitle(`用戶 **${interaction.user.username}** 的懸賞區帳號資訊`)
+                    .setTitle(`你（**${interaction.user.username}**）的懸賞區帳號資訊`)
                     .addField('🕑 帳號創建日期', shortcut_1.core.discord.getRelativeTimestamp(user_acc_data.create_date), true)
                     .addField('🔰 遊玩權限', `${user_acc_data.auth}`, true)
                     .addField('✨ 經驗值', `**${user_acc_data.exp}** 點`, true)
                     .setColor('#ffffff');
-                const ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
+                const ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
                 if (ongoing_info) {
                     user_acc_embed
                         .addField('💪 普通體力', `${ongoing_info.stamina.regular} 格`, true)
@@ -67,7 +67,7 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                 const qns_count = user_acc_data.qns_record.answered_qns_count;
                 const crt_count = user_acc_data.qns_record.correct_qns_count;
                 const user_record_embed = new discord_js_1.MessageEmbed()
-                    .setTitle(`用戶 **${interaction.user.username}** 的懸賞區遊玩紀錄`)
+                    .setTitle(`你（**${interaction.user.username}**）的懸賞區遊玩紀錄`)
                     .addField('📜 回答題數', `🟩：**${qns_count.easy}** 次\n🟧：**${qns_count.medium}** 次\n🟥：**${qns_count.hard}** 次\n\u200b`, true)
                     .addField('✅ 答對題數', `🟩：**${crt_count.easy}** 次\n🟧：**${crt_count.medium}** 次\n🟥：**${crt_count.hard}** 次\n\u200b`, true)
                     .addField('🗂️ 單一難度問題串破關總數', `**${user_acc_data.personal_record.thread_cleared_count}** 次`)
@@ -85,7 +85,7 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
         const acc_cache_data = await this.cache.client.GET(key);
         if (acc_cache_data !== null)
             return JSON.parse(acc_cache_data);
-        const user_acc_data = await (await this.account_op.cursor_promise).findOne({ user_id: user_id });
+        const user_acc_data = await (await this.account_op.cursor).findOne({ user_id: user_id });
         await this.cache.client.SETEX(key, 60, JSON.stringify(user_acc_data));
         return user_acc_data;
     }

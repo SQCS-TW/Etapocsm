@@ -42,7 +42,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     private async updateTotalExp() {
         const self_routine = () => setTimeout(async () => { await this.updateTotalExp() }, 2 * this.mins_in_mili_secs);
 
-        const users_data = await (await this.mainlvl_acc_op.cursor_promise).find({}).toArray();
+        const users_data = await (await this.mainlvl_acc_op.cursor).find({}).toArray();
         const other_acc_cursors = [
             this.bounty_acc_op,
             this.chat_acc_op
@@ -54,7 +54,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
 
             for (let j = 0; j < other_acc_cursors.length; j++) {
                 const cursor = other_acc_cursors[j];
-                const user_acc_data = await (await cursor.cursor_promise).findOne({ user_id: user_mainlvl_data.user_id });
+                const user_acc_data = await (await cursor.cursor).findOne({ user_id: user_mainlvl_data.user_id });
 
                 if (user_acc_data) user_exps += user_acc_data.exp;
             }
@@ -64,7 +64,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                     total_exp: user_exps
                 }
             }
-            await (await this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_exp);
+            await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_exp);
         }
 
         return self_routine();
@@ -73,7 +73,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     private async updateCurrLevel() {
         const self_routine = () => setTimeout(async () => { await this.updateCurrLevel() }, 2 * this.mins_in_mili_secs);
 
-        const users_data = await (await this.mainlvl_acc_op.cursor_promise).find({}).toArray();
+        const users_data = await (await this.mainlvl_acc_op.cursor).find({}).toArray();
 
         for (let i = 0; i < users_data.length; i++) {
             const user_mainlvl_data = users_data[i];
@@ -86,7 +86,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                     level: new_lvl
                 }
             }
-            await (await this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_lvl);
+            await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_lvl);
             await this.sendUserLevelUpdate(user_mainlvl_data.user_id, user_mainlvl_data.level, new_lvl);
         }
 
@@ -95,7 +95,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
 
     private async getUserLevel(exp: number) {
         if (!this.lvl_exp_dict) {
-            const lvl_exp_data = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'level-exp-dict' });
+            const lvl_exp_data = await (await this.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
             this.lvl_exp_dict = lvl_exp_data.exp_dict;
         }
 
@@ -132,7 +132,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         const self_routine = () => setTimeout(async () => { await this.updateGuildRole() }, 3 * this.mins_in_mili_secs);
 
         if (!this.exp_role_id_dict) {
-            const exp_role_id_data = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'exp-role-id-dict' });
+            const exp_role_id_data = await (await this.mainlvl_data_op.cursor).findOne({ type: 'exp-role-id-dict' });
             this.exp_role_id_dict = exp_role_id_data.role_id_dict;
         }
 
@@ -140,7 +140,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
             this.sqcs_main_guild = await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
         }
 
-        const users_data = await (await this.mainlvl_acc_op.cursor_promise).find({}).toArray();
+        const users_data = await (await this.mainlvl_acc_op.cursor).find({}).toArray();
 
         for (let i = 0; i < users_data.length; i++) {
             const user_mainlvl_data = users_data[i];
@@ -162,7 +162,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                     curr_role_id: new_role_id
                 }
             }
-            await (await this.mainlvl_acc_op.cursor_promise).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
+            await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
             console.log(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
 
             await core.sleep(4);

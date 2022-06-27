@@ -6,13 +6,13 @@ const reglist_2 = require("../../db/reglist");
 class BaseMongoOperator {
     constructor(payload) {
         // use promise here due to non-async constructor
-        this.cursor_promise = (new reglist_1.Mongo(payload.db)).getCur(payload.coll);
+        this.cursor = (new reglist_1.Mongo(payload.db)).getCur(payload.coll);
         if (payload.default_data_function) {
             this.createDefaultDataFunction = payload.default_data_function;
         }
     }
     async checkDataExistence(payload, auto_create_account = false) {
-        const user_data = await (await this.cursor_promise).findOne(payload);
+        const user_data = await (await this.cursor).findOne(payload);
         if (user_data)
             return {
                 status: reglist_2.StatusCode.DATA_FOUND
@@ -29,7 +29,7 @@ class BaseMongoOperator {
     async createDefaultData(payload) {
         try {
             const default_data = await this.createDefaultDataFunction(payload);
-            const result = await (await this.cursor_promise).insertOne(default_data);
+            const result = await (await this.cursor).insertOne(default_data);
             if (result.acknowledged)
                 return {
                     status: reglist_2.StatusCode.WRITE_DATA_SUCCESS

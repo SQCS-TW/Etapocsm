@@ -1,7 +1,7 @@
 import { Mongo } from '../db/reglist';
 import { MessageActionRow, MessageButton } from 'discord.js';
 
-export const timeAfterSecs = async (seconds: number) => { return Date.now() + seconds * 1000; };
+export const timeAfterSecs =  (seconds: number) => { return Date.now() + seconds * 1000; };
 
 export const cloneObj = async (obj: object) => { return JSON.parse(JSON.stringify(obj)); };
 
@@ -53,7 +53,7 @@ export async function getSubsetsWithCertainLength(arr: Array<any>, length: numbe
     }
 }
 
-export async function shuffle(array: Array<any>) {
+export function shuffle(array: Array<any>) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];

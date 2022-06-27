@@ -43,7 +43,7 @@ export class StaticDataSetter extends core.BaseManager {
                     coll: 'Data'
                 });
 
-                await (await cursor.cursor_promise).insertOne(main_dt);
+                await (await cursor.cursor).insertOne(main_dt);
                 await msg.channel.send('fin');
             }
         }

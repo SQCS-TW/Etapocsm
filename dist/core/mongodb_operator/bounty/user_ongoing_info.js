@@ -21,7 +21,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseMongoOperator {
                 status: new_status
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged)
             return {
                 status: reglist_2.StatusCode.WRITE_DATA_ERROR,
@@ -36,7 +36,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseMongoOperator {
         const check_result = await this.checkDataExistence({ user_id: user_id });
         if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
             return check_result;
-        const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+        const member_data = await (await this.cursor).findOne({ user_id: user_id });
         if (member_data.status)
             return {
                 status: true
@@ -49,7 +49,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseMongoOperator {
         const check_result = await this.checkDataExistence({ user_id: user_id });
         if (check_result.status === reglist_2.StatusCode.DATA_NOT_FOUND)
             return check_result;
-        const user_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+        const user_data = await (await this.cursor).findOne({ user_id: user_id });
         const old_stamina = user_data.stamina;
         let execute;
         if (type === 'regular') {
@@ -72,7 +72,7 @@ class BountyUserOngoingInfoOperator extends base_1.BaseMongoOperator {
                 }
             };
         }
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged)
             return {
                 status: reglist_2.StatusCode.WRITE_DATA_ERROR,

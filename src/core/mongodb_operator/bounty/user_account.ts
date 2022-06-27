@@ -21,7 +21,7 @@ export class BountyUserAccountOperator extends BaseMongoOperator {
             }
         }
 
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged) return {
             status: StatusCode.WRITE_DATA_ERROR,
             message: ':x: 寫入錯誤'

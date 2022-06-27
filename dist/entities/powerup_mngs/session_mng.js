@@ -24,7 +24,7 @@ class SessionManager extends shortcut_1.core.BaseManager {
     }
     async getData() {
         const data = await this.cache.client.GET(this.session_name);
-        if (data === null)
+        if (!data)
             return null;
         return JSON.parse(data);
     }
@@ -33,7 +33,7 @@ class SessionManager extends shortcut_1.core.BaseManager {
         if (this.maintaining_data)
             return self_routine(this.interval_data.fast);
         const data = await this.getData();
-        if (data === null || data.length === 0)
+        if (!data || data.length === 0)
             return self_routine(this.interval_data.idle);
         if (data[0].expired_date <= Date.now()) {
             this.event.emit('sessionExpired', data[0]);

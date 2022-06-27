@@ -46,7 +46,7 @@ class ChatAccountOperator extends base_1.BaseMongoOperator {
                 cooldown: -1
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged)
             return {
                 status: "M003",
@@ -68,7 +68,7 @@ class ChatAccountOperator extends base_1.BaseMongoOperator {
                 status: false
             };
         }
-        const member_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+        const member_data = await (await this.cursor).findOne({ user_id: user_id });
         if (member_data.cooldown > Date.now())
             return {
                 status: true
@@ -86,7 +86,7 @@ class ChatAccountOperator extends base_1.BaseMongoOperator {
                 cooldown: time
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged)
             return {
                 status: "M003",
@@ -106,7 +106,7 @@ class ChatAccountOperator extends base_1.BaseMongoOperator {
                 exp: exp
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged)
             return {
                 status: "M003",

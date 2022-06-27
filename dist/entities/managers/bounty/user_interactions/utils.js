@@ -44,7 +44,7 @@ class QnsThreadBeautifier {
     }
 }
 exports.QnsThreadBeautifier = QnsThreadBeautifier;
-async function getQnsThreadData(qns_thread) {
+function getQnsThreadData(qns_thread) {
     const diffi_list = ['easy', 'medium', 'hard'];
     let curr_diffi;
     let curr_qns_number;
@@ -56,10 +56,8 @@ async function getQnsThreadData(qns_thread) {
         curr_qns_number = qns_thread[diffi][0];
         break;
     }
-    if (curr_diffi === undefined)
-        return {
-            finished: true
-        };
+    if (!curr_diffi)
+        return { finished: true };
     return {
         finished: false,
         curr_diffi: curr_diffi,

@@ -12,7 +12,7 @@ class MainLevelAccountOperator extends base_1.BaseMongoOperator {
         });
     }
     async createUserMainAccount(user_id) {
-        const user_data = await (await this.cursor_promise).findOne({ user_id: user_id });
+        const user_data = await (await this.cursor).findOne({ user_id: user_id });
         if (user_data)
             return;
         await this.createDefaultData({

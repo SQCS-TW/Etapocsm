@@ -15,8 +15,8 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./banner_mng"), exports);
-__exportStar(require("./confirm_start_mng"), exports);
-__exportStar(require("./end_bounty_mng"), exports);
+__exportStar(require("./1_confirm_start_mng"), exports);
+__exportStar(require("./2_end_bounty_mng"), exports);
 __exportStar(require("./end_session_mng"), exports);
-__exportStar(require("./select_ans_mng"), exports);
-__exportStar(require("./start_mng"), exports);
+__exportStar(require("./3_select_ans_mng"), exports);
+__exportStar(require("./0_start_mng"), exports);

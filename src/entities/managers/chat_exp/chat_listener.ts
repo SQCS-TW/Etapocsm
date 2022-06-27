@@ -37,7 +37,7 @@ export class ChatListener extends core.BaseManager {
             return;
         }
 
-        const COOLDOWN = await core.timeAfterSecs(60);
+        const COOLDOWN = core.timeAfterSecs(60);
         set_result = await this.account_op.setCooldown(msg.member.id, COOLDOWN);
         if (set_result.status === db.StatusCode.WRITE_DATA_ERROR) {
             console.log('error setting cooldown', msg.member.id, COOLDOWN);

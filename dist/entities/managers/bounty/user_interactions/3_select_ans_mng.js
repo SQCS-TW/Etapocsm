@@ -45,23 +45,25 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'choose-bounty-answers')
             return;
         await interaction.deferReply();
-        // auth
-        const user_dp_data = await (await this.dropdown_op.cursor_promise).findOne({ user_id: interaction.user.id });
-        if (!user_dp_data)
-            return await interaction.editReply('找不到驗證資訊！');
-        if (user_dp_data.channel_id !== interaction.channelId)
-            return await interaction.editReply('驗證資訊錯誤！');
-        if (user_dp_data.msg_id !== interaction.message.id)
-            return await interaction.editReply('驗證資訊錯誤！');
-        await (await this.dropdown_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
-        //
-        // fetch data
-        const user_ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-        const thread_data = await (0, utils_1.getQnsThreadData)(user_ongoing_info.qns_thread);
-        const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
-        //
+        const dp_data = await (await this.dropdown_op.cursor).findOne({ user_id: interaction.user.id });
+        if (!dp_data)
+            return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
+        if (dp_data.msg_id !== interaction.message.id)
+            return await interaction.editReply('抱歉，請確認你有沒有選錯選單...');
+        await (await this.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
+        // delete dropdown and qns-pic-msg
         if (interaction.message instanceof discord_js_1.Message)
             await interaction.message.delete();
+        const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+        const qns_msg = await interaction.channel.messages.fetch(ongoing_data.qns_msg_id);
+        if (qns_msg instanceof discord_js_1.Message)
+            await qns_msg.delete();
+        //
+        // fetch data
+        const user_ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+        const thread_data = (0, utils_1.getQnsThreadData)(user_ongoing_info.qns_thread);
+        const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
+        //
         const bounty_result_embed = new discord_js_1.MessageEmbed()
             .setTitle(`🚩｜你選擇了 ${interaction.values[0]}`)
             .setColor('#ffffff');
@@ -84,7 +86,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         }
         if (correct) {
             // extra stamina
-            const can_gain_ext_stamina = await this.canUserGainExtraStamina(user_dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
+            const can_gain_ext_stamina = await this.canUserGainExtraStamina(dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
             if (!can_gain_ext_stamina)
                 return;
             const give_result = await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
@@ -106,7 +108,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         const acc_cache_data = await this.cache.client.GET(key);
         if (acc_cache_data !== null)
             return JSON.parse(acc_cache_data);
-        const qns_data = await (await this.qns_op.cursor_promise).findOne({
+        const qns_data = await (await this.qns_op.cursor).findOne({
             difficulty: diffi,
             number: qns_number
         });
@@ -129,7 +131,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
                 exp: delta_exp
             }
         };
-        const update_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, execute);
         let status;
         if (update_result.acknowledged)
             status = shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS;
@@ -147,7 +149,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
                 [`qns_thread.${diffi}`]: user_qns_thread[diffi]
             }
         };
-        const update_result = await (await this.ongoing_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.ongoing_op.cursor).updateOne({ user_id: user_id }, execute);
         let status;
         if (update_result.acknowledged)
             status = shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS;
@@ -194,12 +196,12 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         }
         let final_result;
         if (!cleared_execute) {
-            const execute_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
+            const execute_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, execute);
             final_result = execute_result.acknowledged;
         }
         else {
-            const execute_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, execute);
-            const cleared_result = await (await this.account_op.cursor_promise).updateOne({ user_id: user_id }, cleared_execute);
+            const execute_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, execute);
+            const cleared_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, cleared_execute);
             final_result = (execute_result.acknowledged && cleared_result.acknowledged);
         }
         return final_result;
@@ -220,8 +222,8 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
                     "personal_record.extra_stamina_gained_count": 1
                 }
             };
-            await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, ongoing_update);
-            await (await this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, main_statistics_update);
+            await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, ongoing_update);
+            await (await this.account_op.cursor).updateOne({ user_id: interaction.user.id }, main_statistics_update);
             return {
                 result: 'gave',
                 gave: 1
@@ -233,7 +235,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
                     exp: 10
                 }
             };
-            await (await this.account_op.cursor_promise).updateOne({ user_id: interaction.user.id }, execute);
+            await (await this.account_op.cursor).updateOne({ user_id: interaction.user.id }, execute);
             return {
                 result: 'overflow',
                 overflow_exp: 10

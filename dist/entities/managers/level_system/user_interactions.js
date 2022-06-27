@@ -29,7 +29,7 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
     async slcmdHandler(interaction) {
         if (interaction.commandName === 'check-lvl-data') {
             await interaction.deferReply({ ephemeral: true });
-            const user_data = await (await this.mainlvl_acc_op.cursor_promise).findOne({ user_id: interaction.user.id });
+            const user_data = await (await this.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
             if (!user_data) {
                 const resp_embed = new discord_js_1.MessageEmbed()
                     .setTitle('😥｜找無資料')
@@ -39,8 +39,8 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
                     embeds: [resp_embed]
                 });
             }
-            if (this.lvl_exp_dict === undefined) {
-                const lvl_exp_dict = await (await this.mainlvl_data_op.cursor_promise).findOne({ type: 'level-exp-dict' });
+            if (!this.lvl_exp_dict) {
+                const lvl_exp_dict = await (await this.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
                 this.lvl_exp_dict = lvl_exp_dict.exp_dict;
             }
             let exp_to_next_level;
@@ -61,7 +61,7 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
         }
         else if (interaction.commandName === 'check-lvl-rank') {
             await interaction.deferReply();
-            const server_lvl_data = await (await this.mainlvl_acc_op.cursor_promise).find().sort({ total_exp: -1 }).limit(10).toArray();
+            const server_lvl_data = await (await this.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
             const user_data_beautify = [];
             await shortcut_1.core.asyncForEach(server_lvl_data, async (user_data) => {
                 const user = await interaction.guild.members.fetch(user_data.user_id);

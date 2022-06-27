@@ -21,7 +21,7 @@ class BountyUserAccountOperator extends base_1.BaseMongoOperator {
                 auth: new_auth
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
         if (!update_result.acknowledged)
             return {
                 status: reglist_2.StatusCode.WRITE_DATA_ERROR,

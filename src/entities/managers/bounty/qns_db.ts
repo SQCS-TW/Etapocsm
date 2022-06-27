@@ -44,10 +44,10 @@ export class BountyQnsDBManager extends core.BaseManager {
 
                 // check cache
                 // if not exist -> create cache
-                await CBQ_functions.checkAndAutoCreateCache(interaction, diffi, db_cache_operator.cursor_promise);
+                await CBQ_functions.checkAndAutoCreateCache(interaction, diffi, db_cache_operator.cursor);
 
                 // refresh cache
-                const refresh_cache = await (await db_cache_operator.cursor_promise).findOne({ type: 'cache' });
+                const refresh_cache = await (await db_cache_operator.cursor).findOne({ type: 'cache' });
 
                 // update current diffi cache --> update when finished upload pic
                 const qns_and_update_data = await CBQ_functions.getQnsNumber(refresh_cache, diffi);
@@ -97,7 +97,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 if (!mani_log_create_result) return await interaction.followUp('error creating mani logs');
 
                 // update storj cache
-                const update_result = await (await db_cache_operator.cursor_promise).updateOne({ type: 'cache' }, qns_and_update_data.execute);
+                const update_result = await (await db_cache_operator.cursor).updateOne({ type: 'cache' }, qns_and_update_data.execute);
                 if (!update_result.acknowledged) return await interaction.followUp('error updating cache');
                 else return;
             }
@@ -174,7 +174,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                     interaction.user.id,
                     diffi,
                     qns_number,
-                    logs_operator.cursor_promise
+                    logs_operator.cursor
                 );
                 if (search_result.status === db.StatusCode.DATA_NOT_FOUND) {
                     return await interaction.editReply('找不到此操作；或是此操作不來自你');
@@ -188,13 +188,13 @@ export class BountyQnsDBManager extends core.BaseManager {
                 });
                 if (!delete_result) return await interaction.editReply('刪除題目圖片出錯');
 
-                const del_qns_info_result = await (await this.qns_op.cursor_promise).deleteOne({
+                const del_qns_info_result = await (await this.qns_op.cursor).deleteOne({
                     difficulty: diffi,
                     number: qns_number
                 });
                 if (!del_qns_info_result.acknowledged) return await interaction.editReply('刪除題目資訊出錯');
 
-                const del_log_result = await (await logs_operator.cursor_promise).deleteOne({
+                const del_log_result = await (await logs_operator.cursor).deleteOne({
                     accessor: interaction.user.id,
                     "qns_info.difficulty": diffi,
                     "qns_info.number": qns_number
@@ -222,13 +222,13 @@ const CBQ_functions = {
         }
     },
 
-    async checkAndAutoCreateCache(interaction: CommandInteraction, diffi: string, cursor_promise) {
-        const exist_cache = await (await cursor_promise).findOne({ type: 'cache' });
+    async checkAndAutoCreateCache(interaction: CommandInteraction, diffi: string, cursor) {
+        const exist_cache = await (await cursor).findOne({ type: 'cache' });
 
         if (!exist_cache) {
             const create_cache = await CBQ_functions.createQnsInfoCache(['easy', 'medium', 'hard']);
 
-            const create_result = await (await cursor_promise).insertOne(create_cache);
+            const create_result = await (await cursor).insertOne(create_cache);
             if (!create_result.acknowledged) return await interaction.editReply('error creating cache');
         } else {
             const create_cache = await CBQ_functions.createQnsInfoCache([diffi]);
@@ -238,7 +238,7 @@ const CBQ_functions = {
                     [diffi]: create_cache[diffi]
                 }
             }
-            const update_result = await (await cursor_promise).updateOne({ type: 'cache' }, execute);
+            const update_result = await (await cursor).updateOne({ type: 'cache' }, execute);
             if (!update_result.acknowledged) return await interaction.editReply('error updating cache');
         }
     },
@@ -367,7 +367,7 @@ const CBQ_functions = {
             }
         };
 
-        const create_result = await (await logs_operator.cursor_promise).insertOne(mani_info);
+        const create_result = await (await logs_operator.cursor).insertOne(mani_info);
         return create_result.acknowledged;
     }
 }
@@ -406,7 +406,7 @@ const LCBQA_functions = {
             coll: 'AdminLogs'
         });
 
-        const logs = (await logs_operator.cursor_promise).find({ accessor: user_id }).sort({ finish_time: 1 });
+        const logs = (await logs_operator.cursor).find({ accessor: user_id }).sort({ finish_time: 1 });
         return logs;
     }
 }
@@ -419,8 +419,8 @@ const DCBQA_functions = {
         }
     },
 
-    async getLog(user_id: string, diffi: string, qns_number: number, cursor_promise) {
-        const log = await (await cursor_promise).findOne({
+    async getLog(user_id: string, diffi: string, qns_number: number, cursor) {
+        const log = await (await cursor).findOne({
             accessor: user_id,
             "qns_info.difficulty": diffi,
             "qns_info.number": qns_number

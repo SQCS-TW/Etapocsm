@@ -55,7 +55,7 @@ export class BountyAccountManager extends core.BaseManager {
                     .addField('✨ 經驗值', `**${user_acc_data.exp}** 點`, true)
                     .setColor('#ffffff');
 
-                const ongoing_info = await (await this.ongoing_op.cursor_promise).findOne({user_id: interaction.user.id});
+                const ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
                 if (ongoing_info) {
                     user_acc_embed
                         .addField('💪 普通體力', `${ongoing_info.stamina.regular} 格`, true)
@@ -99,7 +99,7 @@ export class BountyAccountManager extends core.BaseManager {
 
         if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
 
-        const user_acc_data = await (await this.account_op.cursor_promise).findOne({ user_id: user_id });
+        const user_acc_data = await (await this.account_op.cursor).findOne({ user_id: user_id });
 
         await this.cache.client.SETEX(key, 60, JSON.stringify(user_acc_data));
         return user_acc_data;

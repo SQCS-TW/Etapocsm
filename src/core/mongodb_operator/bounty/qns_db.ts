@@ -24,7 +24,7 @@ export class BountyQnsDBOperator extends BaseMongoOperator {
             }
         }
 
-        const update_result = await (await this.cursor_promise).updateOne({
+        const update_result = await (await this.cursor).updateOne({
             difficulty: diffi,
             number: qns_number
         }, execute);
@@ -52,7 +52,7 @@ export class BountyQnsDBOperator extends BaseMongoOperator {
             }
         }
 
-        const update_result = await (await this.cursor_promise).updateOne({
+        const update_result = await (await this.cursor).updateOne({
             difficulty: diffi,
             number: qns_number
         }, execute);

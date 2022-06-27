@@ -24,7 +24,7 @@ class BountyQnsDBOperator extends base_1.BaseMongoOperator {
                 max_choices: new_max_choices
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({
+        const update_result = await (await this.cursor).updateOne({
             difficulty: diffi,
             number: qns_number
         }, execute);
@@ -50,7 +50,7 @@ class BountyQnsDBOperator extends base_1.BaseMongoOperator {
                 correct_ans: new_answers
             }
         };
-        const update_result = await (await this.cursor_promise).updateOne({
+        const update_result = await (await this.cursor).updateOne({
             difficulty: diffi,
             number: qns_number
         }, execute);

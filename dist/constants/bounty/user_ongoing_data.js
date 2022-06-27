@@ -7,6 +7,8 @@ const getDefaultUserOngoingData = async function (payload) {
         _id: new mongodb_1.ObjectId(),
         user_id: payload.user_id,
         status: false,
+        dm_channel_id: -1,
+        qns_msg_id: -1,
         qns_thread: {
             easy: payload.qns_thread.easy,
             medium: payload.qns_thread.medium,

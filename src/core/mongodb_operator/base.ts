@@ -20,13 +20,13 @@ export type OperatorConstructPayload = {
 
 export class BaseMongoOperator {
     // use promise here due to non-async constructor
-    public cursor_promise: Promise<Collection>;
+    public cursor: Promise<Collection>;
 
     protected createDefaultDataFunction: any;
 
     constructor(payload: OperatorConstructPayload) {
         // use promise here due to non-async constructor
-        this.cursor_promise = (new Mongo(payload.db)).getCur(payload.coll);
+        this.cursor = (new Mongo(payload.db)).getCur(payload.coll);
 
         if (payload.default_data_function) {
             this.createDefaultDataFunction = payload.default_data_function;
@@ -34,7 +34,7 @@ export class BaseMongoOperator {
     }
 
     public async checkDataExistence(payload: DefaultDataPayload, auto_create_account = false): Promise<OperatorResponse> {
-        const user_data = await (await this.cursor_promise).findOne(payload);
+        const user_data = await (await this.cursor).findOne(payload);
 
         if (user_data) return {
             status: StatusCode.DATA_FOUND
@@ -55,7 +55,7 @@ export class BaseMongoOperator {
         try {
             const default_data = await this.createDefaultDataFunction(payload);
 
-            const result = await (await this.cursor_promise).insertOne(default_data);
+            const result = await (await this.cursor).insertOne(default_data);
             if (result.acknowledged) return {
                 status: StatusCode.WRITE_DATA_SUCCESS
             };

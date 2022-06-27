@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.discord = exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const reglist_1 = require("../db/reglist");
 const discord_js_1 = require("discord.js");
-const timeAfterSecs = async (seconds) => { return Date.now() + seconds * 1000; };
+const timeAfterSecs = (seconds) => { return Date.now() + seconds * 1000; };
 exports.timeAfterSecs = timeAfterSecs;
 const cloneObj = async (obj) => { return JSON.parse(JSON.stringify(obj)); };
 exports.cloneObj = cloneObj;
@@ -54,7 +54,7 @@ async function getSubsetsWithCertainLength(arr, length) {
     }
 }
 exports.getSubsetsWithCertainLength = getSubsetsWithCertainLength;
-async function shuffle(array) {
+function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];

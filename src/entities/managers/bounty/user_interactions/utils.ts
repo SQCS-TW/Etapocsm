@@ -49,7 +49,7 @@ export class QnsThreadBeautifier {
     }
 }
 
-export async function getQnsThreadData(qns_thread: QnsThread) {
+export function getQnsThreadData(qns_thread: QnsThread) {
     const diffi_list = ['easy', 'medium', 'hard'];
 
     let curr_diffi: string;

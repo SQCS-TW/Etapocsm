@@ -9,7 +9,6 @@ import { default_end_button } from './components';
 
 
 export class EndBountySessionManager extends session.SessionManager {
-
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
     private end_button_op = new core.BaseMongoOperator({
         db: 'Bounty',
@@ -52,7 +51,7 @@ export class EndBountySessionManager extends session.SessionManager {
         const cached_user_id: string[] = [];
         if (cache_data.length !== 0) {
             for (let i = 0; i < cache_data.length; i++) {
-                const user_acc = await (await this.ongoing_op.cursor_promise).findOne({ user_id: cache_data[i].id });
+                const user_acc = await (await this.ongoing_op.cursor).findOne({ user_id: cache_data[i].id });
 
                 if (!user_acc.status) {
                     cache_data.splice(i, 1);
@@ -62,7 +61,7 @@ export class EndBountySessionManager extends session.SessionManager {
             }
         }
 
-        const end_btn_data = await (await this.end_button_op.cursor_promise).find({}).toArray();
+        const end_btn_data = await (await this.end_button_op.cursor).find({}).toArray();
 
         for (let i = 0; i < end_btn_data.length; i++) {
             const data = end_btn_data[i];
@@ -88,33 +87,32 @@ export class EndBountySessionManager extends session.SessionManager {
     }
 
     private async doAfterExpired(session_data: session.SessionData) {
-        const end_btn_data = await (await this.end_button_op.cursor_promise).findOne({ user_id: session_data.id });
-        if (end_btn_data) {
-            const channel = await this.f_platform.f_bot.channels.fetch(end_btn_data.channel_id);
+        const acc_data = await (await this.ongoing_op.cursor).findOne({ user_id: session_data.id });
+
+        try {
+            const channel = await this.f_platform.f_bot.channels.fetch(acc_data.dm_channel_id);
             if (!(channel instanceof DMChannel)) return;
 
-            try {
-                const msg = await channel.messages.fetch(end_btn_data.msg_id);
-                const new_button = await core.discord.getDisabledButton(default_end_button);
-                await msg.edit({
-                    content: '已超過可回答時間',
-                    files: [],
-                    components: core.discord.compAdder([
-                        [new_button]
-                    ])
-                });
-            } catch {
-                console.log(`err deleting msg ${end_btn_data.msg_id}`);
-            }
-
-            const status_execute = {
-                $set: {
-                    status: false
-                }
-            }
-            await (await this.ongoing_op.cursor_promise).updateOne({ user_id: session_data.id }, status_execute);
-            await (await this.end_button_op.cursor_promise).deleteOne({ user_id: session_data.id });
+            const new_button = await core.discord.getDisabledButton(default_end_button);
+            const msg = await channel.messages.fetch(acc_data.qns_msg_id);
+            await msg.edit({
+                content: '已超過可回答時間',
+                files: [],
+                components: core.discord.compAdder([
+                    [new_button]
+                ])
+            });
+        } catch {
+            console.log(`err deleting msg ${acc_data.qns_msg_id}`);
         }
-        return;
+
+        const status_execute = {
+            $set: {
+                status: false
+            }
+        }
+        await (await this.ongoing_op.cursor).updateOne({ user_id: session_data.id }, status_execute);
+        await (await this.end_button_op.cursor).deleteOne({ user_id: session_data.id });
+
     }
 }

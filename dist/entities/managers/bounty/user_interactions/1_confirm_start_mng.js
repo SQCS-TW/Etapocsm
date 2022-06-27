@@ -35,67 +35,70 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'confirm-start-bounty')
             return;
         await interaction.deferReply();
-        const user_btn_data = await (await this.confirm_start_button_op.cursor_promise).findOne({ user_id: interaction.user.id });
+        const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (!user_btn_data)
             return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
         else if (user_btn_data.msg_id !== interaction.message.id)
-            return await interaction.editReply('抱歉，你的驗證資訊是錯的...');
-        const ongoing_data = await (await this.ongoing_op.cursor_promise).findOne({ user_id: interaction.user.id });
-        // take stamina from user
-        let stamina_execute;
+            return await interaction.editReply('抱歉，請確認你按下的按鈕是否正確...');
+        const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+        let takeaway_stamina;
         if (ongoing_data.stamina.regular > 0) {
-            stamina_execute = {
+            takeaway_stamina = {
                 $inc: {
                     "stamina.regular": -1
                 }
             };
         }
         else if (ongoing_data.stamina.extra > 0) {
-            stamina_execute = {
+            takeaway_stamina = {
                 $inc: {
                     "stamina.extra": -1
                 }
             };
         }
-        await (await this.ongoing_op.cursor_promise).updateOne({ user_id: interaction.user.id }, stamina_execute);
-        //
+        const takeaway_result = await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
+        if (!takeaway_result.acknowledged)
+            return await interaction.editReply('抱歉，消耗體力時發生錯誤了...');
         // activate user ongoing status
         const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
         if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
             return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
         //
-        const diffi = user_btn_data.qns_info.difficulty;
+        const qns_diffi = user_btn_data.qns_info.difficulty;
         const qns_number = user_btn_data.qns_info.number;
+        // disabled the button after activating user status
         const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_start_button);
-        const msg = interaction.message;
-        await msg.edit({
-            components: shortcut_1.core.discord.compAdder([
-                [new_button]
-            ])
-        });
-        const delete_result = await (await this.confirm_start_button_op.cursor_promise).deleteOne({ user_id: interaction.user.id });
+        if (interaction.message instanceof discord_js_1.Message)
+            await interaction.message.edit({
+                components: shortcut_1.core.discord.compAdder([
+                    [new_button]
+                ])
+            });
+        //
+        const delete_result = await (await this.confirm_start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
         if (!delete_result.acknowledged)
             return await interaction.editReply('刪除驗證資訊時發生錯誤！');
-        const buffer_time = 10;
-        const process_delay_time = 1;
-        const start_time = Date.now() + (buffer_time + process_delay_time) * 1000;
-        const end_time = Date.now() + (this.qns_diffi_time[diffi] + buffer_time + process_delay_time) * 1000;
-        const answering_embed = await this.getAnsweringInfoEmbed(shortcut_1.core.discord.getRelativeTimestamp(start_time), shortcut_1.core.discord.getRelativeTimestamp(end_time));
+        // start handling qns-pic
+        const pic_dl_time = 10;
+        const buffer_time = 1;
+        const start_time = shortcut_1.core.timeAfterSecs(buffer_time + pic_dl_time);
+        const end_time = shortcut_1.core.timeAfterSecs(this.qns_diffi_time[qns_diffi] + pic_dl_time + buffer_time);
+        const ans_time_embed = await this.getAnsweringTimeEmbed(shortcut_1.core.discord.getRelativeTimestamp(start_time), shortcut_1.core.discord.getRelativeTimestamp(end_time));
         await interaction.editReply({
-            embeds: [answering_embed]
+            embeds: [ans_time_embed]
         });
         const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}.png`;
         const async_tasks = [
-            shortcut_1.core.sleep(buffer_time),
+            shortcut_1.core.sleep(pic_dl_time),
             shortcut_1.db.storjDownload({
                 bucket_name: 'bounty-questions-db',
                 local_file_name: local_file_name,
-                db_file_name: `${diffi}/${qns_number}.png`
+                db_file_name: `${qns_diffi}/${qns_number}.png`
             })
         ];
         await Promise.all(async_tasks);
         if (!(0, fs_1.existsSync)(local_file_name))
-            return await interaction.editReply('下載圖片錯誤！');
+            return await interaction.followUp('下載圖片錯誤！');
         const qns_msg = await interaction.user.send({
             embeds: [components_1.default_qns_info_embed],
             files: [local_file_name],
@@ -104,21 +107,26 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
             ])
         });
         (0, fs_1.unlink)(local_file_name, () => { return; });
+        // set msg_id to user ongoing data
+        const update_qns_msg_id = {
+            $set: {
+                qns_msg_id: qns_msg.id
+            }
+        };
+        await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
         const end_btn_info = {
             _id: new mongodb_1.ObjectId(),
             user_id: interaction.user.id,
-            channel_id: interaction.channelId,
-            msg_id: qns_msg.id,
             time: {
                 start: start_time,
                 end: end_time
             }
         };
-        const create_result = await (await this.end_button_op.cursor_promise).insertOne(end_btn_info);
+        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
         if (!create_result.acknowledged)
-            await interaction.user.send('建立結束資料時發生錯誤！');
+            return await interaction.user.send('建立結束資料時發生錯誤！');
     }
-    async getAnsweringInfoEmbed(start_time, end_time) {
+    async getAnsweringTimeEmbed(start_time, end_time) {
         const new_embed = new discord_js_1.MessageEmbed(components_1.default_answering_info_embed);
         new_embed.addField('⏳ 開始時間', start_time, true);
         new_embed.addField('⌛ 結束時間', end_time, true);

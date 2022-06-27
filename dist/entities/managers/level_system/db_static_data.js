@@ -37,7 +37,7 @@ class StaticDataSetter extends shortcut_1.core.BaseManager {
                     db: 'Level',
                     coll: 'Data'
                 });
-                await (await cursor.cursor_promise).insertOne(main_dt);
+                await (await cursor.cursor).insertOne(main_dt);
                 await msg.channel.send('fin');
             }
         }
