@@ -1,5 +1,5 @@
 import { core, db } from '../../../shortcut';
-import { unlink, existsSync } from 'fs';
+import { unlink, existsSync, readdirSync } from 'fs';
 import { ObjectId } from 'mongodb';
 
 import {
@@ -16,6 +16,79 @@ import {
     default_qns_info_embed
 } from './components';
 
+type PicCacheData = {
+    thread: number,
+    cd: number
+};
+
+class BountyQnsPicCacheHandler {
+    public cache = new db.Redis();
+
+    private diffi_cache_cd = {
+        'easy': 10,
+        'medium': 5,
+        'hard': 3
+    };
+
+    private switchThread(thread: number) {
+        return (thread + 1) % 2;
+    }
+
+    public async clearAllCache() {
+        const all_keys = await this.cache.client.KEYS('bountyPicCache*');
+        await core.asyncForEach(all_keys, async (key: string) => {
+            await this.cache.client.DEL(key);
+        });
+
+        const file_names = readdirSync(`./cache/bounty_qns_pic/`);
+        file_names.forEach(file_name => {
+            unlink(`./cache/bounty_qns_pic/${file_name}`, () => { return; });
+        });
+    }
+
+    public async getOrSetCache(qns_diffi: string, qns_number: number) {
+        const path_suffix = `${qns_diffi}_${qns_number}`;
+        const pic_cache_key = `bountyPicCache?suffix=${path_suffix}`;
+
+        const pic_data: PicCacheData = JSON.parse(
+            await this.cache.client.GET(pic_cache_key)
+        );
+
+        if (pic_data?.cd > 0) {
+            pic_data.cd--;
+            await this.cache.client.SET(pic_cache_key, JSON.stringify(pic_data));
+
+            return {
+                exists: true,
+                full_file_path: `${pic_data.thread}_${path_suffix}`
+            };
+        } else if (pic_data?.cd === 0) {
+            const old_thread = pic_data.thread;
+
+            pic_data.thread = this.switchThread(pic_data.thread);
+            pic_data.cd = this.diffi_cache_cd[qns_diffi];
+            await this.cache.client.SET(pic_cache_key, JSON.stringify(pic_data));
+
+            unlink(`./cache/bounty_qns_pic/${old_thread}_${path_suffix}.png`, () => { return; });
+            return {
+                exists: false,
+                full_file_path: `${pic_data.thread}_${path_suffix}`
+            };
+        } else if (!pic_data) {
+            const pic_data = {
+                thread: 0,
+                cd: this.diffi_cache_cd[qns_diffi]
+            };
+            await this.cache.client.SET(pic_cache_key, JSON.stringify(pic_data));
+
+            return {
+                exists: false,
+                full_file_path: `0_${path_suffix}`
+            };
+        }
+    }
+}
+
 
 export class ConfirmStartBountyManager extends core.BaseManager {
     private ongoing_op = new core.BountyUserOngoingInfoOperator();
@@ -30,6 +103,8 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         coll: 'EndButtonPipeline'
     });
 
+    private pic_cache_hdl = new BountyQnsPicCacheHandler();
+
     private qns_diffi_time = {
         'easy': 60,
         'medium': 60 * 2,
@@ -43,6 +118,11 @@ export class ConfirmStartBountyManager extends core.BaseManager {
     }
 
     private setupListener() {
+        this.f_platform.f_bot.on('ready', async () => {
+            await this.pic_cache_hdl.cache.client.connect();
+            await this.pic_cache_hdl.clearAllCache();
+        });
+
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.isButton()) await this.buttonHandler(interaction);
         });
@@ -112,27 +192,29 @@ export class ConfirmStartBountyManager extends core.BaseManager {
             embeds: [ans_time_embed]
         });
 
-        const local_file_name = `./cache/qns_pic_dl/${interaction.user.id}.png`;
-        const async_tasks = [
-            core.sleep(pic_dl_time),
+        const pic_cache_data = await this.pic_cache_hdl.getOrSetCache(qns_diffi, qns_number);
+
+        const local_file_path = `./cache/bounty_qns_pic/${pic_cache_data.full_file_path}.png`;
+
+        const async_tasks = [core.sleep(pic_dl_time)];
+        if (!pic_cache_data.exists) async_tasks.push(
             db.storjDownload({
                 bucket_name: 'bounty-questions-db',
-                local_file_name: local_file_name,
+                local_file_name: local_file_path,
                 db_file_name: `${qns_diffi}/${qns_number}.png`
             })
-        ];
+        );
 
         await Promise.all(async_tasks);
-        if (!existsSync(local_file_name)) return await interaction.followUp('下載圖片錯誤！');
+        if (!existsSync(local_file_path)) return await interaction.followUp('下載圖片錯誤！');
 
         const qns_msg = await interaction.user.send({
             embeds: [default_qns_info_embed],
-            files: [local_file_name],
+            files: [local_file_path],
             components: core.discord.compAdder([
                 [default_end_button, default_destroy_qns_button]
             ])
         });
-        unlink(local_file_name, () => { return; });
 
         // set msg_id to user ongoing data
         const update_qns_msg_id = {
