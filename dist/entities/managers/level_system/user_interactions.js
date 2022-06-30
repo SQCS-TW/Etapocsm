@@ -63,8 +63,8 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
             const server_lvl_data = await (await this.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
             const user_data_beautify = [];
             await shortcut_1.core.asyncForEach(server_lvl_data, async (user_data) => {
-                const user = await interaction.guild.members.fetch(user_data.user_id);
-                user_data_beautify.push(`**${user.nickname}**: **${user_data.total_exp}** exp, LV.**${user_data.level}**`);
+                const member = await interaction.guild.members.fetch(user_data.user_id);
+                user_data_beautify.push(`**${member.displayName}**: **${user_data.total_exp}** exp, LV.**${user_data.level}**`);
             });
             const rank_embed = new discord_js_1.MessageEmbed()
                 .setTitle('🥇｜經驗前10排行榜')

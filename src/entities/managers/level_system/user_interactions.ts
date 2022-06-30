@@ -72,9 +72,9 @@ export class UserInteractionHandler extends core.BaseManager {
 
             const user_data_beautify: string[] = [];
             await core.asyncForEach(server_lvl_data, async (user_data) => {
-                const user = await interaction.guild.members.fetch(user_data.user_id);
+                const member = await interaction.guild.members.fetch(user_data.user_id);
                 user_data_beautify.push(
-                    `**${user.nickname}**: **${user_data.total_exp}** exp, LV.**${user_data.level}**`
+                    `**${member.displayName}**: **${user_data.total_exp}** exp, LV.**${user_data.level}**`
                 );
             });
 

@@ -18,7 +18,7 @@ export class AdministratorManager extends core.BaseManager {
 
     private setupListener() {
         this.f_platform.f_bot.on('messageCreate', async (msg) => {
-            if (msg.member.permissions.any('ADMINISTRATOR')) await this.messageHandler(msg);
+            if (msg.member?.permissions?.any('ADMINISTRATOR')) await this.messageHandler(msg);
         });
 
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {

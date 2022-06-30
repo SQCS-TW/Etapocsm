@@ -100,7 +100,8 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         }
 
         for (let cur_lvl = 0; cur_lvl <= 60; cur_lvl++) {
-            if (cur_lvl === 60) return cur_lvl;
+            if (cur_lvl === 60) return 60;
+            else if (exp < this.lvl_exp_dict[0]) return 0;
             else if (this.lvl_exp_dict[cur_lvl] <= exp && exp < this.lvl_exp_dict[cur_lvl + 1]) return cur_lvl;
         }
     }
@@ -163,7 +164,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                 }
             }
             await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
-            core.logger.info(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
+            core.logger.info(`role edit: ${member.displayName}; old: ${old_role.name}, new: ${new_role.name}`);
 
             await core.sleep(4);
         }
