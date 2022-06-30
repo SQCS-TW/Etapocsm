@@ -63,10 +63,10 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         }
         // delete all remained data of user
         try {
-            await (await this.start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-            await (await this.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-            await (await this.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-            await (await this.dropdown_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+            await (await this.start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.confirm_start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.end_button_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.dropdown_op.cursor).deleteMany({ user_id: interaction.user.id });
         }
         catch (e) { /*pass*/ }
         // check if user has the stamina to play

@@ -10,8 +10,11 @@ import {
     LvlSysPlatform
 } from './entities/platforms/reglist';
 
+import { logger } from './logger';
+
 export class Etapocsm extends Client {
     private platforms: Array<BasePlatform>;
+    public logger = logger;
 
     constructor(options: ClientOptions) {
         super(options);
