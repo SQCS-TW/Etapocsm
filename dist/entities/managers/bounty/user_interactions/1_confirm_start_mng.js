@@ -122,14 +122,11 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         const takeaway_result = await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
         if (!takeaway_result.acknowledged)
             return await interaction.editReply('抱歉，消耗體力時發生錯誤了...');
-        // activate user ongoing status
         const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
         if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
             return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
-        //
         const qns_diffi = user_btn_data.qns_info.difficulty;
         const qns_number = user_btn_data.qns_info.number;
-        // disabled the button after activating user status
         const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_start_button);
         if (interaction.message instanceof discord_js_1.Message)
             await interaction.message.edit({
@@ -137,11 +134,9 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
                     [new_button]
                 ])
             });
-        //
         const delete_result = await (await this.confirm_start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
         if (!delete_result.acknowledged)
             return await interaction.editReply('刪除驗證資訊時發生錯誤！');
-        // start handling qns-pic
         const pic_dl_time = 10;
         const buffer_time = 1;
         const start_time = shortcut_1.core.timeAfterSecs(buffer_time + pic_dl_time);
@@ -169,7 +164,6 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
                 [components_1.default_end_button, components_1.default_destroy_qns_button]
             ])
         });
-        // set msg_id to user ongoing data
         const update_qns_msg_id = {
             $set: {
                 qns_msg_id: qns_msg.id

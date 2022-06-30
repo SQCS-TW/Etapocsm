@@ -1,9 +1,4 @@
 "use strict";
-// M000: db 不存在
-// M001: collection 不存在
-// M002: 資料不存在
-// M003: 資料寫入錯誤
-// M004: 資料型態有誤
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StatusCode = void 0;
 var StatusCode;

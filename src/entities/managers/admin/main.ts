@@ -1,11 +1,8 @@
-/* eslint-disable no-inner-declarations */
 import { CommandInteraction, Message } from 'discord.js';
 import { core } from '../../shortcut';
 
 
 export class AdministratorManager extends core.BaseManager {
-    // private account_op = new core.ChatAccountOperator();
-
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 

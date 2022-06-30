@@ -10,7 +10,6 @@ class BaseManager {
         this.perm_error = {
             content: ':x: 【權限不足】你無法使用這個指令！'
         };
-        // file to send when sth goes wrong
         this.error_gif = ['./assets/gif/error.gif'];
     }
     async checkPerm(interaction, perm) {

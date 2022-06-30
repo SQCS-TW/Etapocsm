@@ -6,7 +6,6 @@ const shortcut_1 = require("../../shortcut");
 class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
-        // operators
         this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
         this.bounty_acc_op = new shortcut_1.core.BountyUserAccountOperator();
         this.chat_acc_op = new shortcut_1.core.ChatAccountOperator();
@@ -14,10 +13,8 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
             db: 'Level',
             coll: 'Data'
         });
-        // constants
         this.mins_in_mili_secs = 60 * 1000;
         this.sqcs_main_guild_id = '743507979369709639';
-        // data to be cached
         this.lvl_exp_dict = undefined;
         this.exp_role_id_dict = undefined;
         this.sqcs_main_guild = undefined;
@@ -108,7 +105,7 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
                 embeds: [notif_embed]
             });
         }
-        catch { /*pass*/ }
+        catch { }
     }
     async updateGuildRole() {
         const self_routine = () => setTimeout(async () => { await this.updateGuildRole(); }, 3 * this.mins_in_mili_secs);

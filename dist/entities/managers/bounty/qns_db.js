@@ -26,24 +26,17 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
         switch (interaction.commandName) {
             case 'create-bounty-qns': {
                 await interaction.deferReply();
-                // get input data
                 const inner_values = await CBQ_functions.getInputData(interaction);
                 const diffi = inner_values.diffi;
                 const max_choices = inner_values.max_choices;
                 const correct_ans = inner_values.correct_ans;
-                // create operator
                 const db_cache_operator = new shortcut_1.core.BaseMongoOperator({
                     db: 'Bounty',
                     coll: 'StorjQnsDBCache'
                 });
-                // check cache
-                // if not exist -> create cache
                 await CBQ_functions.checkAndAutoCreateCache(interaction, diffi, db_cache_operator.cursor);
-                // refresh cache
                 const refresh_cache = await (await db_cache_operator.cursor).findOne({ type: 'cache' });
-                // update current diffi cache --> update when finished upload pic
                 const qns_and_update_data = await CBQ_functions.getQnsNumber(refresh_cache, diffi);
-                // get the picture that will be uploaded to storj
                 let collected;
                 try {
                     await interaction.editReply('請上傳問題圖片（限時60秒）');
@@ -62,13 +55,11 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 if (!pic)
                     return await interaction.followUp('此並非圖片格式，請重新執行指令');
                 const pic_url = pic.url;
-                // if (!pic_url.endsWith('.png')) return await interaction.followUp('此圖片並非.png檔，請重新執行指令');
                 const upload_status = await CBQ_functions.downloadAndUploadPic(pic_url, diffi, qns_and_update_data.qns_number);
                 if (upload_status)
                     await interaction.followUp('圖片已上傳！');
                 else
                     return await interaction.followUp('圖片上傳錯誤');
-                // create qns info in mdb
                 const create_params = {
                     difficulty: diffi,
                     qns_number: qns_and_update_data.qns_number,
@@ -85,7 +76,6 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 const mani_log_create_result = await CBQ_functions.createManipulationLog(interaction, Date.now(), diffi, qns_and_update_data.qns_number);
                 if (!mani_log_create_result)
                     return await interaction.followUp('error creating mani logs');
-                // update storj cache
                 const update_result = await (await db_cache_operator.cursor).updateOne({ type: 'cache' }, qns_and_update_data.execute);
                 if (!update_result.acknowledged)
                     return await interaction.followUp('error updating cache');
@@ -94,7 +84,6 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             }
             case 'edit-bounty-qns-max-choices': {
                 await interaction.deferReply();
-                // get input data
                 const inner_values = await EBQMC_functions.getInputData(interaction);
                 const diffi = inner_values.diffi;
                 const qns_number = inner_values.qns_number;
@@ -109,7 +98,6 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             }
             case 'edit-bounty-qns-answers': {
                 await interaction.deferReply();
-                // get input data
                 const inner_values = await EBQA_functions.getInputData(interaction);
                 const diffi = inner_values.diffi;
                 const qns_number = inner_values.qns_number;
@@ -185,7 +173,6 @@ exports.BountyQnsDBManager = BountyQnsDBManager;
 const CBQ_functions = {
     async getInputData(interaction) {
         const correct_ans = interaction.options.getString('correct-ans').split(";");
-        // a -> A; b -> B; ...
         for (let i = 0; i < correct_ans.length; i++) {
             correct_ans[i] = correct_ans[i].toUpperCase();
         }
@@ -238,7 +225,7 @@ const CBQ_functions = {
             }
             else {
                 for (let i = 0; i < file_names.length; i++) {
-                    file_names[i] = Number(file_names[i].replace(".png", '')); // 0.png -> 0; 1.png -> 1
+                    file_names[i] = Number(file_names[i].replace(".png", ''));
                 }
                 max_number = Math.max(...file_names);
                 file_names.sort((a, b) => a - b);
@@ -338,7 +325,6 @@ const EBQMC_functions = {
 const EBQA_functions = {
     async getInputData(interaction) {
         const new_answers = interaction.options.getString('new-answers').split(";");
-        // a -> A; b -> B; ...
         for (let i = 0; i < new_answers.length; i++) {
             new_answers[i] = new_answers[i].toUpperCase();
         }

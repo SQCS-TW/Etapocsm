@@ -14,7 +14,6 @@ async function main() {
     });
     await bot.login(process.env.BOT_TOKEN);
 }
-// prevent break down
 process.on('uncaughtException', async (data) => {
     reglist_1.logger.error(data.stack);
 });

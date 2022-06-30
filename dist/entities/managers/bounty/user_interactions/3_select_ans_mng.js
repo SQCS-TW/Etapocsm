@@ -51,19 +51,15 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         if (dp_data.msg_id !== interaction.message.id)
             return await interaction.editReply('抱歉，請確認你有沒有選錯選單...');
         await (await this.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
-        // delete dropdown and qns-pic-msg
         if (interaction.message instanceof discord_js_1.Message)
             await interaction.message.delete();
         const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
         const qns_msg = await interaction.channel.messages.fetch(ongoing_data.qns_msg_id);
         if (qns_msg instanceof discord_js_1.Message)
             await qns_msg.delete();
-        //
-        // fetch data
         const user_ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
         const thread_data = (0, utils_1.getQnsThreadData)(user_ongoing_info.qns_thread);
         const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
-        //
         const bounty_result_embed = new discord_js_1.MessageEmbed()
             .setTitle(`🚩｜你選擇了 ${interaction.values[0]}`)
             .setColor('#ffffff');
@@ -85,7 +81,6 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             new_thread = result.new_thread;
         }
         if (correct) {
-            // extra stamina
             const can_gain_ext_stamina = await this.canUserGainExtraStamina(dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
             if (!can_gain_ext_stamina)
                 return;

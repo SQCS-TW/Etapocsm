@@ -56,7 +56,6 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
                 }
             };
             await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_end_bounty);
-            // disabled the end-bounty-btn in qns-pic-msg
             const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_end_button);
             if (interaction.message instanceof discord_js_1.Message)
                 await interaction.message.edit({
@@ -85,19 +84,16 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
             if (!create_result.acknowledged)
                 return await interaction.channel.send('新增dp驗證時發生錯誤！');
             await shortcut_1.core.sleep(30);
-            // after 30 seconds, whether the user had chose the answerer or not,
-            // the dropdown and the qns has to be deleted
             try {
                 if (dp_msg instanceof discord_js_1.Message)
                     await dp_msg.delete();
             }
-            catch (e) { /*pass*/ }
+            catch (e) { }
             try {
                 if (interaction.message instanceof discord_js_1.Message)
                     await interaction.message.delete();
             }
-            catch (e) { /*pass*/ }
-            // delete dp data
+            catch (e) { }
             return await (await this.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
         }
         else if (interaction.customId === 'destroy-bounty-qns') {
@@ -111,9 +107,6 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
         }
     }
     async generateQuestionChoices(qns_diffi, qns_number) {
-        // ex:
-        // const qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
-        // const qns_ans = ['A', 'C'];
         const qns_data = await this.getOrSetQnsCache(qns_diffi, qns_number);
         const qns_choices = this.alphabet_sequence.slice(0, qns_data.max_choices);
         const qns_ans = qns_data.correct_ans;
@@ -123,7 +116,6 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
         result = result.filter((item) => { return !(shortcut_1.core.arrayEquals(item, qns_ans)); });
         result = shortcut_1.core.shuffle(result);
         let random_choices_count = Math.min(Math.pow(2, qns_ans.length) + 2, await shortcut_1.core.binomialCoefficient(qns_choices.length, qns_ans.length));
-        // discord dropdown choices limit: 25 (1 slot for push qns_ans)
         random_choices_count = Math.min(random_choices_count, 23);
         result = result.slice(0, random_choices_count);
         result.push(qns_ans);

@@ -31,8 +31,6 @@ export class Etapocsm extends Client {
         this.on('ready', async () => {
             if (!this.user) throw new Error('Client is null.');
             logger.info(`${this.user.username} has logged in!`);
-
-            // await this.registerSlcmd();
         });
     }
 

@@ -4,7 +4,6 @@ exports.StaticDataSetter = void 0;
 const shortcut_1 = require("../../shortcut");
 const mongodb_1 = require("mongodb");
 class StaticDataSetter extends shortcut_1.core.BaseManager {
-    // private account_op = new core.ChatAccountOperator();
     constructor(f_platform) {
         super(f_platform);
         this.setupListener();

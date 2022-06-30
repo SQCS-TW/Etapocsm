@@ -20,7 +20,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             coll: 'StorjQnsDBCache'
         });
         this.qns_thread_beauty = new utils_1.QnsThreadBeautifier();
-        // for resetting user data
         this.confirm_start_button_op = new shortcut_1.core.BaseMongoOperator({
             db: 'Bounty',
             coll: 'StartButtonPipeline'
@@ -45,11 +44,9 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'start-bounty')
             return;
         await interaction.deferReply({ ephemeral: true });
-        // check if the user had already pressed this button before
         const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (user_btn_data)
             return await interaction.editReply('問題資訊剛才已發送，請查看私訊！');
-        //
         const main_acc = await (await this.account_op.cursor).findOne({ user_id: interaction.user.id });
         if (!main_acc)
             return await interaction.editReply('請先建立你的懸賞區資料！');
@@ -61,15 +58,13 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         else if (create_ongoing_data.status == shortcut_1.db.StatusCode.DATA_FOUND && create_ongoing_data.playing) {
             return await interaction.editReply('請專心回答問題');
         }
-        // delete all remained data of user
         try {
             await (await this.start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
             await (await this.confirm_start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
             await (await this.end_button_op.cursor).deleteMany({ user_id: interaction.user.id });
             await (await this.dropdown_op.cursor).deleteMany({ user_id: interaction.user.id });
         }
-        catch (e) { /*pass*/ }
-        // check if user has the stamina to play
+        catch (e) { }
         let stamina_consume_type;
         if (create_ongoing_data.stamina.regular > 0)
             stamina_consume_type = '普通';
@@ -77,7 +72,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             stamina_consume_type = '額外';
         else
             return await interaction.editReply('❌ 你沒有足夠的體力！');
-        // send user current answering status
         const beautified_qns_thread = await this.qns_thread_beauty.beautify(create_ongoing_data.qns_thread);
         await interaction.editReply({
             embeds: [beautified_qns_thread]
@@ -88,7 +82,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 content: '✅ 你已經回答完所有問題了',
                 ephemeral: true
             });
-        // ==== modify embed -> set difficulty and qns_number
         const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number, stamina_consume_type);
         let msg;
         try {
@@ -125,9 +118,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         };
         await (await this.start_button_op.cursor).insertOne(confirm_start_btn_data);
         await shortcut_1.core.sleep(60);
-        // If the btn data has been deleted,
-        // that means the user has already pressed the confirm-bounty-btn.
-        // Otherwise, it has to be disabled, and then delete the btn data
         const btn_data = await (await this.start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (!btn_data)
             return;
@@ -138,7 +128,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             ])
         });
         return await (await this.start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
-        //
     }
     async getStartBountyEmbed(diffi, qns_number, stamina_consume_type) {
         const new_embed = new discord_js_1.MessageEmbed(components_1.default_start_embed)
@@ -157,13 +146,11 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 qns_thread: ongoing_data.qns_thread,
                 stamina: ongoing_data.stamina
             };
-        // setup user ongoing data
         const new_qns_thread = await this.createQnsThread(user_id);
         const create_result = await this.ongoing_op.createDefaultData({
             user_id: user_id,
             qns_thread: new_qns_thread
         });
-        //
         return {
             status: create_result.status,
             dm_channel_id: -1,
@@ -189,7 +176,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             const not_answered = [];
             const answered = user_main_acc.qns_record.answered_qns_number[diffi];
             answered.sort((a, b) => a - b);
-            // find max-num and skipped-num
             for (let i = 0; i <= max_num; i++) {
                 if (skipped_nums.length !== 0 && i === skipped_nums[0]) {
                     skipped_nums.shift();
@@ -201,12 +187,9 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 }
                 not_answered.push(i);
             }
-            //
-            // setting user qns-thread
             shortcut_1.core.shuffle(not_answered);
             const max_qns_count = Math.min(3, not_answered.length);
             new_qns_thread[diffi] = not_answered.slice(0, max_qns_count);
-            //
         });
         return new_qns_thread;
     }

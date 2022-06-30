@@ -15,7 +15,6 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
             db: 'Level',
             coll: 'Data'
         });
-        // constants waiting to be fetched
         this.lvl_exp_dict = undefined;
         this.SLCMD_REGISTER_LIST = components_1.REGISTER_LIST;
         this.setupListener();

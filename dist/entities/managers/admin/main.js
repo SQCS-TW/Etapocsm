@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdministratorManager = void 0;
 const shortcut_1 = require("../../shortcut");
 class AdministratorManager extends shortcut_1.core.BaseManager {
-    // private account_op = new core.ChatAccountOperator();
     constructor(f_platform) {
         super(f_platform);
         this.setupListener();

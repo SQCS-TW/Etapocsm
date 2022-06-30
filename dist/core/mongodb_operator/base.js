@@ -6,7 +6,6 @@ const reglist_2 = require("../../db/reglist");
 const logger_1 = require("../logger");
 class BaseMongoOperator {
     constructor(payload) {
-        // use promise here due to non-async constructor
         this.cursor = (new reglist_1.Mongo(payload.db)).getCur(payload.coll);
         if (payload.default_data_function) {
             this.createDefaultDataFunction = payload.default_data_function;
