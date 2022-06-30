@@ -7,7 +7,8 @@ import { core } from './entities/shortcut';
 import {
     ChatExpPlatform,
     BountyPlatform,
-    LvlSysPlatform
+    LvlSysPlatform,
+    AdministratorPlatform
 } from './entities/platforms/reglist';
 
 export class Etapocsm extends Client {
@@ -19,7 +20,8 @@ export class Etapocsm extends Client {
         this.platforms = [
             new ChatExpPlatform(this),
             new BountyPlatform(this),
-            new LvlSysPlatform(this)
+            new LvlSysPlatform(this),
+            new AdministratorPlatform(this)
         ];
 
         this.setupListener();

@@ -17,3 +17,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./chat_exp"), exports);
 __exportStar(require("./bounty"), exports);
 __exportStar(require("./level_system"), exports);
+__exportStar(require("./admin"), exports);

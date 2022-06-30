@@ -16,6 +16,6 @@ async function main() {
 }
 // prevent break down
 process.on('uncaughtException', async (data) => {
-    reglist_1.logger.error(data);
+    reglist_1.logger.error(data.stack);
 });
 main();
