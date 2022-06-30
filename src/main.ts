@@ -3,7 +3,7 @@ require('dotenv').config();
 import { Etapocsm } from './bot';
 import { Intents } from 'discord.js';
 import { db } from './entities/shortcut';
-import { logger } from './logger';
+import { logger } from './core/reglist';
 
 
 let bot: Etapocsm;
@@ -20,8 +20,7 @@ async function main() {
 
 // prevent break down
 process.on('uncaughtException', async (data) => {
-    if (bot?.logger) bot.logger.error(data);
-    else logger.error(data);
+    logger.error(data);
 });
 
 main();

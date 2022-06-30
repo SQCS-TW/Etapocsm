@@ -5,6 +5,7 @@
 */
 
 import { execSync } from 'child_process';
+import { logger } from '../../core/reglist';
 
 type StorjDown_UploadOptions = {
     bucket_name: string,
@@ -35,14 +36,12 @@ export async function storjUpload(options: StorjDown_UploadOptions) {
         db_file_name: a full path of the target file in the bucket.
     */
 
-    console.log(options);
-
     const command = `python ./src/db/storj/py_port.py upload_file ${options.bucket_name} ${options.local_file_name} ${options.db_file_name}`;
 
     let upload_result: any = execSync(command);
     upload_result = upload_result.toString("utf-8");
 
-    console.log('upload result:', upload_result);
+    logger.debug(`upload result: ${upload_result}`);
 
     upload_result = (upload_result.trim() === 'true');
     return upload_result;
@@ -109,13 +108,13 @@ export async function storjDeleteFile(options: DeleteFileOptions) {
         bucket_name: the bucket in storj where the target folder is,
         delete_path: the storj path where the target file is
     */
-    
+
     const command = `python ./src/db/storj/py_port.py delete_file ${options.bucket_name} ${options.delete_path}`;
 
     let delete_result: any = execSync(command);
     delete_result = delete_result.toString("utf-8");
 
-    console.log('delete result:', delete_result);
+    logger.debug(`delete result: ${delete_result}`);
 
     delete_result = (delete_result.trim() === 'true');
     return delete_result;

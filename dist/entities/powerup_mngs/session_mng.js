@@ -37,7 +37,7 @@ class SessionManager extends shortcut_1.core.BaseManager {
             return self_routine(this.interval_data.idle);
         if (data[0].expired_date <= Date.now()) {
             this.event.emit('sessionExpired', data[0]);
-            console.log('cache del', data[0]);
+            shortcut_1.core.logger.debug(`cache del ${data[0]}`);
             data.shift();
             await this.writeData(data);
         }

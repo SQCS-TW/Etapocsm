@@ -2,17 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Etapocsm = void 0;
 const discord_js_1 = require("discord.js");
+const reglist_1 = require("./core/reglist");
 const rest_1 = require("@discordjs/rest");
 const v9_1 = require("discord-api-types/v9");
 const shortcut_1 = require("./entities/shortcut");
-const reglist_1 = require("./entities/platforms/reglist");
+const reglist_2 = require("./entities/platforms/reglist");
 class Etapocsm extends discord_js_1.Client {
     constructor(options) {
         super(options);
         this.platforms = [
-            new reglist_1.ChatExpPlatform(this),
-            new reglist_1.BountyPlatform(this),
-            new reglist_1.LvlSysPlatform(this)
+            new reglist_2.ChatExpPlatform(this),
+            new reglist_2.BountyPlatform(this),
+            new reglist_2.LvlSysPlatform(this)
         ];
         this.setupListener();
     }
@@ -20,7 +21,7 @@ class Etapocsm extends discord_js_1.Client {
         this.on('ready', async () => {
             if (!this.user)
                 throw new Error('Client is null.');
-            console.log(`${this.user.username} has logged in!`);
+            reglist_1.logger.info(`${this.user.username} has logged in!`);
             // await this.registerSlcmd();
         });
     }
@@ -42,7 +43,7 @@ class Etapocsm extends discord_js_1.Client {
         await rest.put(v9_1.Routes.applicationGuildCommands(BOT_ID, MAIN_GUILD_ID), { body: [] }); // reset slcmd
         if (slcmd_register_list.length !== 0) {
             await rest.put(v9_1.Routes.applicationGuildCommands(BOT_ID, MAIN_GUILD_ID), { body: slcmd_register_list });
-            console.log('slcmd registered!');
+            reglist_1.logger.info('SLCMD Registered!');
         }
     }
 }

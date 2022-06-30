@@ -82,7 +82,7 @@ class EndBountySessionManager extends session.SessionManager {
                 id: data.user_id,
                 expired_date: data.time.end
             });
-            console.log('cache pushed', {
+            shortcut_1.core.logger.debug('cache pushed', {
                 id: data.user_id,
                 expired_date: data.time.end
             });
@@ -108,7 +108,7 @@ class EndBountySessionManager extends session.SessionManager {
             });
         }
         catch {
-            console.log(`err deleting msg ${acc_data.qns_msg_id}`);
+            shortcut_1.core.logger.error(`err deleting msg ${acc_data.qns_msg_id}`);
         }
         const status_execute = {
             $set: {

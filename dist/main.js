@@ -4,6 +4,7 @@ require('dotenv').config();
 const bot_1 = require("./bot");
 const discord_js_1 = require("discord.js");
 const shortcut_1 = require("./entities/shortcut");
+const reglist_1 = require("./core/reglist");
 let bot;
 async function main() {
     await shortcut_1.db.connectMongoDB();
@@ -15,6 +16,6 @@ async function main() {
 }
 // prevent break down
 process.on('uncaughtException', async (data) => {
-    console.log(data);
+    reglist_1.logger.error(data);
 });
 main();

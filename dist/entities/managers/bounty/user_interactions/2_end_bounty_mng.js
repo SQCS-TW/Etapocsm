@@ -114,17 +114,14 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
         // ex:
         // const qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
         // const qns_ans = ['A', 'C'];
-        const sd = Date.now();
         const qns_data = await this.getOrSetQnsCache(qns_diffi, qns_number);
-        const ed = Date.now();
-        const sp = Date.now();
         const qns_choices = this.alphabet_sequence.slice(0, qns_data.max_choices);
         const qns_ans = qns_data.correct_ans;
         if (qns_ans.length === 1)
             return qns_choices;
         let result = await this.getOrSetSubsetsCache(qns_choices, qns_ans.length);
         result = result.filter((item) => { return !(shortcut_1.core.arrayEquals(item, qns_ans)); });
-        result = await shortcut_1.core.shuffle(result);
+        result = shortcut_1.core.shuffle(result);
         let random_choices_count = Math.min(Math.pow(2, qns_ans.length) + 2, await shortcut_1.core.binomialCoefficient(qns_choices.length, qns_ans.length));
         // discord dropdown choices limit: 25 (1 slot for push qns_ans)
         random_choices_count = Math.min(random_choices_count, 23);
@@ -132,11 +129,6 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
         result.push(qns_ans);
         result = await shortcut_1.core.shuffle(result);
         result = result.map((item) => { return item.join(', '); });
-        console.log(result);
-        const ep = Date.now();
-        console.log('fetch db', ed - sd);
-        console.log('pro data', qns_choices.length, qns_ans.length);
-        console.log('pro time', ep - sp);
         return result;
     }
     async getOrSetQnsCache(diffi, qns_number) {

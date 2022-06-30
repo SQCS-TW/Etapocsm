@@ -229,7 +229,7 @@ const CBQ_functions = {
                 prefix: `${diffi}/`,
                 suffixes: '.png'
             });
-            console.log('file names', file_names);
+            shortcut_1.core.logger.debug(`file names: ${file_names}`);
             let max_number = undefined;
             let skipped_numbers = undefined;
             if (file_names.length === 1 && file_names[0] === '') {

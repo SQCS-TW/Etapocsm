@@ -35,7 +35,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         });
 
         this.f_platform.f_bot.on('rateLimit', async (rateLimitData) => {
-            console.log('**RATE LIMITED**:', rateLimitData);
+            core.logger.warn(`RATE LIMITED: ${rateLimitData}`);
         });
     }
 
@@ -163,7 +163,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                 }
             }
             await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
-            console.log(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
+            core.logger.info(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
 
             await core.sleep(4);
         }

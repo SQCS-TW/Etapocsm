@@ -22,21 +22,21 @@ class ChatListener extends shortcut_1.core.BaseManager {
             return;
         const check_result = await this.account_op.isUserInCooldown(msg.member.id);
         if (check_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
-            return console.log('error creating user chat account', msg.member.id);
+            return shortcut_1.core.logger.error('error creating user chat account', msg.member.id);
         }
         if (check_result.status === true)
             return;
         const REWARD_EXP = await shortcut_1.core.getRandomInt(2);
-        console.log(REWARD_EXP);
+        shortcut_1.core.logger.debug(`dexp: ${REWARD_EXP}`);
         let set_result = await this.account_op.addExp(msg.member.id, REWARD_EXP);
         if (set_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
-            console.log('error giving user exp', msg.member.id, REWARD_EXP);
+            shortcut_1.core.logger.error(`error giving user exp ${msg.member.id} ${REWARD_EXP}`);
             return;
         }
         const COOLDOWN = shortcut_1.core.timeAfterSecs(60);
         set_result = await this.account_op.setCooldown(msg.member.id, COOLDOWN);
         if (set_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
-            console.log('error setting cooldown', msg.member.id, COOLDOWN);
+            shortcut_1.core.logger.error(`error setting cooldown ${msg.member.id} ${COOLDOWN}`);
             return;
         }
     }

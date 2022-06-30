@@ -7,6 +7,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.storjDeleteFile = exports.storjGetFolderFiles = exports.storjGetFolderSize = exports.storjUpload = exports.storjDownload = void 0;
 const child_process_1 = require("child_process");
+const reglist_1 = require("../../core/reglist");
 async function storjDownload(options) {
     /*
         bucket_name: the bucket in storj where the target file is.
@@ -26,11 +27,10 @@ async function storjUpload(options) {
         local_file_name: a full relative path of the file, including suffix.
         db_file_name: a full path of the target file in the bucket.
     */
-    console.log(options);
     const command = `python ./src/db/storj/py_port.py upload_file ${options.bucket_name} ${options.local_file_name} ${options.db_file_name}`;
     let upload_result = (0, child_process_1.execSync)(command);
     upload_result = upload_result.toString("utf-8");
-    console.log('upload result:', upload_result);
+    reglist_1.logger.debug(`upload result: ${upload_result}`);
     upload_result = (upload_result.trim() === 'true');
     return upload_result;
 }
@@ -79,7 +79,7 @@ async function storjDeleteFile(options) {
     const command = `python ./src/db/storj/py_port.py delete_file ${options.bucket_name} ${options.delete_path}`;
     let delete_result = (0, child_process_1.execSync)(command);
     delete_result = delete_result.toString("utf-8");
-    console.log('delete result:', delete_result);
+    reglist_1.logger.debug(`delete result: ${delete_result}`);
     delete_result = (delete_result.trim() === 'true');
     return delete_result;
 }

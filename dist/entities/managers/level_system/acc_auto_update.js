@@ -30,7 +30,7 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
             await this.updateGuildRole();
         });
         this.f_platform.f_bot.on('rateLimit', async (rateLimitData) => {
-            console.log('**RATE LIMITED**:', rateLimitData);
+            shortcut_1.core.logger.warn(`RATE LIMITED: ${rateLimitData}`);
         });
     }
     async updateTotalExp() {
@@ -138,7 +138,7 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
                 }
             };
             await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
-            console.log(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
+            shortcut_1.core.logger.info(`role edit: ${member.nickname}; old: ${old_role.name}, new: ${new_role.name}`);
             await shortcut_1.core.sleep(4);
         }
         return self_routine();

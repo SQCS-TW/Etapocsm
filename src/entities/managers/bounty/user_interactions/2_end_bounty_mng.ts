@@ -135,11 +135,7 @@ export class EndBountyManager extends core.BaseManager {
         // const qns_choices = ['A', 'B', 'C', 'D', 'E', 'F'];
         // const qns_ans = ['A', 'C'];
 
-        const sd = Date.now();
         const qns_data = await this.getOrSetQnsCache(qns_diffi, qns_number);
-        const ed = Date.now();
-
-        const sp = Date.now();
 
         const qns_choices = this.alphabet_sequence.slice(0, qns_data.max_choices);
         const qns_ans = qns_data.correct_ans;
@@ -149,7 +145,7 @@ export class EndBountyManager extends core.BaseManager {
         let result: Array<any> = await this.getOrSetSubsetsCache(qns_choices, qns_ans.length);
 
         result = result.filter((item) => { return !(core.arrayEquals(item, qns_ans)) });
-        result = await core.shuffle(result);
+        result = core.shuffle(result);
 
         let random_choices_count = Math.min(
             Math.pow(2, qns_ans.length) + 2,
@@ -163,14 +159,6 @@ export class EndBountyManager extends core.BaseManager {
         result.push(qns_ans);
         result = await core.shuffle(result);
         result = result.map((item) => { return item.join(', ') });
-
-        console.log(result);
-
-        const ep = Date.now();
-
-        console.log('fetch db', ed - sd);
-        console.log('pro data', qns_choices.length, qns_ans.length);
-        console.log('pro time', ep - sp);
 
         return result;
     }

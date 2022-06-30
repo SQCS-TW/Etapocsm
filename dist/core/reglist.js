@@ -18,3 +18,4 @@ __exportStar(require("./mongodb_operator/reglist"), exports);
 __exportStar(require("./concrete_object/reglist"), exports);
 __exportStar(require("./utils"), exports);
 __exportStar(require("./json"), exports);
+__exportStar(require("./logger"), exports);

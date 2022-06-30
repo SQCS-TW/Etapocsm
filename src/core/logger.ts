@@ -5,8 +5,8 @@ export const logger = createLogger({
     defaultMeta: { service: 'user-service' },
     transports: [
         new transports.Console(),
-        new transports.File({ filename: 'error.log', level: 'error' }),
-        new transports.File({ filename: 'normal.log' }),
+        new transports.File({ filename: './logs/error.log', level: 'error' }),
+        new transports.File({ filename: './logs/info.log', level: 'info' })
     ],
     format: format.combine(
         format.timestamp({
