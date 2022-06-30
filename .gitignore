@@ -1,5 +1,6 @@
 .env
 logs/
+buffer/
 
 # redis
 redis.conf
