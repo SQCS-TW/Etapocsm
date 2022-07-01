@@ -1,8 +1,7 @@
 .env
-./logs/
-buffer/
+/logs/
+/buffer/
 
 # redis
-redis.conf
-dump.rdb
-redis.log
+/redis.conf
+/dump.rdb
