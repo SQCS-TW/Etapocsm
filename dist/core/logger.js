@@ -14,5 +14,5 @@ exports.logger = (0, winston_1.createLogger)({
     ],
     format: winston_1.format.combine(winston_1.format.timestamp({
         format: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
-    }), winston_1.format.printf(info => `[${info.level.toUpperCase()}] (${[info.timestamp]}): ${info.message}`))
+    }), winston_1.format.printf(info => `[${info.level.toUpperCase()}] (${[info.timestamp]}): ${info.message}\n`))
 });

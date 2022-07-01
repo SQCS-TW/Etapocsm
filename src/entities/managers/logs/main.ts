@@ -1,6 +1,6 @@
-import { Channel, MessageAttachment, TextChannel } from 'discord.js';
+import { Channel, TextChannel } from 'discord.js';
 import { core } from '../../shortcut';
-import fs from 'fs';
+import { readdirSync, readFileSync, writeFileSync } from 'fs';
 
 
 export class LogsManager extends core.BaseManager {
@@ -21,16 +21,22 @@ export class LogsManager extends core.BaseManager {
         const self_routine = () => setTimeout(async () => { await this.sendLogs() }, 1 * 60 * 1000);
 
         if (!this.log_channel) {
-            this.log_channel = await (await this.f_platform.f_bot.guilds.fetch(core.GuildId.CADRE)).channels.fetch('992264680158548039');
+            this.log_channel = await (await this.f_platform.f_bot.guilds.fetch(core.GuildId.CADRE)).channels.fetch('992278772986429441');
         }
 
-        const file_names = fs.readdirSync('./logs/');
+        const file_names = readdirSync('./logs/');
         await core.asyncForEach(file_names, async (file_name: string) => {
+
+            const data = readFileSync(`./logs/${file_name}`, {
+                encoding: 'utf-8'
+            });
+            if (data.split('\n').length < 100) return;
+
             if (this.log_channel instanceof TextChannel) await this.log_channel.send({
                 content: core.localizeDatetime(),
                 files: [`./logs/${file_name}`]
             });
-            fs.writeFileSync(`./logs/${file_name}`, '');
+            writeFileSync(`./logs/${file_name}`, '');
             await core.sleep(2);
         });
 

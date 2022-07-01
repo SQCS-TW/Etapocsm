@@ -14,6 +14,6 @@ export const logger = createLogger({
         format.timestamp({
             format: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
         }),
-        format.printf(info => `[${info.level.toUpperCase()}] (${[info.timestamp]}): ${info.message}`)
+        format.printf(info => `[${info.level.toUpperCase()}] (${[info.timestamp]}): ${info.message}\n`)
     )
 });

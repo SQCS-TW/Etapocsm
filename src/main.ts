@@ -20,8 +20,7 @@ async function main() {
 
 // prevent break down
 process.on('uncaughtException', async (data) => {
-    console.log(data);
-    // logger.error(data.stack);
+    logger.error(data.stack);
 });
 
 main();
