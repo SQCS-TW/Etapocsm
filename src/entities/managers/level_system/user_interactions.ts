@@ -19,10 +19,13 @@ export class UserInteractionHandler extends core.BaseManager {
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
-
-        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
-
+        
         this.setupListener();
+
+        this.slcmd_register_options = {
+            guild_id: [core.GuildId.MAIN],
+            cmd_list: REGISTER_LIST
+        };
     }
 
     private setupListener() {

@@ -1,7 +1,7 @@
 import { Mongo } from '../db/reglist';
 import { MessageActionRow, MessageButton } from 'discord.js';
 
-export const timeAfterSecs =  (seconds: number) => { return Date.now() + seconds * 1000; };
+export const timeAfterSecs = (seconds: number) => { return Date.now() + seconds * 1000; };
 
 export const cloneObj = async (obj: object) => { return JSON.parse(JSON.stringify(obj)); };
 
@@ -27,7 +27,7 @@ export async function binomialCoefficient(m: number, n: number) {
 
 export async function getSubsetsWithCertainLength(arr: Array<any>, length: number) {
     let modify = [...arr].map(item => [item]);
-    
+
     if (length === 1) return [arr];
 
     for (let i = 0; i < length - 1; i++) {
@@ -124,3 +124,5 @@ export const discord = {
         return `<t:${Math.trunc(t / 1000)}:R>`;
     }
 }
+
+export const localizeDatetime = () => { return new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }); }

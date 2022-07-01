@@ -6,12 +6,15 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
         this.setupListener();
-        this.SLCMD_REGISTER_LIST = [
-            {
-                name: 'ping',
-                description: '戳一下機器人'
-            }
-        ];
+        this.slcmd_register_options = {
+            guild_id: [shortcut_1.core.GuildId.MAIN],
+            cmd_list: [
+                {
+                    name: 'ping',
+                    description: '戳一下機器人'
+                }
+            ]
+        };
     }
     setupListener() {
         this.f_platform.f_bot.on('messageCreate', async (msg) => {
@@ -26,8 +29,8 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
     async messageHandler(msg) {
         switch (msg.content) {
             case 'e:REGISTER-SLASH-COMMAND': {
-                await this.f_platform.f_bot.registerSlcmd();
-                await msg.reply('slcmd registered!');
+                await this.f_platform.f_bot.registerSlcmd(msg.guildId);
+                await msg.reply(`slcmd of guild ${msg.guildId} registered!`);
             }
         }
     }

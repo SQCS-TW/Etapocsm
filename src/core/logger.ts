@@ -4,7 +4,9 @@ export const logger = createLogger({
     level: 'info',
     defaultMeta: { service: 'user-service' },
     transports: [
-        new transports.Console(),
+        new transports.Console({
+            level: 'debug'
+        }),
         new transports.File({ filename: './logs/error.log', level: 'error' }),
         new transports.File({ filename: './logs/info.log', level: 'info' })
     ],

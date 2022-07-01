@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.discord = exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
+exports.localizeDatetime = exports.discord = exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const reglist_1 = require("../db/reglist");
 const discord_js_1 = require("discord.js");
 const timeAfterSecs = (seconds) => { return Date.now() + seconds * 1000; };
@@ -120,3 +120,5 @@ exports.discord = {
         return `<t:${Math.trunc(t / 1000)}:R>`;
     }
 };
+const localizeDatetime = () => { return new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }); };
+exports.localizeDatetime = localizeDatetime;

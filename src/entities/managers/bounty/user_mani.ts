@@ -12,7 +12,10 @@ export class BountyUserManiManager extends core.BaseManager {
 
         this.setupListener();
 
-        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        this.slcmd_register_options = {
+            guild_id: [core.GuildId.MAIN, core.GuildId.CADRE],
+            cmd_list: REGISTER_LIST
+        };
     }
 
     private setupListener() {

@@ -3,3 +3,4 @@ export * from './concrete_object/reglist';
 export * from './utils';
 export * from './json';
 export * from './logger';
+export * from './guild_id';

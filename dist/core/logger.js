@@ -6,7 +6,9 @@ exports.logger = (0, winston_1.createLogger)({
     level: 'info',
     defaultMeta: { service: 'user-service' },
     transports: [
-        new winston_1.transports.Console(),
+        new winston_1.transports.Console({
+            level: 'debug'
+        }),
         new winston_1.transports.File({ filename: './logs/error.log', level: 'error' }),
         new winston_1.transports.File({ filename: './logs/info.log', level: 'info' })
     ],

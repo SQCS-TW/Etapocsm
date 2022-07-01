@@ -9,7 +9,10 @@ class BountyUserManiManager extends shortcut_1.core.BaseManager {
         this.account_op = new shortcut_1.core.BountyUserAccountOperator();
         this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
         this.setupListener();
-        this.SLCMD_REGISTER_LIST = user_mani_1.REGISTER_LIST;
+        this.slcmd_register_options = {
+            guild_id: [shortcut_1.core.GuildId.MAIN, shortcut_1.core.GuildId.CADRE],
+            cmd_list: user_mani_1.REGISTER_LIST
+        };
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {

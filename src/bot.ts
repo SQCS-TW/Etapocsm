@@ -8,7 +8,8 @@ import {
     ChatExpPlatform,
     BountyPlatform,
     LvlSysPlatform,
-    AdministratorPlatform
+    AdministratorPlatform,
+    LogsPlatform
 } from './entities/platforms/reglist';
 
 export class Etapocsm extends Client {
@@ -21,7 +22,8 @@ export class Etapocsm extends Client {
             new ChatExpPlatform(this),
             new BountyPlatform(this),
             new LvlSysPlatform(this),
-            new AdministratorPlatform(this)
+            new AdministratorPlatform(this),
+            new LogsPlatform(this)
         ];
 
         this.setupListener();
@@ -34,14 +36,16 @@ export class Etapocsm extends Client {
         });
     }
 
-    public async registerSlcmd() {
+    public async registerSlcmd(guild_id: string) {
         const slcmd_register_list = [];
 
         await core.asyncForEach(this.platforms, async (pf: any) => {
             await core.asyncForEach(pf.managers, async (mng: any) => {
-                if (!mng.SLCMD_REGISTER_LIST) return;
+                const reg_options: core.SlcmdRegisterOptions | undefined = mng?.slcmd_register_options;
+                if (!reg_options) return;
+                if (!reg_options.guild_id.includes(guild_id)) return;
 
-                await core.asyncForEach(mng.SLCMD_REGISTER_LIST, async (slcmd) => {
+                await core.asyncForEach(reg_options.cmd_list, async (slcmd) => {
                     slcmd_register_list.push(slcmd);
                 });
             });
@@ -49,14 +53,13 @@ export class Etapocsm extends Client {
 
         const BOT_TOKEN = process.env.BOT_TOKEN;
         const BOT_ID = process.env.BOT_ID;
-        const MAIN_GUILD_ID = process.env.SQCS_MAIN_GUILD_ID;
 
-        const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
+        const rest = new REST({ version: '9' }).setToken(BOT_TOKEN);
 
-        await rest.put(Routes.applicationGuildCommands(BOT_ID, MAIN_GUILD_ID), { body: [] }) // reset slcmd
+        await rest.put(Routes.applicationGuildCommands(BOT_ID, guild_id), { body: [] }) // reset slcmd
         if (slcmd_register_list.length !== 0) {
-            await rest.put(Routes.applicationGuildCommands(BOT_ID, MAIN_GUILD_ID), { body: slcmd_register_list })
-            logger.info('SLCMD Registered!');
+            await rest.put(Routes.applicationGuildCommands(BOT_ID, guild_id), { body: slcmd_register_list })
+            logger.info(`slcmd of guild ${guild_id} registered!`);
         }
     }
 }

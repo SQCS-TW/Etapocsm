@@ -7,6 +7,10 @@ import {
     ApplicationCommandData
 } from "discord.js";
 
+export type SlcmdRegisterOptions = {
+    guild_id: string[],
+    cmd_list: ApplicationCommandData[]
+};
 
 export class BaseManager {
     public f_platform: BasePlatform;
@@ -15,7 +19,7 @@ export class BaseManager {
     protected perm_error: InteractionReplyOptions;
     protected error_gif: Array<string>;
 
-    public SLCMD_REGISTER_LIST?: Array<ApplicationCommandData>;
+    public slcmd_register_options?: SlcmdRegisterOptions;
 
     constructor(f_platform: BasePlatform) {
         this.f_platform = f_platform;

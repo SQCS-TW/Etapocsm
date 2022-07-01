@@ -19,3 +19,4 @@ __exportStar(require("./concrete_object/reglist"), exports);
 __exportStar(require("./utils"), exports);
 __exportStar(require("./json"), exports);
 __exportStar(require("./logger"), exports);
+__exportStar(require("./guild_id"), exports);

@@ -16,8 +16,11 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
             coll: 'Data'
         });
         this.lvl_exp_dict = undefined;
-        this.SLCMD_REGISTER_LIST = components_1.REGISTER_LIST;
         this.setupListener();
+        this.slcmd_register_options = {
+            guild_id: [shortcut_1.core.GuildId.MAIN],
+            cmd_list: components_1.REGISTER_LIST
+        };
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {

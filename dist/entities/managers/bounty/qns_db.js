@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyQnsDBManager = void 0;
+const discord_js_1 = require("discord.js");
 const qns_db_1 = require("./components/qns_db");
 const shortcut_1 = require("../../shortcut");
 const mongodb_1 = require("mongodb");
@@ -10,13 +11,31 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
         super(f_platform);
         this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
         this.setupListener();
-        this.SLCMD_REGISTER_LIST = qns_db_1.REGISTER_LIST;
+        this.slcmd_register_options = {
+            guild_id: [shortcut_1.core.GuildId.MAIN, shortcut_1.core.GuildId.CADRE],
+            cmd_list: qns_db_1.REGISTER_LIST
+        };
     }
     setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
-            if (!interaction.inGuild())
+            if (!interaction.inGuild() || interaction.guildId !== '980630152872615937')
                 return;
-            if (!(this.checkPerm(interaction, 'ADMINISTRATOR')))
+            let role_found = false;
+            const roles = interaction.member.roles;
+            shortcut_1.core.logger.debug(typeof roles);
+            if (roles instanceof (Array)) {
+                shortcut_1.core.logger.debug(roles);
+                roles.forEach(role => {
+                    if (['教學組', '總召'].includes(role))
+                        role_found = true;
+                });
+            }
+            else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
+                shortcut_1.core.logger.debug(roles.cache);
+                if (roles.cache.some(role => ['教學組', '總召'].includes(role.name)))
+                    role_found = true;
+            }
+            if (!role_found)
                 return;
             if (interaction.isCommand())
                 await this.slcmdHandler(interaction);
@@ -122,9 +141,9 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     logs_prettify.push(`時間：${finish_time_prettify}\n題目難度：${log.qns_info.difficulty}\n題目編號：${log.qns_info.number}`);
                 }
                 while (logs_prettify.length > 0) {
-                    await interaction.channel.send(logs_prettify[0]);
-                    logs_prettify.shift();
-                    await shortcut_1.core.sleep(0.5);
+                    await interaction.channel.send(logs_prettify.slice(0, 5).join('\n'));
+                    logs_prettify.splice(0, 5);
+                    await shortcut_1.core.sleep(1);
                 }
                 return await interaction.editReply('輸出完畢！');
             }

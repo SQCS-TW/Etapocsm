@@ -8,12 +8,15 @@ export class AdministratorManager extends core.BaseManager {
 
         this.setupListener();
 
-        this.SLCMD_REGISTER_LIST = [
-            {
-                name: 'ping',
-                description: '戳一下機器人'
-            }
-        ];
+        this.slcmd_register_options = {
+            guild_id: [core.GuildId.MAIN],
+            cmd_list: [
+                {
+                    name: 'ping',
+                    description: '戳一下機器人'
+                }
+            ]
+        };
     }
 
     private setupListener() {
@@ -27,10 +30,10 @@ export class AdministratorManager extends core.BaseManager {
     }
 
     private async messageHandler(msg: Message) {
-        switch(msg.content) {
+        switch (msg.content) {
             case 'e:REGISTER-SLASH-COMMAND': {
-                await this.f_platform.f_bot.registerSlcmd();
-                await msg.reply('slcmd registered!');
+                await this.f_platform.f_bot.registerSlcmd(msg.guildId);
+                await msg.reply(`slcmd of guild ${msg.guildId} registered!`);
             }
         }
     }

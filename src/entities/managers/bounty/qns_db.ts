@@ -1,4 +1,4 @@
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, GuildMemberRoleManager } from 'discord.js';
 import { REGISTER_LIST } from './components/qns_db';
 import { core, db } from '../../shortcut';
 import { ObjectId } from 'mongodb';
@@ -13,13 +13,30 @@ export class BountyQnsDBManager extends core.BaseManager {
 
         this.setupListener();
 
-        this.SLCMD_REGISTER_LIST = REGISTER_LIST;
+        this.slcmd_register_options = {
+            guild_id: [core.GuildId.MAIN, core.GuildId.CADRE],
+            cmd_list: REGISTER_LIST
+        };
     }
 
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
-            if (!interaction.inGuild()) return;
-            if (!(this.checkPerm(interaction, 'ADMINISTRATOR'))) return;
+            if (!interaction.inGuild() || interaction.guildId !== '980630152872615937') return;
+
+            let role_found = false;
+            const roles = interaction.member.roles;
+            core.logger.debug(typeof roles);
+            if (roles instanceof Array<string>) {
+                core.logger.debug(roles);
+                roles.forEach(role => {
+                    if (['教學組', '總召'].includes(role)) role_found = true;
+                });
+            } else if (roles instanceof GuildMemberRoleManager) {
+                core.logger.debug(roles.cache);
+                if (roles.cache.some(role => ['教學組', '總召'].includes(role.name))) role_found = true;
+            }
+            if (!role_found) return;
+
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });
     }
@@ -150,9 +167,9 @@ export class BountyQnsDBManager extends core.BaseManager {
                 }
 
                 while (logs_prettify.length > 0) {
-                    await interaction.channel.send(logs_prettify[0]);
-                    logs_prettify.shift();
-                    await core.sleep(0.5);
+                    await interaction.channel.send(logs_prettify.slice(0, 5).join('\n'));
+                    logs_prettify.splice(0, 5);
+                    await core.sleep(1);
                 }
 
                 return await interaction.editReply('輸出完畢！');
