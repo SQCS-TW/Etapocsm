@@ -38,7 +38,7 @@ export class BountyUIManager extends core.BaseManager {
         .setEmoji('🤔')
         .setLabel('遊玩方式')
         .setStyle('LINK')
-        .setURL('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+        .setURL('https://hackmd.io/@Quantami/lvl-sys-intro');
 
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
