@@ -133,7 +133,10 @@ export class ConfirmStartBountyManager extends core.BaseManager {
 
         await interaction.deferReply();
 
-        const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
+        const delete_result = await (await this.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+        
+        const user_btn_data = delete_result.value;
         if (!user_btn_data) return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
         else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('抱歉，請確認你按下的按鈕是否正確...');
 
@@ -173,10 +176,6 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         });
         //
 
-        const delete_result = await (await this.confirm_start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
-        if (!delete_result.acknowledged) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
-
-
         // start handling qns-pic
         const pic_dl_time = 10;
         const buffer_time = 1;
@@ -207,6 +206,18 @@ export class ConfirmStartBountyManager extends core.BaseManager {
 
         await Promise.all(async_tasks);
         if (!existsSync(local_file_path)) return await interaction.followUp('下載圖片錯誤！');
+        
+        // insert validation data
+        const end_btn_info = {
+            user_id: interaction.user.id,
+            time: {
+                start: start_time,
+                end: end_time
+            }
+        };
+        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
+        if (!create_result.acknowledged) return await interaction.user.send('創建驗證資訊時發生錯誤...');
+        //
 
         const qns_msg = await interaction.user.send({
             embeds: [default_qns_info_embed],
@@ -223,17 +234,6 @@ export class ConfirmStartBountyManager extends core.BaseManager {
             }
         };
         await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
-
-        const end_btn_info = {
-            _id: new ObjectId(),
-            user_id: interaction.user.id,
-            time: {
-                start: start_time,
-                end: end_time
-            }
-        };
-        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
-        if (!create_result.acknowledged) return await interaction.user.send('建立結束資料時發生錯誤！');
     }
 
     private async getAnsweringTimeEmbed(start_time: string, end_time: string) {

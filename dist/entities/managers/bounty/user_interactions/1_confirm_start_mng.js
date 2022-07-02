@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfirmStartBountyManager = void 0;
 const shortcut_1 = require("../../../shortcut");
 const fs_1 = require("fs");
-const mongodb_1 = require("mongodb");
 const discord_js_1 = require("discord.js");
 const components_1 = require("./components");
 class BountyQnsPicCacheHandler {
@@ -98,7 +97,10 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'confirm-start-bounty')
             return;
         await interaction.deferReply();
-        const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
+        const delete_result = await (await this.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        if (!delete_result.ok)
+            return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+        const user_btn_data = delete_result.value;
         if (!user_btn_data)
             return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
         else if (user_btn_data.msg_id !== interaction.message.id)
@@ -134,9 +136,6 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
                     [new_button]
                 ])
             });
-        const delete_result = await (await this.confirm_start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
-        if (!delete_result.acknowledged)
-            return await interaction.editReply('刪除驗證資訊時發生錯誤！');
         const pic_dl_time = 10;
         const buffer_time = 1;
         const start_time = shortcut_1.core.timeAfterSecs(buffer_time + pic_dl_time);
@@ -157,6 +156,16 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         await Promise.all(async_tasks);
         if (!(0, fs_1.existsSync)(local_file_path))
             return await interaction.followUp('下載圖片錯誤！');
+        const end_btn_info = {
+            user_id: interaction.user.id,
+            time: {
+                start: start_time,
+                end: end_time
+            }
+        };
+        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
+        if (!create_result.acknowledged)
+            return await interaction.user.send('創建驗證資訊時發生錯誤...');
         const qns_msg = await interaction.user.send({
             embeds: [components_1.default_qns_info_embed],
             files: [local_file_path],
@@ -170,17 +179,6 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
             }
         };
         await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
-        const end_btn_info = {
-            _id: new mongodb_1.ObjectId(),
-            user_id: interaction.user.id,
-            time: {
-                start: start_time,
-                end: end_time
-            }
-        };
-        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
-        if (!create_result.acknowledged)
-            return await interaction.user.send('建立結束資料時發生錯誤！');
     }
     async getAnsweringTimeEmbed(start_time, end_time) {
         const new_embed = new discord_js_1.MessageEmbed(components_1.default_answering_info_embed);

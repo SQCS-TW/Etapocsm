@@ -1,5 +1,4 @@
 import { core, db } from '../../../shortcut';
-import { ObjectId } from 'mongodb';
 
 import {
     ButtonInteraction,
@@ -108,16 +107,31 @@ export class StartBountyManager extends core.BaseManager {
 
         // ==== modify embed -> set difficulty and qns_number
         const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number, stamina_consume_type);
-
+        
         let msg: Message;
         try {
-            msg = await interaction.user.send({
+            msg = await interaction.user.send('等待驗證資訊...');
+
+            const confirm_start_btn_data = {
+                user_id: interaction.user.id,
+                msg_id: msg.id,
+                qns_info: {
+                    difficulty: qns_data.curr_diffi,
+                    number: qns_data.curr_qns_number
+                },
+                due_time: core.timeAfterSecs(60)
+            }
+            await (await this.start_button_op.cursor).insertOne(confirm_start_btn_data);
+
+            await msg.edit({
+                content: '驗證資訊已創建！',
                 embeds: [new_embed],
                 components: core.discord.compAdder([
                     [default_start_button]
                 ])
             });
-        } catch {
+        } catch (err) {
+            console.log(err);
             return await interaction.followUp({
                 content: '❗ 傳送問題資訊錯誤，請確認你是否有開啟私訊權限',
                 ephemeral: true
@@ -132,18 +146,6 @@ export class StartBountyManager extends core.BaseManager {
             }
             await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_dm_channel_id);
         }
-
-        const confirm_start_btn_data = {
-            _id: new ObjectId(),
-            user_id: interaction.user.id,
-            msg_id: msg.id,
-            qns_info: {
-                difficulty: qns_data.curr_diffi,
-                number: qns_data.curr_qns_number
-            },
-            due_time: core.timeAfterSecs(60)
-        }
-        await (await this.start_button_op.cursor).insertOne(confirm_start_btn_data);
 
         await core.sleep(60);
 

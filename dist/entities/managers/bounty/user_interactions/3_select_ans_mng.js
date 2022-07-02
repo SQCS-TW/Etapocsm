@@ -45,20 +45,21 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'choose-bounty-answers')
             return;
         await interaction.deferReply();
-        const dp_data = await (await this.dropdown_op.cursor).findOne({ user_id: interaction.user.id });
+        const delete_result = await (await this.dropdown_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        if (!delete_result.ok)
+            return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+        const dp_data = delete_result.value;
         if (!dp_data)
             return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
         if (dp_data.msg_id !== interaction.message.id)
-            return await interaction.editReply('抱歉，請確認你有沒有選錯選單...');
-        await (await this.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
+            return await interaction.editReply('抱歉，你好像選錯選錯選單了...');
         if (interaction.message instanceof discord_js_1.Message)
             await interaction.message.delete();
         const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
         const qns_msg = await interaction.channel.messages.fetch(ongoing_data.qns_msg_id);
         if (qns_msg instanceof discord_js_1.Message)
             await qns_msg.delete();
-        const user_ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
-        const thread_data = (0, utils_1.getQnsThreadData)(user_ongoing_info.qns_thread);
+        const thread_data = (0, utils_1.getQnsThreadData)(ongoing_data.qns_thread);
         const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
         const bounty_result_embed = new discord_js_1.MessageEmbed()
             .setTitle(`🚩｜你選擇了 ${interaction.values[0]}`)
@@ -75,7 +76,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             await interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
         let new_thread = undefined;
         if (correct) {
-            const result = await this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi);
+            const result = await this.updateQnsThread(interaction.user.id, ongoing_data.qns_thread, thread_data.curr_diffi);
             if (result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                 await interaction.channel.send('更新問題串時發生錯誤');
             new_thread = result.new_thread;
@@ -84,7 +85,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             const can_gain_ext_stamina = await this.canUserGainExtraStamina(dp_data.ans_duration, this.qns_diffi_time[thread_data.curr_diffi], this.qns_ext_stamina_portion[thread_data.curr_diffi]);
             if (!can_gain_ext_stamina)
                 return;
-            const give_result = await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
+            const give_result = await this.giveExtraStamina(interaction, ongoing_data.stamina.extra_gained);
             if (give_result.result === 'gave')
                 bounty_result_embed.addField('⚡ 獲得額外體力', `${give_result.gave} 格`, true);
             else if (give_result.result === 'overflow')
@@ -95,8 +96,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         });
         const stat_result = await this.updateStatistics(interaction.user.id, correct, thread_data.curr_diffi, thread_data.curr_qns_number, new_thread);
         if (!stat_result)
-            await interaction.channel.send('更新統計資料時發生錯誤');
-        return;
+            return await interaction.channel.send('更新統計資料時發生錯誤');
     }
     async getOrSetQnsCache(diffi, qns_number) {
         const key = `bounty-qns-data?diffi=${diffi}&number=${qns_number}`;

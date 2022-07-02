@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StaticDataSetter = void 0;
 const shortcut_1 = require("../../shortcut");
-const mongodb_1 = require("mongodb");
 class StaticDataSetter extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -28,7 +27,6 @@ class StaticDataSetter extends shortcut_1.core.BaseManager {
                     role_dict[i] = role.id;
                 }
                 const main_dt = {
-                    _id: new mongodb_1.ObjectId(),
                     type: 'exp-role-id-dict',
                     role_id_dict: role_dict
                 };

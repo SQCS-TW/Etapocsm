@@ -262,7 +262,6 @@ const CBQ_functions = {
 
     async createQnsInfoCache(diffi_list: string[]) {
         const new_cache = {
-            _id: new ObjectId(),
             type: 'cache',
             easy: undefined,
             medium: undefined,
@@ -374,7 +373,6 @@ const CBQ_functions = {
         });
 
         const mani_info = {
-            _id: new ObjectId(),
             type: 'create-qns',
             accessor: interaction.user.id,
             finish_time: finish_time,

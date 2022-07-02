@@ -4,7 +4,6 @@ exports.BountyQnsDBManager = void 0;
 const discord_js_1 = require("discord.js");
 const qns_db_1 = require("./components/qns_db");
 const shortcut_1 = require("../../shortcut");
-const mongodb_1 = require("mongodb");
 const fs_1 = require("fs");
 class BountyQnsDBManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
@@ -223,7 +222,6 @@ const CBQ_functions = {
     },
     async createQnsInfoCache(diffi_list) {
         const new_cache = {
-            _id: new mongodb_1.ObjectId(),
             type: 'cache',
             easy: undefined,
             medium: undefined,
@@ -319,7 +317,6 @@ const CBQ_functions = {
             coll: 'AdminLogs'
         });
         const mani_info = {
-            _id: new mongodb_1.ObjectId(),
             type: 'create-qns',
             accessor: interaction.user.id,
             finish_time: finish_time,

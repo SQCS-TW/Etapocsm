@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EndBountyManager = void 0;
 const shortcut_1 = require("../../../shortcut");
-const mongodb_1 = require("mongodb");
 const discord_js_1 = require("discord.js");
 const components_1 = require("./components");
 const utils_1 = require("./utils");
@@ -42,20 +41,20 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
         if (interaction.customId === 'end-bounty') {
             await interaction.deferReply();
             const stop_answering_time = Date.now();
-            const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
-            const end_btn_data = await (await this.end_button_op.cursor).findOne({ user_id: interaction.user.id });
+            const delete_result = await (await this.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+            if (!delete_result.ok)
+                return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+            const end_btn_data = delete_result.value;
             if (!end_btn_data)
                 return await interaction.editReply('抱歉，我們找不到驗證資料...');
-            await (await this.end_button_op.cursor).deleteOne({ user_id: interaction.user.id });
-            const channel = await this.f_platform.f_bot.channels.fetch(ongoing_data.dm_channel_id);
-            if (!(channel instanceof discord_js_1.DMChannel))
-                return;
             const update_end_bounty = {
                 $set: {
                     status: false
                 }
             };
-            await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_end_bounty);
+            const update_result = await (await this.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
+            if (!update_result.ok)
+                return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
             const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_end_button);
             if (interaction.message instanceof discord_js_1.Message)
                 await interaction.message.edit({
@@ -63,26 +62,25 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
                         [new_button, components_1.default_destroy_qns_button]
                     ])
                 });
+            const ongoing_data = update_result.value;
             const thread_data = (0, utils_1.getQnsThreadData)(ongoing_data.qns_thread);
             const choices = await this.generateQuestionChoices(thread_data.curr_diffi, thread_data.curr_qns_number);
             const ans_dropdown = await this.appendChoicesToDropdown(choices);
-            const dp_msg = await interaction.editReply({
-                content: '請選擇答案（限時30秒）',
-                components: shortcut_1.core.discord.compAdder([
-                    [ans_dropdown]
-                ])
-            });
-            if (!(dp_msg instanceof discord_js_1.Message))
-                return await interaction.channel.send('處裡DP訊息時發生類別問題！');
+            const dp_msg = await interaction.editReply('等待驗證資訊...');
             const dp_data = {
-                _id: new mongodb_1.ObjectId(),
                 user_id: interaction.user.id,
                 msg_id: dp_msg.id,
                 ans_duration: stop_answering_time - end_btn_data.time.start
             };
             const create_result = await (await this.dropdown_op.cursor).insertOne(dp_data);
             if (!create_result.acknowledged)
-                return await interaction.channel.send('新增dp驗證時發生錯誤！');
+                return await interaction.user.send('創建驗證資訊時發生錯誤...');
+            await interaction.editReply({
+                content: '請選擇答案（限時30秒）',
+                components: shortcut_1.core.discord.compAdder([
+                    [ans_dropdown]
+                ])
+            });
             await shortcut_1.core.sleep(30);
             try {
                 if (dp_msg instanceof discord_js_1.Message)

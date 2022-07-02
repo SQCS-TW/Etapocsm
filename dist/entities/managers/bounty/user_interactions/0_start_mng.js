@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StartBountyManager = void 0;
 const shortcut_1 = require("../../../shortcut");
-const mongodb_1 = require("mongodb");
 const discord_js_1 = require("discord.js");
 const components_1 = require("./components");
 const utils_1 = require("./utils");
@@ -85,14 +84,27 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number, stamina_consume_type);
         let msg;
         try {
-            msg = await interaction.user.send({
+            msg = await interaction.user.send('等待驗證資訊...');
+            const confirm_start_btn_data = {
+                user_id: interaction.user.id,
+                msg_id: msg.id,
+                qns_info: {
+                    difficulty: qns_data.curr_diffi,
+                    number: qns_data.curr_qns_number
+                },
+                due_time: shortcut_1.core.timeAfterSecs(60)
+            };
+            await (await this.start_button_op.cursor).insertOne(confirm_start_btn_data);
+            await msg.edit({
+                content: '驗證資訊已創建！',
                 embeds: [new_embed],
                 components: shortcut_1.core.discord.compAdder([
                     [components_1.default_start_button]
                 ])
             });
         }
-        catch {
+        catch (err) {
+            console.log(err);
             return await interaction.followUp({
                 content: '❗ 傳送問題資訊錯誤，請確認你是否有開啟私訊權限',
                 ephemeral: true
@@ -106,17 +118,6 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             };
             await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_dm_channel_id);
         }
-        const confirm_start_btn_data = {
-            _id: new mongodb_1.ObjectId(),
-            user_id: interaction.user.id,
-            msg_id: msg.id,
-            qns_info: {
-                difficulty: qns_data.curr_diffi,
-                number: qns_data.curr_qns_number
-            },
-            due_time: shortcut_1.core.timeAfterSecs(60)
-        };
-        await (await this.start_button_op.cursor).insertOne(confirm_start_btn_data);
         await shortcut_1.core.sleep(60);
         const btn_data = await (await this.start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (!btn_data)

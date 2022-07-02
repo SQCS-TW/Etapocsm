@@ -33,7 +33,6 @@ export class StaticDataSetter extends core.BaseManager {
                 }
 
                 const main_dt = {
-                    _id: new ObjectId(),
                     type: 'exp-role-id-dict',
                     role_id_dict: role_dict
                 }

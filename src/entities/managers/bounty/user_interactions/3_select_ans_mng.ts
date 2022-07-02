@@ -58,11 +58,12 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
         await interaction.deferReply();
 
-        const dp_data = await (await this.dropdown_op.cursor).findOne({ user_id: interaction.user.id });
-        if (!dp_data) return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
-        if (dp_data.msg_id !== interaction.message.id) return await interaction.editReply('抱歉，請確認你有沒有選錯選單...');
+        const delete_result = await (await this.dropdown_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
 
-        await (await this.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
+        const dp_data = delete_result.value;
+        if (!dp_data) return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
+        if (dp_data.msg_id !== interaction.message.id) return await interaction.editReply('抱歉，你好像選錯選錯選單了...');
 
         // delete dropdown and qns-pic-msg
         if (interaction.message instanceof Message) await interaction.message.delete();
@@ -73,11 +74,9 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         //
 
         // fetch data
-        const user_ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
-        const thread_data = getQnsThreadData(user_ongoing_info.qns_thread);
+        const thread_data = getQnsThreadData(ongoing_data.qns_thread);
         const qns_data = await this.getOrSetQnsCache(thread_data.curr_diffi, thread_data.curr_qns_number);
         //
-
 
         const bounty_result_embed = new MessageEmbed()
             .setTitle(`🚩｜你選擇了 ${interaction.values[0]}`)
@@ -93,7 +92,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
         let new_thread = undefined;
         if (correct) {
-            const result = await this.updateQnsThread(interaction.user.id, user_ongoing_info.qns_thread, thread_data.curr_diffi)
+            const result = await this.updateQnsThread(interaction.user.id, ongoing_data.qns_thread, thread_data.curr_diffi)
             if (result.status === db.StatusCode.WRITE_DATA_ERROR) await interaction.channel.send('更新問題串時發生錯誤');
             new_thread = result.new_thread;
         }
@@ -107,7 +106,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
             );
             if (!can_gain_ext_stamina) return;
 
-            const give_result = await this.giveExtraStamina(interaction, user_ongoing_info.stamina.extra_gained);
+            const give_result = await this.giveExtraStamina(interaction, ongoing_data.stamina.extra_gained);
             if (give_result.result === 'gave') bounty_result_embed.addField('⚡ 獲得額外體力', `${give_result.gave} 格`, true);
             else if (give_result.result === 'overflow') bounty_result_embed.addField('⚡ 獲得額外體力', `可獲得數量已到上限\n自動轉為 **${give_result.overflow_exp}** exp`, true);
         }
@@ -123,8 +122,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
             thread_data.curr_qns_number,
             new_thread
         );
-        if (!stat_result) await interaction.channel.send('更新統計資料時發生錯誤');
-        return;
+        if (!stat_result) return await interaction.channel.send('更新統計資料時發生錯誤');
     }
 
     private async getOrSetQnsCache(diffi: string, qns_number: number) {
