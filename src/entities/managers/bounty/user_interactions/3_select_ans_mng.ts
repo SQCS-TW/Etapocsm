@@ -104,11 +104,11 @@ export class SelectBountyAnswerManager extends core.BaseManager {
                 this.qns_diffi_time[thread_data.curr_diffi],
                 this.qns_ext_stamina_portion[thread_data.curr_diffi]
             );
-            if (!can_gain_ext_stamina) return;
-
-            const give_result = await this.giveExtraStamina(interaction, ongoing_data.stamina.extra_gained);
-            if (give_result.result === 'gave') bounty_result_embed.addField('⚡ 獲得額外體力', `${give_result.gave} 格`, true);
-            else if (give_result.result === 'overflow') bounty_result_embed.addField('⚡ 獲得額外體力', `可獲得數量已到上限\n自動轉為 **${give_result.overflow_exp}** exp`, true);
+            if (can_gain_ext_stamina) {
+                const give_result = await this.giveExtraStamina(interaction, ongoing_data.stamina.extra_gained);
+                if (give_result.result === 'gave') bounty_result_embed.addField('⚡ 獲得額外體力', `${give_result.gave} 格`, true);
+                else if (give_result.result === 'overflow') bounty_result_embed.addField('⚡ 獲得額外體力', `可獲得數量已到上限\n自動轉為 **${give_result.overflow_exp}** exp`, true);
+            }
         }
 
         await interaction.editReply({
