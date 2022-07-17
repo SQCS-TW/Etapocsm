@@ -9,7 +9,7 @@ export class AdministratorManager extends core.BaseManager {
         this.setupListener();
 
         this.slcmd_register_options = {
-            guild_id: [core.GuildId.MAIN],
+            guild_id: [core.GuildId.MAIN, core.GuildId.CADRE],
             cmd_list: [
                 {
                     name: 'ping',

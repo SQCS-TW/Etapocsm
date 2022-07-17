@@ -18,9 +18,15 @@ async function main() {
     await bot.login(process.env.BOT_TOKEN);
 }
 
+function getStackTrace(err) {
+    Error.captureStackTrace(err, getStackTrace);
+    return err;
+}
+
 // prevent break down
-process.on('uncaughtException', async (data) => {
-    logger.error(data.stack);
+process.on('uncaughtException', async (err) => {
+    const refined_err = getStackTrace(err);
+    logger.error(`${refined_err.stack} ${JSON.stringify(refined_err, null, 4)}`);
 });
 
 main();

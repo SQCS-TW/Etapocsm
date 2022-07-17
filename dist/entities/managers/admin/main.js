@@ -7,7 +7,7 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
         super(f_platform);
         this.setupListener();
         this.slcmd_register_options = {
-            guild_id: [shortcut_1.core.GuildId.MAIN],
+            guild_id: [shortcut_1.core.GuildId.MAIN, shortcut_1.core.GuildId.CADRE],
             cmd_list: [
                 {
                     name: 'ping',

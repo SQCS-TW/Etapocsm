@@ -1,6 +1,7 @@
 .env
 /logs/
 /buffer/
+/cache/
 
 # redis
 /redis.conf

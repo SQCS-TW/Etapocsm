@@ -15,6 +15,6 @@ export class LvlSysPlatform extends core.BasePlatform {
             new StaticDataSetter(this),
             new AutoUpdateAccountManager(this),
             new UserInteractionHandler(this)
-        ]
+        ];
     }
 }

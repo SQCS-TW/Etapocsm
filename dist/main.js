@@ -14,7 +14,12 @@ async function main() {
     });
     await bot.login(process.env.BOT_TOKEN);
 }
-process.on('uncaughtException', async (data) => {
-    reglist_1.logger.error(data.stack);
+function getStackTrace(err) {
+    Error.captureStackTrace(err, getStackTrace);
+    return err;
+}
+process.on('uncaughtException', async (err) => {
+    const refined_err = getStackTrace(err);
+    reglist_1.logger.error(`${refined_err.stack} ${JSON.stringify(refined_err, null, 4)}`);
 });
 main();
