@@ -98,6 +98,17 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
             await interaction.deferReply();
             if (interaction.message instanceof discord_js_1.Message) {
                 await interaction.message.delete();
+                const delete_result = await (await this.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+                if (!delete_result.ok)
+                    return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+                const update_end_bounty = {
+                    $set: {
+                        status: false
+                    }
+                };
+                const update_result = await (await this.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
+                if (!update_result.ok)
+                    return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
                 return await interaction.editReply('✅ 已放棄答題');
             }
             else
