@@ -15,7 +15,8 @@ class BountyPlatform extends shortcut_1.core.BasePlatform {
             new reglist_1.SelectBountyAnswerManager(this),
             new reglist_1.EndBountySessionManager(this),
             new reglist_1.BountyUserManiManager(this),
-            new reglist_1.BountyUIManager(this)
+            new reglist_1.BountyUIManager(this),
+            new reglist_1.AutoManager(this)
         ];
     }
 }

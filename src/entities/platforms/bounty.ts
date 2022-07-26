@@ -13,7 +13,9 @@ import {
 
     BountyUserManiManager,
 
-    BountyUIManager
+    BountyUIManager,
+
+    AutoManager
 } from '../managers/bounty/reglist';
 
 export class BountyPlatform extends core.BasePlatform {
@@ -32,7 +34,9 @@ export class BountyPlatform extends core.BasePlatform {
 
             new BountyUserManiManager(this),
 
-            new BountyUIManager(this)
+            new BountyUIManager(this),
+
+            new AutoManager(this)
         ];
     }
 }

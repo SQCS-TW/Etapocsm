@@ -18,3 +18,4 @@ __exportStar(require("./qns_db"), exports);
 __exportStar(require("./user_interactions/reglist"), exports);
 __exportStar(require("./user_mani"), exports);
 __exportStar(require("./ui"), exports);
+__exportStar(require("./auto_tasks"), exports);

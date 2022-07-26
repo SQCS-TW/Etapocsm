@@ -13,6 +13,8 @@ import {
 
 import { getQnsThreadData, QnsThreadBeautifier } from './utils';
 
+import { utcToZonedTime } from 'date-fns-tz';
+
 
 export class StartBountyManager extends core.BaseManager {
     private account_op = new core.BountyUserAccountOperator();
@@ -43,8 +45,6 @@ export class StartBountyManager extends core.BaseManager {
         coll: 'DropdownPipeline'
     });
 
-
-
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
@@ -61,6 +61,9 @@ export class StartBountyManager extends core.BaseManager {
         if (interaction.customId !== 'start-bounty') return;
 
         await interaction.deferReply({ ephemeral: true });
+
+        const in_event_time = this.isNowInBountyWeeklyTimeInterval();
+        if (!in_event_time) return await interaction.editReply('現在不是可遊玩時間！');
 
         // check if the user had already pressed this button before
         const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
@@ -165,6 +168,16 @@ export class StartBountyManager extends core.BaseManager {
         //
     }
 
+    private isNowInBountyWeeklyTimeInterval() {
+        const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
+        
+        const day = curr_time.getDay() % 7;
+        const hour = curr_time.getHours();
+
+        if ((1 <= day && day <= 6) || (day === 0 && hour >= 7) || (day === 6 && hour <= 22)) return true;
+        return false;
+    }
+
     private async getStartBountyEmbed(diffi: string, qns_number: number, stamina_consume_type: string) {
         const new_embed = new MessageEmbed(default_start_embed)
             .addField('💷 消耗體力', `一格 ${stamina_consume_type} 體力`)
@@ -173,7 +186,7 @@ export class StartBountyManager extends core.BaseManager {
         return new_embed;
     }
 
-    async createOrGetOngoingInfo(user_id: string) {
+    private async createOrGetOngoingInfo(user_id: string) {
         const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: user_id });
         if (ongoing_data) return {
             status: db.StatusCode.DATA_FOUND,

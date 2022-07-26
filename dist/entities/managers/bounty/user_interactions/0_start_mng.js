@@ -5,6 +5,7 @@ const shortcut_1 = require("../../../shortcut");
 const discord_js_1 = require("discord.js");
 const components_1 = require("./components");
 const utils_1 = require("./utils");
+const date_fns_tz_1 = require("date-fns-tz");
 class StartBountyManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super(f_platform);
@@ -43,6 +44,9 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'start-bounty')
             return;
         await interaction.deferReply({ ephemeral: true });
+        const in_event_time = this.isNowInBountyWeeklyTimeInterval();
+        if (!in_event_time)
+            return await interaction.editReply('現在不是可遊玩時間！');
         const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (user_btn_data)
             return await interaction.editReply('問題資訊剛才已發送，請查看私訊！');
@@ -129,6 +133,14 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             ])
         });
         return await (await this.start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
+    }
+    isNowInBountyWeeklyTimeInterval() {
+        const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
+        const day = curr_time.getDay() % 7;
+        const hour = curr_time.getHours();
+        if ((1 <= day && day <= 6) || (day === 0 && hour >= 7) || (day === 6 && hour <= 22))
+            return true;
+        return false;
     }
     async getStartBountyEmbed(diffi, qns_number, stamina_consume_type) {
         const new_embed = new discord_js_1.MessageEmbed(components_1.default_start_embed)
