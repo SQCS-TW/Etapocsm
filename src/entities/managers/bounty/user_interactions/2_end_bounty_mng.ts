@@ -1,5 +1,4 @@
 import { core, db } from '../../../shortcut';
-import { ObjectId } from 'mongodb';
 
 import {
     ButtonInteraction,
@@ -120,7 +119,7 @@ export class EndBountyManager extends core.BaseManager {
             await interaction.deferReply();
             if (interaction.message instanceof Message) {
                 await interaction.message.delete();
-                return await interaction.editReply('✅ 圖片已銷毀');
+                return await interaction.editReply('✅ 已放棄答題');
             } else await interaction.editReply('Message not cached!');
         }
     }

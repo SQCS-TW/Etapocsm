@@ -1,6 +1,5 @@
 import { core, db } from '../../../shortcut';
 import { unlink, existsSync, readdirSync } from 'fs';
-import { ObjectId } from 'mongodb';
 
 import {
     ButtonInteraction,

@@ -3,6 +3,8 @@ import { schedule } from 'node-cron';
 import { utcToZonedTime } from 'date-fns-tz';
 import { makeBountyBannerEmbed } from './ui';
 
+import { endOfMonth } from 'date-fns';
+
 
 export class AutoManager extends core.BaseManager {
 
@@ -16,6 +18,7 @@ export class AutoManager extends core.BaseManager {
 
         schedule('30 22 * * *', async () => { await this.refreshStamina(); });
         schedule('0 0 * * *', async () => { await this.refreshBanner(); });
+        schedule('58 11 * * *', async () => { await this.refreshOngoing(); });
     }
 
     private async refreshStamina() {
@@ -33,6 +36,7 @@ export class AutoManager extends core.BaseManager {
         };
 
         await (await this.ongoing_op.cursor).updateMany({}, reset_stamina);
+        core.logger.alert('[BOUNTY] STAMINA REFRESHED');
     }
 
     private async refreshBanner() {
@@ -49,5 +53,15 @@ export class AutoManager extends core.BaseManager {
         await banner_msg.edit({
             embeds: [makeBountyBannerEmbed()]
         });
+        core.logger.alert('[BOUNTY] BANNER REFRESHED');
+    }
+
+    private async refreshOngoing() {
+        const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
+        const end_of_month = endOfMonth(curr_time);
+        if (curr_time.getDate() !== end_of_month.getDate()) return;
+
+        await (await this.ongoing_op.cursor).deleteMany({});
+        core.logger.alert('[BOUNTY] ONGOING REFRESHED');
     }
 }

@@ -33,7 +33,7 @@ exports.default_end_button = new discord_js_1.MessageButton()
 exports.default_destroy_qns_button = new discord_js_1.MessageButton()
     .setStyle('DANGER')
     .setEmoji('⚠️')
-    .setLabel('銷毀題目')
+    .setLabel('放棄答題')
     .setCustomId('destroy-bounty-qns');
 exports.default_select_ans_dropdown = new discord_js_1.MessageSelectMenu()
     .setCustomId('choose-bounty-answers')

@@ -40,7 +40,7 @@ export const default_end_button = new MessageButton()
 export const default_destroy_qns_button = new MessageButton()
     .setStyle('DANGER')
     .setEmoji('⚠️')
-    .setLabel('銷毀題目')
+    .setLabel('放棄答題')
     .setCustomId('destroy-bounty-qns');
 
 export const default_select_ans_dropdown = new MessageSelectMenu()

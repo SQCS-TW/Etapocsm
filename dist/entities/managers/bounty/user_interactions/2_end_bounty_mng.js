@@ -98,7 +98,7 @@ class EndBountyManager extends shortcut_1.core.BaseManager {
             await interaction.deferReply();
             if (interaction.message instanceof discord_js_1.Message) {
                 await interaction.message.delete();
-                return await interaction.editReply('✅ 圖片已銷毀');
+                return await interaction.editReply('✅ 已放棄答題');
             }
             else
                 await interaction.editReply('Message not cached!');
