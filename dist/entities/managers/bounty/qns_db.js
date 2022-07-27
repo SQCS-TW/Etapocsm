@@ -23,14 +23,12 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             const roles = interaction.member.roles;
             shortcut_1.core.logger.debug(typeof roles);
             if (roles instanceof (Array)) {
-                shortcut_1.core.logger.debug(roles);
                 roles.forEach(role => {
                     if (['教學組', '總召'].includes(role))
                         role_found = true;
                 });
             }
             else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
-                shortcut_1.core.logger.debug(roles.cache);
                 if (roles.cache.some(role => ['教學組', '總召'].includes(role.name)))
                     role_found = true;
             }

@@ -46,7 +46,7 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         await interaction.deferReply({ ephemeral: true });
         const in_event_time = this.isNowInBountyWeeklyTimeInterval();
         if (!in_event_time)
-            return await interaction.editReply('現在不是可遊玩時間！');
+            return await interaction.editReply('❌ 現在並非可遊玩時段！');
         const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (user_btn_data)
             return await interaction.editReply('問題資訊剛才已發送，請查看私訊！');

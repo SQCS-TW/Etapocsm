@@ -18,12 +18,12 @@ export class AutoManager extends core.BaseManager {
 
         schedule('30 22 * * *', async () => { await this.refreshStamina(); });
         schedule('0 0 * * *', async () => { await this.refreshBanner(); });
-        schedule('58 11 * * *', async () => { await this.refreshOngoing(); });
+        schedule('0 23 * * *', async () => { await this.refreshOngoing(); });
     }
 
     private async refreshStamina() {
         const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
-        if (curr_time.getDay() % 7 !== 6) return;
+        if (curr_time.getDay() !== 6) return;
 
         const reset_stamina = {
             $set: {

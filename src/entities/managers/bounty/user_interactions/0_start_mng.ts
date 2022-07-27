@@ -63,7 +63,7 @@ export class StartBountyManager extends core.BaseManager {
         await interaction.deferReply({ ephemeral: true });
 
         const in_event_time = this.isNowInBountyWeeklyTimeInterval();
-        if (!in_event_time) return await interaction.editReply('現在不是可遊玩時間！');
+        if (!in_event_time) return await interaction.editReply('❌ 現在並非可遊玩時段！');
 
         // check if the user had already pressed this button before
         const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });

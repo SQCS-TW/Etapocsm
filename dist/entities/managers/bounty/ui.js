@@ -37,11 +37,14 @@ const play_info_btn = new discord_js_1.MessageButton()
     .setURL('https://hackmd.io/@Quantami/lvl-sys-intro');
 const makeBountyBannerEmbed = () => {
     const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
-    const start = shortcut_1.core.discord.getRelativeTimestamp((0, date_fns_1.startOfWeek)(curr_time).getTime() + 7 * 60 * 60 * 1000);
-    const end = shortcut_1.core.discord.getRelativeTimestamp((0, date_fns_1.endOfWeek)(curr_time).getTime() - 2 * 60 * 60 * 1000);
+    const end_of_week_time = (0, date_fns_1.addHours)((0, date_fns_1.endOfWeek)(curr_time), -2);
+    const stamina_refresh_time = (0, date_fns_1.addMinutes)(end_of_week_time, 30);
+    const stamina_refresh_timestamp = shortcut_1.core.discord.getRelativeTimestamp(stamina_refresh_time.getTime());
+    const qns_thread_refresh_time = (0, date_fns_1.addHours)((0, date_fns_1.endOfMonth)(curr_time), 6);
+    const qns_thread_refresh_timestamp = shortcut_1.core.discord.getRelativeTimestamp(qns_thread_refresh_time.getTime());
     const new_embed = new discord_js_1.MessageEmbed(bounty_embed)
-        .addField('此輪開始時間', start, true)
-        .addField('此輪結束時間', end, true);
+        .addField('問題串刷新時間', qns_thread_refresh_timestamp, true)
+        .addField('體力更新時間', stamina_refresh_timestamp, true);
     return new_embed;
 };
 exports.makeBountyBannerEmbed = makeBountyBannerEmbed;

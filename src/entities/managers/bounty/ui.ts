@@ -1,6 +1,6 @@
 import { Message, MessageButton, MessageEmbed } from 'discord.js';
 import { core } from '../../shortcut';
-import { endOfWeek, startOfWeek } from 'date-fns';
+import { endOfWeek, addHours, endOfMonth, addMinutes } from 'date-fns';
 
 import { utcToZonedTime } from 'date-fns-tz';
 
@@ -42,12 +42,24 @@ const play_info_btn = new MessageButton()
 
 export const makeBountyBannerEmbed = () => {
     const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
-    const start = core.discord.getRelativeTimestamp(startOfWeek(curr_time).getTime() + 7 * 60 * 60 * 1000);
-    const end = core.discord.getRelativeTimestamp(endOfWeek(curr_time).getTime() - 2 * 60 * 60 * 1000);
-    
+
+    // const start_of_week_time = addHours(startOfWeek(curr_time), 7);
+    const end_of_week_time = addHours(endOfWeek(curr_time), -2);
+
+    // const weekly_start_timestamp = core.discord.getRelativeTimestamp(start_of_week_event.getTime());
+    // const weekly_end_timestamp = core.discord.getRelativeTimestamp(end_of_week_event.getTime());
+
+    const stamina_refresh_time = addMinutes(end_of_week_time, 30);
+    const stamina_refresh_timestamp = core.discord.getRelativeTimestamp(stamina_refresh_time.getTime());
+
+    const qns_thread_refresh_time = addHours(endOfMonth(curr_time), 6);
+    const qns_thread_refresh_timestamp = core.discord.getRelativeTimestamp(qns_thread_refresh_time.getTime());
+
     const new_embed = new MessageEmbed(bounty_embed)
-        .addField('此輪開始時間', start, true)
-        .addField('此輪結束時間', end, true);
+        .addField('問題串刷新時間', qns_thread_refresh_timestamp, true)
+        .addField('體力更新時間', stamina_refresh_timestamp, true);
+        // .addField('此輪開始時間', weekly_start_timestamp, false)
+        // .addField('此輪結束時間', weekly_end_timestamp, false);
 
     return new_embed;
 }

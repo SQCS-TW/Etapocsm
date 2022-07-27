@@ -14,11 +14,11 @@ class AutoManager extends shortcut_1.core.BaseManager {
         this.BOUNTY_BANNER_MSG_ID = '992659965556818100';
         (0, node_cron_1.schedule)('30 22 * * *', async () => { await this.refreshStamina(); });
         (0, node_cron_1.schedule)('0 0 * * *', async () => { await this.refreshBanner(); });
-        (0, node_cron_1.schedule)('58 11 * * *', async () => { await this.refreshOngoing(); });
+        (0, node_cron_1.schedule)('0 23 * * *', async () => { await this.refreshOngoing(); });
     }
     async refreshStamina() {
         const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
-        if (curr_time.getDay() % 7 !== 6)
+        if (curr_time.getDay() !== 6)
             return;
         const reset_stamina = {
             $set: {

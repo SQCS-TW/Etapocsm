@@ -26,12 +26,10 @@ export class BountyQnsDBManager extends core.BaseManager {
             const roles = interaction.member.roles;
             core.logger.debug(typeof roles);
             if (roles instanceof Array<string>) {
-                core.logger.debug(roles);
                 roles.forEach(role => {
                     if (['教學組', '總召'].includes(role)) role_found = true;
                 });
             } else if (roles instanceof GuildMemberRoleManager) {
-                core.logger.debug(roles.cache);
                 if (roles.cache.some(role => ['教學組', '總召'].includes(role.name))) role_found = true;
             }
             if (!role_found) return;
