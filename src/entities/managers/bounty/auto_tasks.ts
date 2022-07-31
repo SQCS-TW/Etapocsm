@@ -16,14 +16,19 @@ export class AutoManager extends core.BaseManager {
     constructor(f_platform: core.BasePlatform) {
         super(f_platform);
 
+        // default: 22:30
         schedule('30 22 * * *', async () => { await this.refreshStamina(); });
+        
+        // default: 00:00
         schedule('0 0 * * *', async () => { await this.refreshBanner(); });
+
+        // default: 23:00
         schedule('0 23 * * *', async () => { await this.refreshOngoing(); });
     }
 
     private async refreshStamina() {
         const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
-        if (curr_time.getDay() !== 6) return;
+        // if (curr_time.getDay() !== 6) return;
 
         const reset_stamina = {
             $set: {
@@ -41,7 +46,7 @@ export class AutoManager extends core.BaseManager {
 
     private async refreshBanner() {
         const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
-        if (curr_time.getDay() % 7 !== 0) return;
+        // if (curr_time.getDay() % 7 !== 0) return;
 
         const main_guild = await this.f_platform.f_bot.guilds.fetch(core.GuildId.MAIN);
         const banner_channel = await main_guild.channels.fetch(this.BOUNTY_BANNER_CHANNEL_ID);
