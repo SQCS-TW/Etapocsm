@@ -2,6 +2,7 @@
 /logs/
 /buffer/
 /cache/
+/node_modules/
 
 # redis
 /redis.conf
