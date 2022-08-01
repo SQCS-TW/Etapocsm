@@ -18,6 +18,8 @@ class AutoManager extends shortcut_1.core.BaseManager {
     }
     async refreshStamina() {
         const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
+        if (curr_time.getDay() !== 6)
+            return;
         const reset_stamina = {
             $set: {
                 stamina: {
@@ -32,6 +34,8 @@ class AutoManager extends shortcut_1.core.BaseManager {
     }
     async refreshBanner() {
         const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
+        if (curr_time.getDay() % 7 !== 0)
+            return;
         const main_guild = await this.f_platform.f_bot.guilds.fetch(shortcut_1.core.GuildId.MAIN);
         const banner_channel = await main_guild.channels.fetch(this.BOUNTY_BANNER_CHANNEL_ID);
         if (!banner_channel.isText())
