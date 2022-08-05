@@ -1,12 +1,14 @@
 import { Message } from 'discord.js';
+import { ChatExpPlatform } from '../../platforms/chat_exp';
 import { core, db } from '../../shortcut';
 
 
 export class ChatListener extends core.BaseManager {
-    private account_op = new core.ChatAccountOperator();
-
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    public f_platform: ChatExpPlatform;
+    
+    constructor(f_platform: ChatExpPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }
@@ -22,23 +24,26 @@ export class ChatListener extends core.BaseManager {
         if (msg.author.bot) return;
         if (msg.guildId !== "743507979369709639") return;
 
-        const check_result = await this.account_op.isUserInCooldown(msg.member.id);
+        const check_result = await this.f_platform.account_op.isUserInCooldown(msg.member.id);
         if (check_result.status === db.StatusCode.WRITE_DATA_ERROR) {
             return core.logger.error('error creating user chat account', msg.member.id);
         }
 
         if (check_result.status === true) return;
 
-        const REWARD_EXP = await core.getRandomInt(2);
-        core.logger.debug(`dexp: ${REWARD_EXP}`);
-        let set_result = await this.account_op.addExp(msg.member.id, REWARD_EXP);
+        const user_main_lvl_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: msg.author.id });
+        const exp_multiplier = user_main_lvl_acc.exp_multiplier;
+
+        const REWARD_EXP = Math.round(core.getRandomInt(2) * exp_multiplier);
+        core.logger.debug(`[${msg.member.displayName}]<${msg.member.id}> delta_exp: ${REWARD_EXP}`);
+        let set_result = await this.f_platform.account_op.addExp(msg.member.id, REWARD_EXP);
         if (set_result.status === db.StatusCode.WRITE_DATA_ERROR) {
             core.logger.error(`error giving user exp ${msg.member.id} ${REWARD_EXP}`);
             return;
         }
 
         const COOLDOWN = core.timeAfterSecs(60);
-        set_result = await this.account_op.setCooldown(msg.member.id, COOLDOWN);
+        set_result = await this.f_platform.account_op.setCooldown(msg.member.id, COOLDOWN);
         if (set_result.status === db.StatusCode.WRITE_DATA_ERROR) {
             core.logger.error(`error setting cooldown ${msg.member.id} ${COOLDOWN}`);
             return;

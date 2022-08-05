@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.localizeDatetime = exports.discord = exports.asyncForEach = exports.isItemInArray = exports.verifyMenuApplication = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
-const reglist_1 = require("../db/reglist");
+exports.localizeDatetime = exports.discord = exports.asyncForEach = exports.arrayEquals = exports.shuffle = exports.getSubsetsWithCertainLength = exports.binomialCoefficient = exports.factorial = exports.sleep = exports.getRandomInt = exports.cloneObj = exports.timeAfterSecs = void 0;
 const discord_js_1 = require("discord.js");
 const timeAfterSecs = (seconds) => { return Date.now() + seconds * 1000; };
 exports.timeAfterSecs = timeAfterSecs;
 const cloneObj = async (obj) => { return JSON.parse(JSON.stringify(obj)); };
 exports.cloneObj = cloneObj;
-const getRandomInt = async (max) => { return Math.floor(Math.random() * (max + 1)); };
+const getRandomInt = (max) => { return Math.floor(Math.random() * (max + 1)); };
 exports.getRandomInt = getRandomInt;
 const sleep = (sec) => {
     return new Promise(resolve => setTimeout(resolve, sec * 1000));
@@ -16,7 +15,7 @@ exports.sleep = sleep;
 async function factorial(num) {
     let counter = 1;
     for (let i = 2; i <= num; i++)
-        counter = counter * i;
+        counter *= i;
     return counter;
 }
 exports.factorial = factorial;
@@ -77,26 +76,6 @@ function arrayEquals(arr1, arr2) {
     return true;
 }
 exports.arrayEquals = arrayEquals;
-async function verifyMenuApplication(verify) {
-    const cursor = await (new reglist_1.Mongo('Interaction')).getCur('Pipeline');
-    const user_application = cursor.findOne(verify);
-    if (user_application) {
-        await cursor.deleteOne(verify);
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-exports.verifyMenuApplication = verifyMenuApplication;
-async function isItemInArray(item, arr) {
-    if (arr.indexOf(item) !== -1) {
-        return true;
-    }
-    else
-        return false;
-}
-exports.isItemInArray = isItemInArray;
 async function asyncForEach(array, callback) {
     for (let i = 0; i < array.length; i++) {
         await callback(array[i], i, array);

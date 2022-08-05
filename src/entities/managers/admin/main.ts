@@ -1,11 +1,14 @@
 import { CommandInteraction, Message } from 'discord.js';
 import { core } from '../../shortcut';
+import { AdministratorPlatform } from '../../platforms/admin';
 
 
 export class AdministratorManager extends core.BaseManager {
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
-
+    public f_platform: AdministratorPlatform;
+    constructor(f_platform: AdministratorPlatform) {
+        super();
+        this.f_platform = f_platform;
+        
         this.setupListener();
 
         this.slcmd_register_options = {
@@ -34,6 +37,19 @@ export class AdministratorManager extends core.BaseManager {
             case 'e:REGISTER-SLASH-COMMAND': {
                 await this.f_platform.f_bot.registerSlcmd(msg.guildId);
                 await msg.reply(`slcmd of guild ${msg.guildId} registered!`);
+                break;
+            }
+
+            case 'e:TempUpdateDb': {
+                const mainlvl_acc_op = new core.MainLevelAccountOperator();
+
+                const update = {
+                    $set: {
+                        exp_multiplier: 1
+                    }
+                };
+                await (await mainlvl_acc_op.cursor).updateMany({}, update);
+                await msg.reply('fin.');
             }
         }
     }

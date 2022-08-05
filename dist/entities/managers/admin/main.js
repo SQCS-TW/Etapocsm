@@ -4,7 +4,8 @@ exports.AdministratorManager = void 0;
 const shortcut_1 = require("../../shortcut");
 class AdministratorManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
+        super();
+        this.f_platform = f_platform;
         this.setupListener();
         this.slcmd_register_options = {
             guild_id: [shortcut_1.core.GuildId.MAIN, shortcut_1.core.GuildId.CADRE],
@@ -31,6 +32,17 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
             case 'e:REGISTER-SLASH-COMMAND': {
                 await this.f_platform.f_bot.registerSlcmd(msg.guildId);
                 await msg.reply(`slcmd of guild ${msg.guildId} registered!`);
+                break;
+            }
+            case 'e:TempUpdateDb': {
+                const mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
+                const update = {
+                    $set: {
+                        exp_multiplier: 1
+                    }
+                };
+                await (await mainlvl_acc_op.cursor).updateMany({}, update);
+                await msg.reply('fin.');
             }
         }
     }

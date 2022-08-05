@@ -1,4 +1,5 @@
 import { core, db } from '../../../shortcut';
+import { BountyPlatform } from '../../../platforms/bounty';
 
 import {
     ButtonInteraction,
@@ -15,19 +16,8 @@ import {
 import { getQnsThreadData } from './utils';
 
 export class EndBountyManager extends core.BaseManager {
-    private ongoing_op = new core.BountyUserOngoingInfoOperator();
-    private qns_op = new core.BountyQnsDBOperator();
-
+    public f_platform: BountyPlatform;
     private cache = new db.Redis();
-
-    private end_button_op = new core.BaseMongoOperator({
-        db: 'Bounty',
-        coll: 'EndButtonPipeline'
-    });
-    private dropdown_op = new core.BaseMongoOperator({
-        db: 'Bounty',
-        coll: 'DropdownPipeline'
-    });
 
     private alphabet_sequence = [
         'A', 'B', 'C', 'D', 'E',
@@ -37,8 +27,9 @@ export class EndBountyManager extends core.BaseManager {
         'U', 'V', 'W', 'X', 'Y', 'Z'
     ];
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: BountyPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }
@@ -59,7 +50,7 @@ export class EndBountyManager extends core.BaseManager {
 
             const stop_answering_time = Date.now();
 
-            const delete_result = await (await this.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+            const delete_result = await (await this.f_platform.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
             if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
 
             const end_btn_data = delete_result.value;
@@ -70,7 +61,7 @@ export class EndBountyManager extends core.BaseManager {
                     status: false
                 }
             };
-            const update_result = await (await this.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
+            const update_result = await (await this.f_platform.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
             if (!update_result.ok) return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
             
             // disabled the end-bounty-btn in qns-pic-msg
@@ -92,7 +83,7 @@ export class EndBountyManager extends core.BaseManager {
                 msg_id: dp_msg.id,
                 ans_duration: stop_answering_time - end_btn_data.time.start
             };
-            const create_result = await (await this.dropdown_op.cursor).insertOne(dp_data);
+            const create_result = await (await this.f_platform.dropdown_op.cursor).insertOne(dp_data);
             if (!create_result.acknowledged) return await interaction.user.send('創建驗證資訊時發生錯誤...');
 
             await interaction.editReply({
@@ -113,14 +104,14 @@ export class EndBountyManager extends core.BaseManager {
             catch (e) { /*pass*/ }
 
             // delete dp data
-            return await (await this.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
+            return await (await this.f_platform.dropdown_op.cursor).deleteOne({ user_id: interaction.user.id });
 
         } else if (interaction.customId === 'destroy-bounty-qns') {
             await interaction.deferReply();
             if (interaction.message instanceof Message) {
                 await interaction.message.delete();
 
-                const delete_result = await (await this.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+                const delete_result = await (await this.f_platform.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
                 if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
 
                 const update_end_bounty = {
@@ -128,7 +119,7 @@ export class EndBountyManager extends core.BaseManager {
                         status: false
                     }
                 };
-                const update_result = await (await this.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
+                const update_result = await (await this.f_platform.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
                 if (!update_result.ok) return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
 
                 return await interaction.editReply('✅ 已放棄答題');
@@ -175,7 +166,7 @@ export class EndBountyManager extends core.BaseManager {
 
         if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
 
-        const qns_data = await (await this.qns_op.cursor).findOne({
+        const qns_data = await (await this.f_platform.qns_op.cursor).findOne({
             difficulty: diffi,
             number: qns_number
         });

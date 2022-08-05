@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import { Db, MongoClient, Collection, ObjectId } from "mongodb";
 
 const MONGODB_ACCOUNT = process.env.MONGODB_ACCOUNT;

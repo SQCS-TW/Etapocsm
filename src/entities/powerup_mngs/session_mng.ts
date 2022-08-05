@@ -1,6 +1,7 @@
 import { Redis } from '../../db/reglist';
 import { core } from '../shortcut';
 import { EventEmitter } from 'events';
+import { BountyPlatform } from '../platforms/bounty';
 
 
 export type SessionConfig = {
@@ -21,6 +22,8 @@ export type SessionData = {
 
 
 export class SessionManager extends core.BaseManager {
+    public f_platform: BountyPlatform;
+
     private session_name: string;
     private interval_data: IntervalData;
 
@@ -29,8 +32,10 @@ export class SessionManager extends core.BaseManager {
 
     private maintaining_data = false;
 
-    constructor(f_platform: core.BasePlatform, session_config: SessionConfig) {
-        super(f_platform);
+    constructor(f_platform: BountyPlatform, session_config: SessionConfig) {
+        super();
+
+        this.f_platform = f_platform;
         
         this.session_name = session_config.session_name;
         this.interval_data = session_config.interval_data;

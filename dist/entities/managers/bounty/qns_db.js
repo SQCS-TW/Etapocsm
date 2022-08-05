@@ -7,8 +7,8 @@ const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 class BountyQnsDBManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
-        this.qns_op = new shortcut_1.core.BountyQnsDBOperator();
+        super();
+        this.f_platform = f_platform;
         this.setupListener();
         this.slcmd_register_options = {
             guild_id: [shortcut_1.core.GuildId.MAIN, shortcut_1.core.GuildId.CADRE],
@@ -82,7 +82,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     max_choices: max_choices,
                     correct_ans: correct_ans
                 };
-                const create_result = await this.qns_op.createDefaultData(create_params);
+                const create_result = await this.f_platform.qns_op.createDefaultData(create_params);
                 if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                     return await interaction.followUp('error creating qns info');
                 else {
@@ -104,7 +104,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 const diffi = inner_values.diffi;
                 const qns_number = inner_values.qns_number;
                 const new_max_choices = inner_values.new_max_choices;
-                const update_result = await this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
+                const update_result = await this.f_platform.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
                 if (update_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                     return await interaction.editReply('目標問題不存在！');
                 if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
@@ -118,7 +118,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 const diffi = inner_values.diffi;
                 const qns_number = inner_values.qns_number;
                 const new_answers = inner_values.new_answers;
-                const update_result = await this.qns_op.setCorrectAns(diffi, qns_number, new_answers);
+                const update_result = await this.f_platform.qns_op.setCorrectAns(diffi, qns_number, new_answers);
                 if (update_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                     return await interaction.editReply('目標問題不存在！');
                 if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
@@ -166,7 +166,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 });
                 if (!delete_result)
                     return await interaction.editReply('刪除題目圖片出錯');
-                const del_qns_info_result = await (await this.qns_op.cursor).deleteOne({
+                const del_qns_info_result = await (await this.f_platform.qns_op.cursor).deleteOne({
                     difficulty: diffi,
                     number: qns_number
                 });

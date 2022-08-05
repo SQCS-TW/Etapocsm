@@ -8,10 +8,10 @@ const ui_1 = require("./ui");
 const date_fns_1 = require("date-fns");
 class AutoManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
-        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
+        super();
         this.BOUNTY_BANNER_CHANNEL_ID = '991731828845195324';
         this.BOUNTY_BANNER_MSG_ID = '992659965556818100';
+        this.f_platform = f_platform;
         (0, node_cron_1.schedule)('30 22 * * *', async () => { await this.refreshStamina(); });
         (0, node_cron_1.schedule)('0 0 * * *', async () => { await this.refreshBanner(); });
         (0, node_cron_1.schedule)('0 23 * * *', async () => { await this.refreshOngoing(); });
@@ -29,7 +29,7 @@ class AutoManager extends shortcut_1.core.BaseManager {
                 }
             }
         };
-        await (await this.ongoing_op.cursor).updateMany({}, reset_stamina);
+        await (await this.f_platform.ongoing_op.cursor).updateMany({}, reset_stamina);
         shortcut_1.core.logger.alert('[BOUNTY] STAMINA REFRESHED');
     }
     async refreshBanner() {
@@ -51,7 +51,7 @@ class AutoManager extends shortcut_1.core.BaseManager {
         const end_of_month = (0, date_fns_1.endOfMonth)(curr_time);
         if (curr_time.getDate() !== end_of_month.getDate())
             return;
-        await (await this.ongoing_op.cursor).deleteMany({});
+        await (await this.f_platform.ongoing_op.cursor).deleteMany({});
         shortcut_1.core.logger.alert('[BOUNTY] ONGOING REFRESHED');
     }
 }

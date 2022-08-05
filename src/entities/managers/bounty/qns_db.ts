@@ -2,13 +2,15 @@ import { CommandInteraction, GuildMemberRoleManager } from 'discord.js';
 import { REGISTER_LIST } from './components/qns_db';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
+import { BountyPlatform } from '../../platforms/bounty';
 
 
 export class BountyQnsDBManager extends core.BaseManager {
-    private qns_op = new core.BountyQnsDBOperator();
-
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    public f_platform: BountyPlatform;
+    
+    constructor(f_platform: BountyPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
 
@@ -100,7 +102,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                     max_choices: max_choices,
                     correct_ans: correct_ans
                 }
-                const create_result = await this.qns_op.createDefaultData(create_params);
+                const create_result = await this.f_platform.qns_op.createDefaultData(create_params);
                 if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.followUp('error creating qns info');
                 else {
                     await interaction.followUp('問題資料已建立！');
@@ -125,7 +127,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const qns_number: number = inner_values.qns_number;
                 const new_max_choices: number = inner_values.new_max_choices;
 
-                const update_result = await this.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
+                const update_result = await this.f_platform.qns_op.setMaxChoices(diffi, qns_number, new_max_choices);
                 if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
 
                 if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
@@ -141,7 +143,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 const qns_number: number = inner_values.qns_number;
                 const new_answers: string[] = inner_values.new_answers;
 
-                const update_result = await this.qns_op.setCorrectAns(diffi, qns_number, new_answers);
+                const update_result = await this.f_platform.qns_op.setCorrectAns(diffi, qns_number, new_answers);
                 if (update_result.status === db.StatusCode.DATA_NOT_FOUND) return await interaction.editReply('目標問題不存在！');
 
                 if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('更改錯誤！');
@@ -202,7 +204,7 @@ export class BountyQnsDBManager extends core.BaseManager {
                 });
                 if (!delete_result) return await interaction.editReply('刪除題目圖片出錯');
 
-                const del_qns_info_result = await (await this.qns_op.cursor).deleteOne({
+                const del_qns_info_result = await (await this.f_platform.qns_op.cursor).deleteOne({
                     difficulty: diffi,
                     number: qns_number
                 });

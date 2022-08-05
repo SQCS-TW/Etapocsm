@@ -57,7 +57,8 @@ const makeBountyBannerButtons = () => {
 exports.makeBountyBannerButtons = makeBountyBannerButtons;
 class BountyUIManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
+        super();
+        this.f_platform = f_platform;
         this.setupListener();
     }
     setupListener() {

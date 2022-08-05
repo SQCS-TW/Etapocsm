@@ -6,8 +6,9 @@ const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
 class LogsManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
+        super();
         this.log_channel = undefined;
+        this.f_platform = f_platform;
         this.setupListener();
     }
     setupListener() {

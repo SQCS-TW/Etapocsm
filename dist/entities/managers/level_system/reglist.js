@@ -17,3 +17,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./db_static_data"), exports);
 __exportStar(require("./acc_auto_update"), exports);
 __exportStar(require("./user_interactions"), exports);
+__exportStar(require("./user_mani"), exports);

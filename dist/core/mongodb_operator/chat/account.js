@@ -26,7 +26,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatAccountOperator = void 0;
 const base_1 = require("../base");
 const reglist_1 = require("../../../constants/reglist");
-const reglist_2 = require("../../reglist");
 const core = __importStar(require("../../reglist"));
 class ChatAccountOperator extends base_1.BaseMongoOperator {
     constructor() {
@@ -35,27 +34,7 @@ class ChatAccountOperator extends base_1.BaseMongoOperator {
             coll: "Accounts",
             default_data_function: reglist_1.getDefaultChatAccount
         });
-        this.mainlvlacc_op = new core.MainLevelAccountOperator();
-    }
-    async clearCooldown(user_id) {
-        const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (reglist_2.isItemInArray)
-            return check_result;
-        const execute = {
-            $set: {
-                cooldown: -1
-            }
-        };
-        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
-        if (!update_result.acknowledged)
-            return {
-                status: "M003",
-                message: ':x:**【寫入錯誤】**'
-            };
-        return {
-            status: "nM003",
-            message: ':white_check_mark:**【寫入成功】**'
-        };
+        this.mainlvl_acc_op = new core.MainLevelAccountOperator();
     }
     async isUserInCooldown(user_id) {
         const check_result = await this.checkDataExistence({ user_id: user_id }, true);
@@ -63,7 +42,7 @@ class ChatAccountOperator extends base_1.BaseMongoOperator {
             return check_result;
         }
         else if (check_result.status === 'nM003') {
-            await this.mainlvlacc_op.createUserMainAccount(user_id);
+            await this.mainlvl_acc_op.createUserMainAccount(user_id);
             return {
                 status: false
             };

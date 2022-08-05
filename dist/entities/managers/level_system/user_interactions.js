@@ -1,25 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserInteractionHandler = void 0;
+exports.UserInteractionsManager = void 0;
 const discord_js_1 = require("discord.js");
 const shortcut_1 = require("../../shortcut");
 const components_1 = require("./components");
-class UserInteractionHandler extends shortcut_1.core.BaseManager {
+class UserInteractionsManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
-        this.mainlvl_acc_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Level',
-            coll: 'Accounts'
-        });
-        this.mainlvl_data_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Level',
-            coll: 'Data'
-        });
+        super();
         this.lvl_exp_dict = undefined;
+        this.f_platform = f_platform;
         this.setupListener();
         this.slcmd_register_options = {
             guild_id: [shortcut_1.core.GuildId.MAIN],
-            cmd_list: components_1.REGISTER_LIST
+            cmd_list: components_1.USER_INTERACTION_SLCMD_REGISTER_LIST
         };
     }
     setupListener() {
@@ -31,7 +24,7 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
     async slcmdHandler(interaction) {
         if (interaction.commandName === 'check-lvl-data') {
             await interaction.deferReply({ ephemeral: true });
-            const user_data = await (await this.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
+            const user_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
             if (!user_data) {
                 const resp_embed = new discord_js_1.MessageEmbed()
                     .setTitle('😥｜找無資料')
@@ -42,7 +35,7 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
                 });
             }
             if (!this.lvl_exp_dict) {
-                const lvl_exp_dict = await (await this.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
+                const lvl_exp_dict = await (await this.f_platform.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
                 this.lvl_exp_dict = lvl_exp_dict.exp_dict;
             }
             let exp_to_next_level;
@@ -63,7 +56,7 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
         }
         else if (interaction.commandName === 'check-lvl-rank') {
             await interaction.deferReply();
-            const server_lvl_data = await (await this.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
+            const server_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
             const user_data_beautify = [];
             await shortcut_1.core.asyncForEach(server_lvl_data, async (user_data) => {
                 const member = await interaction.guild.members.fetch(user_data.user_id);
@@ -79,4 +72,4 @@ class UserInteractionHandler extends shortcut_1.core.BaseManager {
         }
     }
 }
-exports.UserInteractionHandler = UserInteractionHandler;
+exports.UserInteractionsManager = UserInteractionsManager;

@@ -1,11 +1,10 @@
-import { Mongo } from '../db/reglist';
 import { MessageActionRow, MessageButton } from 'discord.js';
 
 export const timeAfterSecs = (seconds: number) => { return Date.now() + seconds * 1000; };
 
 export const cloneObj = async (obj: object) => { return JSON.parse(JSON.stringify(obj)); };
 
-export const getRandomInt = async (max: number) => { return Math.floor(Math.random() * (max + 1)); };
+export const getRandomInt = (max: number) => { return Math.floor(Math.random() * (max + 1)); };
 
 export const sleep = (sec) => {
     return new Promise(resolve => setTimeout(resolve, sec * 1000));
@@ -13,8 +12,7 @@ export const sleep = (sec) => {
 
 export async function factorial(num: number) {
     let counter = 1;
-    for (let i = 2; i <= num; i++)
-        counter = counter * i;
+    for (let i = 2; i <= num; i++) counter *= i;
     return counter;
 }
 
@@ -72,29 +70,6 @@ export function arrayEquals(arr1: Array<any>, arr2: Array<any>) {
         }
     }
     return true;
-}
-
-export type MenuApplicationVerifyData = {
-    user_id: string
-    type: string
-}
-
-export async function verifyMenuApplication(verify: MenuApplicationVerifyData) {
-    const cursor = await (new Mongo('Interaction')).getCur('Pipeline');
-    const user_application: any = cursor.findOne(verify);
-
-    if (user_application) {
-        await cursor.deleteOne(verify);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-export async function isItemInArray<T>(item: T, arr: Array<T>) {
-    if (arr.indexOf(item) !== -1) {
-        return true;
-    } else return false;
 }
 
 export async function asyncForEach(array, callback) {

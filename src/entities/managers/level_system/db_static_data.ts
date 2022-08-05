@@ -1,14 +1,15 @@
 /* eslint-disable no-inner-declarations */
 import { Message } from 'discord.js';
+import { LvlSysPlatform } from '../../platforms/level_system';
 import { core } from '../../shortcut';
-import { ObjectId } from 'mongodb';
 
 
 export class StaticDataSetter extends core.BaseManager {
-    // private account_op = new core.ChatAccountOperator();
+    public f_platform: LvlSysPlatform;
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: LvlSysPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }

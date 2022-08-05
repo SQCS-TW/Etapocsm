@@ -2,19 +2,20 @@ import { core } from '../../shortcut';
 import { schedule } from 'node-cron';
 import { utcToZonedTime } from 'date-fns-tz';
 import { makeBountyBannerEmbed } from './ui';
+import { BountyPlatform } from '../../platforms/bounty';
 
 import { endOfMonth } from 'date-fns';
 
 
 export class AutoManager extends core.BaseManager {
-
-    private ongoing_op = new core.BountyUserOngoingInfoOperator();
-
+    public f_platform: BountyPlatform;
+    
     private BOUNTY_BANNER_CHANNEL_ID = '991731828845195324';
     private BOUNTY_BANNER_MSG_ID = '992659965556818100';
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: BountyPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         // default: 22:30
         schedule('30 22 * * *', async () => { await this.refreshStamina(); });
@@ -40,7 +41,7 @@ export class AutoManager extends core.BaseManager {
             }
         };
 
-        await (await this.ongoing_op.cursor).updateMany({}, reset_stamina);
+        await (await this.f_platform.ongoing_op.cursor).updateMany({}, reset_stamina);
         core.logger.alert('[BOUNTY] STAMINA REFRESHED');
     }
 
@@ -66,7 +67,7 @@ export class AutoManager extends core.BaseManager {
         const end_of_month = endOfMonth(curr_time);
         if (curr_time.getDate() !== end_of_month.getDate()) return;
 
-        await (await this.ongoing_op.cursor).deleteMany({});
+        await (await this.f_platform.ongoing_op.cursor).deleteMany({});
         core.logger.alert('[BOUNTY] ONGOING REFRESHED');
     }
 }

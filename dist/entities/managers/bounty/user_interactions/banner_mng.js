@@ -5,11 +5,9 @@ const discord_js_1 = require("discord.js");
 const shortcut_1 = require("../../../shortcut");
 class BountyAccountManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
-        this.account_op = new shortcut_1.core.BountyUserAccountOperator();
-        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
-        this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
+        super();
         this.cache = new shortcut_1.db.Redis();
+        this.f_platform = f_platform;
         this.setupListener();
     }
     setupListener() {
@@ -25,20 +23,20 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
         switch (interaction.customId) {
             case 'create-main-bounty-account': {
                 await interaction.deferReply({ ephemeral: true });
-                const exist_result = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                const exist_result = await this.f_platform.account_op.checkDataExistence({ user_id: interaction.user.id });
                 if (exist_result.status === shortcut_1.db.StatusCode.DATA_FOUND)
                     return await interaction.editReply('你已經建立過懸賞區主帳號了！');
-                const create_result = await this.account_op.createDefaultData({ user_id: interaction.user.id });
+                const create_result = await this.f_platform.account_op.createDefaultData({ user_id: interaction.user.id });
                 if (create_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                     return await interaction.editReply('建立帳號時發生錯誤了！');
                 else {
-                    await this.mainlvl_acc_op.createUserMainAccount(interaction.user.id);
+                    await this.f_platform.mainlvl_acc_op.createUserMainAccount(interaction.user.id);
                     return await interaction.editReply('帳號建立成功！');
                 }
             }
             case 'check-account-data': {
                 await interaction.deferReply({ ephemeral: true });
-                const exist_result = await this.account_op.checkDataExistence({ user_id: interaction.user.id });
+                const exist_result = await this.f_platform.account_op.checkDataExistence({ user_id: interaction.user.id });
                 if (exist_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                     return await interaction.editReply('你還沒建立過懸賞區主帳號！');
                 const user_acc_data = await this.getOrCacheUserAccData(interaction.user.id);
@@ -48,7 +46,7 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                     .addField('🔰 遊玩權限', `${user_acc_data.auth}`, true)
                     .addField('✨ 經驗值', `**${user_acc_data.exp}** 點`, true)
                     .setColor('#ffffff');
-                const ongoing_info = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+                const ongoing_info = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
                 if (ongoing_info) {
                     user_acc_embed
                         .addField('💪 普通體力', `${ongoing_info.stamina.regular} 格`, true)
@@ -60,7 +58,7 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
             }
             case 'check-personal-record': {
                 await interaction.deferReply({ ephemeral: true });
-                const exist_result = await this.ongoing_op.checkDataExistence({ user_id: interaction.user.id });
+                const exist_result = await this.f_platform.ongoing_op.checkDataExistence({ user_id: interaction.user.id });
                 if (exist_result.status === shortcut_1.db.StatusCode.DATA_NOT_FOUND)
                     return await interaction.editReply('你還沒開啟過懸賞區！');
                 const user_acc_data = await this.getOrCacheUserAccData(interaction.user.id);
@@ -85,7 +83,7 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
         const acc_cache_data = await this.cache.client.GET(key);
         if (acc_cache_data !== null)
             return JSON.parse(acc_cache_data);
-        const user_acc_data = await (await this.account_op.cursor).findOne({ user_id: user_id });
+        const user_acc_data = await (await this.f_platform.account_op.cursor).findOne({ user_id: user_id });
         await this.cache.client.SETEX(key, 60, JSON.stringify(user_acc_data));
         return user_acc_data;
     }

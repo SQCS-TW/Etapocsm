@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mongo = exports.connectMongoDB = void 0;
+require('dotenv').config();
 const mongodb_1 = require("mongodb");
 const MONGODB_ACCOUNT = process.env.MONGODB_ACCOUNT;
 const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD;

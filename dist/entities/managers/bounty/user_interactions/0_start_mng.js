@@ -8,30 +8,9 @@ const utils_1 = require("./utils");
 const date_fns_tz_1 = require("date-fns-tz");
 class StartBountyManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
-        this.account_op = new shortcut_1.core.BountyUserAccountOperator();
-        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
-        this.start_button_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'StartButtonPipeline'
-        });
-        this.db_cache_operator = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'StorjQnsDBCache'
-        });
+        super();
         this.qns_thread_beauty = new utils_1.QnsThreadBeautifier();
-        this.confirm_start_button_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'StartButtonPipeline'
-        });
-        this.end_button_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'EndButtonPipeline'
-        });
-        this.dropdown_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'DropdownPipeline'
-        });
+        this.f_platform = f_platform;
         this.setupListener();
     }
     setupListener() {
@@ -47,10 +26,10 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         const in_event_time = this.isNowInBountyWeeklyTimeInterval();
         if (!in_event_time)
             return await interaction.editReply('❌ 現在並非可遊玩時段！');
-        const user_btn_data = await (await this.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
+        const user_btn_data = await (await this.f_platform.confirm_start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (user_btn_data)
             return await interaction.editReply('問題資訊剛才已發送，請查看私訊！');
-        const main_acc = await (await this.account_op.cursor).findOne({ user_id: interaction.user.id });
+        const main_acc = await (await this.f_platform.account_op.cursor).findOne({ user_id: interaction.user.id });
         if (!main_acc)
             return await interaction.editReply('請先建立你的懸賞區資料！');
         if (!main_acc.auth)
@@ -62,10 +41,10 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             return await interaction.editReply('請專心回答問題');
         }
         try {
-            await (await this.start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
-            await (await this.confirm_start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
-            await (await this.end_button_op.cursor).deleteMany({ user_id: interaction.user.id });
-            await (await this.dropdown_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.f_platform.start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.f_platform.confirm_start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.f_platform.end_button_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await (await this.f_platform.dropdown_op.cursor).deleteMany({ user_id: interaction.user.id });
         }
         catch (e) { }
         let stamina_consume_type;
@@ -98,7 +77,7 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 },
                 due_time: shortcut_1.core.timeAfterSecs(60)
             };
-            await (await this.start_button_op.cursor).insertOne(confirm_start_btn_data);
+            await (await this.f_platform.start_button_op.cursor).insertOne(confirm_start_btn_data);
             await msg.edit({
                 content: '驗證資訊已創建！',
                 embeds: [new_embed],
@@ -120,10 +99,10 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                     dm_channel_id: msg.channelId
                 }
             };
-            await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_dm_channel_id);
+            await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_dm_channel_id);
         }
         await shortcut_1.core.sleep(60);
-        const btn_data = await (await this.start_button_op.cursor).findOne({ user_id: interaction.user.id });
+        const btn_data = await (await this.f_platform.start_button_op.cursor).findOne({ user_id: interaction.user.id });
         if (!btn_data)
             return;
         const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_start_button);
@@ -132,7 +111,7 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 [new_button]
             ])
         });
-        return await (await this.start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
+        return await (await this.f_platform.start_button_op.cursor).deleteOne({ user_id: interaction.user.id });
     }
     isNowInBountyWeeklyTimeInterval() {
         const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
@@ -150,7 +129,7 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         return new_embed;
     }
     async createOrGetOngoingInfo(user_id) {
-        const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: user_id });
+        const ongoing_data = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: user_id });
         if (ongoing_data)
             return {
                 status: shortcut_1.db.StatusCode.DATA_FOUND,
@@ -160,7 +139,7 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
                 stamina: ongoing_data.stamina
             };
         const new_qns_thread = await this.createQnsThread(user_id);
-        const create_result = await this.ongoing_op.createDefaultData({
+        const create_result = await this.f_platform.ongoing_op.createDefaultData({
             user_id: user_id,
             qns_thread: new_qns_thread
         });
@@ -175,8 +154,8 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         };
     }
     async createQnsThread(user_id) {
-        const user_main_acc = await (await this.account_op.cursor).findOne({ user_id: user_id });
-        const cache = await (await this.db_cache_operator.cursor).findOne({ type: 'cache' });
+        const user_main_acc = await (await this.f_platform.account_op.cursor).findOne({ user_id: user_id });
+        const cache = await (await this.f_platform.db_cache_operator.cursor).findOne({ type: 'cache' });
         const diffi_list = ['easy', 'medium', 'hard'];
         const new_qns_thread = {
             easy: undefined,

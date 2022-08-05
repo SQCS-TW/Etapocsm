@@ -6,10 +6,11 @@ const shortcut_1 = require("../shortcut");
 const events_1 = require("events");
 class SessionManager extends shortcut_1.core.BaseManager {
     constructor(f_platform, session_config) {
-        super(f_platform);
+        super();
         this.cache = new reglist_1.Redis();
         this.event = new events_1.EventEmitter();
         this.maintaining_data = false;
+        this.f_platform = f_platform;
         this.session_name = session_config.session_name;
         this.interval_data = session_config.interval_data;
         this.f_platform.f_bot.on('ready', async () => {

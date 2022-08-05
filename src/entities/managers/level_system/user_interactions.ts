@@ -1,30 +1,23 @@
 import { CommandInteraction, MessageEmbed } from 'discord.js';
+import { LvlSysPlatform } from '../../platforms/level_system';
 import { core } from '../../shortcut';
-import { REGISTER_LIST } from './components';
+import { USER_INTERACTION_SLCMD_REGISTER_LIST } from './components';
 
-export class UserInteractionHandler extends core.BaseManager {
-
-    private mainlvl_acc_op = new core.BaseMongoOperator({
-        db: 'Level',
-        coll: 'Accounts'
-    });
-
-    private mainlvl_data_op = new core.BaseMongoOperator({
-        db: 'Level',
-        coll: 'Data'
-    });
+export class UserInteractionsManager extends core.BaseManager {
+    public f_platform: LvlSysPlatform;
 
     // constants waiting to be fetched
     private lvl_exp_dict = undefined;
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: LvlSysPlatform) {
+        super();
+        this.f_platform = f_platform;
         
         this.setupListener();
 
         this.slcmd_register_options = {
             guild_id: [core.GuildId.MAIN],
-            cmd_list: REGISTER_LIST
+            cmd_list: USER_INTERACTION_SLCMD_REGISTER_LIST
         };
     }
 
@@ -38,7 +31,7 @@ export class UserInteractionHandler extends core.BaseManager {
         if (interaction.commandName === 'check-lvl-data') {
 
             await interaction.deferReply({ ephemeral: true });
-            const user_data = await (await this.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
+            const user_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
             if (!user_data) {
                 const resp_embed = new MessageEmbed()
                     .setTitle('😥｜找無資料')
@@ -50,7 +43,7 @@ export class UserInteractionHandler extends core.BaseManager {
             }
 
             if (!this.lvl_exp_dict) {
-                const lvl_exp_dict = await (await this.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
+                const lvl_exp_dict = await (await this.f_platform.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
                 this.lvl_exp_dict = lvl_exp_dict.exp_dict;
             }
 
@@ -71,7 +64,7 @@ export class UserInteractionHandler extends core.BaseManager {
             });
         } else if (interaction.commandName === 'check-lvl-rank') {
             await interaction.deferReply();
-            const server_lvl_data = await (await this.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
+            const server_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
 
             const user_data_beautify: string[] = [];
             await core.asyncForEach(server_lvl_data, async (user_data) => {

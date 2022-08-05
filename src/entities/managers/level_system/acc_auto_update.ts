@@ -1,28 +1,21 @@
 import { Guild, MessageEmbed } from 'discord.js';
 import { core } from '../../shortcut';
+import { LvlSysPlatform } from '../../platforms/level_system';
 
 export class AutoUpdateAccountManager extends core.BaseManager {
-    // operators
-    private mainlvl_acc_op = new core.MainLevelAccountOperator();
-    private bounty_acc_op = new core.BountyUserAccountOperator();
-    private chat_acc_op = new core.ChatAccountOperator();
-
-    private mainlvl_data_op = new core.BaseMongoOperator({
-        db: 'Level',
-        coll: 'Data'
-    });
+    public f_platform: LvlSysPlatform;
 
     // constants
-    private mins_in_mili_secs = 60 * 1000;
-    private sqcs_main_guild_id = '743507979369709639';
+    private readonly mins_in_mili_secs = 60 * 1000;
 
     // data to be cached
     private lvl_exp_dict = undefined;
     private exp_role_id_dict = undefined;
     private sqcs_main_guild: Guild = undefined;
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: LvlSysPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }
@@ -42,10 +35,10 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     private async updateTotalExp() {
         const self_routine = () => setTimeout(async () => { await this.updateTotalExp() }, 2 * this.mins_in_mili_secs);
 
-        const users_data = await (await this.mainlvl_acc_op.cursor).find({}).toArray();
+        const users_data = await (await this.f_platform.mainlvl_acc_op.cursor).find({}).toArray();
         const other_acc_cursors = [
-            this.bounty_acc_op,
-            this.chat_acc_op
+            this.f_platform.bounty_acc_op,
+            this.f_platform.chat_acc_op
         ];
 
         for (let i = 0; i < users_data.length; i++) {
@@ -64,7 +57,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                     total_exp: user_exps
                 }
             }
-            await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_exp);
+            await (await this.f_platform.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_exp);
         }
 
         return self_routine();
@@ -73,7 +66,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     private async updateCurrLevel() {
         const self_routine = () => setTimeout(async () => { await this.updateCurrLevel() }, 2 * this.mins_in_mili_secs);
 
-        const users_data = await (await this.mainlvl_acc_op.cursor).find({}).toArray();
+        const users_data = await (await this.f_platform.mainlvl_acc_op.cursor).find({}).toArray();
 
         for (let i = 0; i < users_data.length; i++) {
             const user_mainlvl_data = users_data[i];
@@ -86,7 +79,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                     level: new_lvl
                 }
             }
-            await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_lvl);
+            await (await this.f_platform.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_lvl);
             await this.sendUserLevelUpdate(user_mainlvl_data.user_id, user_mainlvl_data.level, new_lvl);
         }
 
@@ -95,7 +88,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
 
     private async getUserLevel(exp: number) {
         if (!this.lvl_exp_dict) {
-            const lvl_exp_data = await (await this.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
+            const lvl_exp_data = await (await this.f_platform.mainlvl_data_op.cursor).findOne({ type: 'level-exp-dict' });
             this.lvl_exp_dict = lvl_exp_data.exp_dict;
         }
 
@@ -107,7 +100,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
     }
 
     private async sendUserLevelUpdate(user_id: string, old_lvl: number, new_lvl: number) {
-        this.sqcs_main_guild = this.sqcs_main_guild ?? await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
+        this.sqcs_main_guild = this.sqcs_main_guild ?? await this.f_platform.f_bot.guilds.fetch(core.GuildId.MAIN);
 
         const member = await this.sqcs_main_guild.members.fetch(user_id);
         try {
@@ -133,15 +126,15 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         const self_routine = () => setTimeout(async () => { await this.updateGuildRole() }, 3 * this.mins_in_mili_secs);
 
         if (!this.exp_role_id_dict) {
-            const exp_role_id_data = await (await this.mainlvl_data_op.cursor).findOne({ type: 'exp-role-id-dict' });
+            const exp_role_id_data = await (await this.f_platform.mainlvl_data_op.cursor).findOne({ type: 'exp-role-id-dict' });
             this.exp_role_id_dict = exp_role_id_data.role_id_dict;
         }
 
         if (!this.sqcs_main_guild) {
-            this.sqcs_main_guild = await this.f_platform.f_bot.guilds.fetch(this.sqcs_main_guild_id);
+            this.sqcs_main_guild = await this.f_platform.f_bot.guilds.fetch(core.GuildId.MAIN);
         }
 
-        const users_data = await (await this.mainlvl_acc_op.cursor).find({}).toArray();
+        const users_data = await (await this.f_platform.mainlvl_acc_op.cursor).find({}).toArray();
 
         for (let i = 0; i < users_data.length; i++) {
             const user_mainlvl_data = users_data[i];
@@ -163,7 +156,7 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                     curr_role_id: new_role_id
                 }
             }
-            await (await this.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
+            await (await this.f_platform.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
             core.logger.info(`role edit: ${member.displayName}; old: ${old_role.name}, new: ${new_role.name}`);
 
             await core.sleep(4);

@@ -1,5 +1,3 @@
-import { BasePlatform } from './platform';
-
 import {
     InteractionReplyOptions,
     Interaction,
@@ -13,17 +11,13 @@ export type SlcmdRegisterOptions = {
 };
 
 export class BaseManager {
-    public f_platform: BasePlatform;
-
     protected cmd_error: InteractionReplyOptions;
     protected perm_error: InteractionReplyOptions;
     protected error_gif: Array<string>;
 
     public slcmd_register_options?: SlcmdRegisterOptions;
 
-    constructor(f_platform: BasePlatform) {
-        this.f_platform = f_platform;
-
+    constructor() {
         this.cmd_error = {
             content: ':x: 【使用錯誤】這個指令現在無法使用！'
         };

@@ -1,12 +1,17 @@
 import { Channel, TextChannel } from 'discord.js';
 import { core } from '../../shortcut';
 import { readdirSync, readFileSync, writeFileSync } from 'fs';
+import { LogsPlatform } from '../../platforms/logs';
 
 
 export class LogsManager extends core.BaseManager {
+    public f_platform: LogsPlatform;
+
     private log_channel: Channel = undefined;
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+
+    constructor(f_platform: LogsPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }

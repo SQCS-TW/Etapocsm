@@ -1,5 +1,6 @@
 import { core, db } from '../../../shortcut';
 import { unlink, existsSync, readdirSync } from 'fs';
+import { BountyPlatform } from '../../../platforms/bounty';
 
 import {
     ButtonInteraction,
@@ -90,18 +91,7 @@ class BountyQnsPicCacheHandler {
 
 
 export class ConfirmStartBountyManager extends core.BaseManager {
-    private ongoing_op = new core.BountyUserOngoingInfoOperator();
-
-    private confirm_start_button_op = new core.BaseMongoOperator({
-        db: 'Bounty',
-        coll: 'StartButtonPipeline'
-    });
-
-    private end_button_op = new core.BaseMongoOperator({
-        db: 'Bounty',
-        coll: 'EndButtonPipeline'
-    });
-
+    public f_platform: BountyPlatform;
     private pic_cache_hdl = new BountyQnsPicCacheHandler();
 
     private qns_diffi_time = {
@@ -110,8 +100,9 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         'hard': 60 * 3
     };
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: BountyPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }
@@ -132,14 +123,14 @@ export class ConfirmStartBountyManager extends core.BaseManager {
 
         await interaction.deferReply();
 
-        const delete_result = await (await this.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        const delete_result = await (await this.f_platform.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
         if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
         
         const user_btn_data = delete_result.value;
         if (!user_btn_data) return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
         else if (user_btn_data.msg_id !== interaction.message.id) return await interaction.editReply('抱歉，請確認你按下的按鈕是否正確...');
 
-        const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+        const ongoing_data = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
 
         let takeaway_stamina: object;
         if (ongoing_data.stamina.regular > 0) {
@@ -155,11 +146,11 @@ export class ConfirmStartBountyManager extends core.BaseManager {
                 }
             }
         }
-        const takeaway_result = await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
+        const takeaway_result = await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
         if (!takeaway_result.acknowledged) return await interaction.editReply('抱歉，消耗體力時發生錯誤了...');
 
         // activate user ongoing status
-        const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
+        const update_result = await this.f_platform.ongoing_op.setStatus(interaction.user.id, true);
         if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
         //
 
@@ -214,7 +205,7 @@ export class ConfirmStartBountyManager extends core.BaseManager {
                 end: end_time
             }
         };
-        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
+        const create_result = await (await this.f_platform.end_button_op.cursor).insertOne(end_btn_info);
         if (!create_result.acknowledged) return await interaction.user.send('創建驗證資訊時發生錯誤...');
         //
 
@@ -232,7 +223,7 @@ export class ConfirmStartBountyManager extends core.BaseManager {
                 qns_msg_id: qns_msg.id
             }
         };
-        await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
+        await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
     }
 
     private async getAnsweringTimeEmbed(start_time: string, end_time: string) {

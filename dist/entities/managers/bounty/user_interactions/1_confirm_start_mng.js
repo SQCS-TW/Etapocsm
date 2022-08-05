@@ -65,22 +65,14 @@ class BountyQnsPicCacheHandler {
 }
 class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
-        this.ongoing_op = new shortcut_1.core.BountyUserOngoingInfoOperator();
-        this.confirm_start_button_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'StartButtonPipeline'
-        });
-        this.end_button_op = new shortcut_1.core.BaseMongoOperator({
-            db: 'Bounty',
-            coll: 'EndButtonPipeline'
-        });
+        super();
         this.pic_cache_hdl = new BountyQnsPicCacheHandler();
         this.qns_diffi_time = {
             'easy': 60,
             'medium': 60 * 2,
             'hard': 60 * 3
         };
+        this.f_platform = f_platform;
         this.setupListener();
     }
     setupListener() {
@@ -97,7 +89,7 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
         if (interaction.customId !== 'confirm-start-bounty')
             return;
         await interaction.deferReply();
-        const delete_result = await (await this.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        const delete_result = await (await this.f_platform.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
         if (!delete_result.ok)
             return await interaction.editReply('刪除驗證資訊時發生錯誤！');
         const user_btn_data = delete_result.value;
@@ -105,7 +97,7 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
             return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
         else if (user_btn_data.msg_id !== interaction.message.id)
             return await interaction.editReply('抱歉，請確認你按下的按鈕是否正確...');
-        const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+        const ongoing_data = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
         let takeaway_stamina;
         if (ongoing_data.stamina.regular > 0) {
             takeaway_stamina = {
@@ -121,10 +113,10 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
                 }
             };
         }
-        const takeaway_result = await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
+        const takeaway_result = await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
         if (!takeaway_result.acknowledged)
             return await interaction.editReply('抱歉，消耗體力時發生錯誤了...');
-        const update_result = await this.ongoing_op.setStatus(interaction.user.id, true);
+        const update_result = await this.f_platform.ongoing_op.setStatus(interaction.user.id, true);
         if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
             return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
         const qns_diffi = user_btn_data.qns_info.difficulty;
@@ -163,7 +155,7 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
                 end: end_time
             }
         };
-        const create_result = await (await this.end_button_op.cursor).insertOne(end_btn_info);
+        const create_result = await (await this.f_platform.end_button_op.cursor).insertOne(end_btn_info);
         if (!create_result.acknowledged)
             return await interaction.user.send('創建驗證資訊時發生錯誤...');
         const qns_msg = await interaction.user.send({
@@ -178,7 +170,7 @@ class ConfirmStartBountyManager extends shortcut_1.core.BaseManager {
                 qns_msg_id: qns_msg.id
             }
         };
-        await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
+        await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, update_qns_msg_id);
     }
     async getAnsweringTimeEmbed(start_time, end_time) {
         const new_embed = new discord_js_1.MessageEmbed(components_1.default_answering_info_embed);

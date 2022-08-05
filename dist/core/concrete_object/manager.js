@@ -2,8 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseManager = void 0;
 class BaseManager {
-    constructor(f_platform) {
-        this.f_platform = f_platform;
+    constructor() {
         this.cmd_error = {
             content: ':x: 【使用錯誤】這個指令現在無法使用！'
         };

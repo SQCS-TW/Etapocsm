@@ -3,6 +3,7 @@ import { core } from '../../shortcut';
 import { endOfWeek, addHours, endOfMonth, addMinutes } from 'date-fns';
 
 import { utcToZonedTime } from 'date-fns-tz';
+import { BountyPlatform } from '../../platforms/bounty';
 
 const bounty_embed = new MessageEmbed()
     .setTitle('懸賞區選單')
@@ -72,9 +73,11 @@ export const makeBountyBannerButtons = () => {
 }
 
 export class BountyUIManager extends core.BaseManager {
-
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    public f_platform: BountyPlatform;
+    
+    constructor(f_platform: BountyPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }

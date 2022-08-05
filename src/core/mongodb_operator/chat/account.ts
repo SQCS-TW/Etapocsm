@@ -1,11 +1,10 @@
 import { BaseMongoOperator, OperatorResponse } from '../base';
 import { getDefaultChatAccount } from '../../../constants/reglist';
-import { isItemInArray } from '../../reglist';
 import * as core from '../../reglist';
 
 
 export class ChatAccountOperator extends BaseMongoOperator {
-    private mainlvlacc_op: core.MainLevelAccountOperator;
+    private mainlvl_acc_op: core.MainLevelAccountOperator;
 
     constructor() {
         super({
@@ -14,29 +13,7 @@ export class ChatAccountOperator extends BaseMongoOperator {
             default_data_function: getDefaultChatAccount
         });
 
-        this.mainlvlacc_op = new core.MainLevelAccountOperator();
-    }
-
-    public async clearCooldown(user_id: string): Promise<OperatorResponse> {
-        const check_result = await this.checkDataExistence({ user_id: user_id });
-        if (isItemInArray) return check_result;
-
-        const execute = {
-            $set: {
-                cooldown: -1
-            }
-        };
-
-        const update_result = await (await this.cursor).updateOne({ user_id: user_id }, execute);
-        if (!update_result.acknowledged) return {
-            status: "M003",
-            message: ':x:**【寫入錯誤】**'
-        };
-
-        return {
-            status: "nM003",
-            message: ':white_check_mark:**【寫入成功】**'
-        };
+        this.mainlvl_acc_op = new core.MainLevelAccountOperator();
     }
 
     public async isUserInCooldown(user_id: string): Promise<OperatorResponse> {
@@ -44,7 +21,7 @@ export class ChatAccountOperator extends BaseMongoOperator {
         if (check_result.status === 'M003') {
             return check_result;
         } else if (check_result.status === 'nM003') {
-            await this.mainlvlacc_op.createUserMainAccount(user_id);
+            await this.mainlvl_acc_op.createUserMainAccount(user_id);
             return {
                 status: false
             }

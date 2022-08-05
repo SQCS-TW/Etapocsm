@@ -1,4 +1,5 @@
 import { core, db } from '../../../shortcut';
+import { BountyPlatform } from '../../../platforms/bounty';
 
 import {
     SelectMenuInteraction,
@@ -10,15 +11,7 @@ import { getQnsThreadData } from './utils';
 
 
 export class SelectBountyAnswerManager extends core.BaseManager {
-    private account_op = new core.BountyUserAccountOperator();
-    private ongoing_op = new core.BountyUserOngoingInfoOperator();
-    private qns_op = new core.BountyQnsDBOperator();
-
-    private dropdown_op = new core.BaseMongoOperator({
-        db: 'Bounty',
-        coll: 'DropdownPipeline'
-    });
-
+    public f_platform: BountyPlatform;
     private cache = new db.Redis();
 
     private qns_diffi_exp = {
@@ -37,8 +30,9 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         'hard': 1 / 3
     };
 
-    constructor(f_platform: core.BasePlatform) {
-        super(f_platform);
+    constructor(f_platform: BountyPlatform) {
+        super();
+        this.f_platform = f_platform;
 
         this.setupListener();
     }
@@ -58,7 +52,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
         await interaction.deferReply();
 
-        const delete_result = await (await this.dropdown_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
+        const delete_result = await (await this.f_platform.dropdown_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
         if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
 
         const dp_data = delete_result.value;
@@ -68,7 +62,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
         // delete dropdown and qns-pic-msg
         if (interaction.message instanceof Message) await interaction.message.delete();
         
-        const ongoing_data = await (await this.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
+        const ongoing_data = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: interaction.user.id });
         const qns_msg = await interaction.channel.messages.fetch(ongoing_data.qns_msg_id);
         if (qns_msg instanceof Message) await qns_msg.delete();
         //
@@ -131,7 +125,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
         if (acc_cache_data !== null) return JSON.parse(acc_cache_data);
 
-        const qns_data = await (await this.qns_op.cursor).findOne({
+        const qns_data = await (await this.f_platform.qns_op.cursor).findOne({
             difficulty: diffi,
             number: qns_number
         });
@@ -147,17 +141,21 @@ export class SelectBountyAnswerManager extends core.BaseManager {
     }
 
     private async giveExp(correct, diffi, user_id) {
+        const user_lvl_main_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({user_id: user_id});
+        const exp_multiplier = user_lvl_main_acc.exp_multiplier;
+
         let delta_exp: number;
 
         if (!correct) delta_exp = 2;
         else delta_exp = this.qns_diffi_exp[diffi];
+        delta_exp *= exp_multiplier;
 
         const execute = {
             $inc: {
                 exp: delta_exp
             }
         };
-        const update_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.f_platform.account_op.cursor).updateOne({ user_id: user_id }, execute);
 
         let status: string;
         if (update_result.acknowledged) status = db.StatusCode.WRITE_DATA_SUCCESS;
@@ -177,7 +175,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
                 [`qns_thread.${diffi}`]: user_qns_thread[diffi]
             }
         };
-        const update_result = await (await this.ongoing_op.cursor).updateOne({ user_id: user_id }, execute);
+        const update_result = await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: user_id }, execute);
 
         let status: string;
         if (update_result.acknowledged) status = db.StatusCode.WRITE_DATA_SUCCESS;
@@ -227,11 +225,11 @@ export class SelectBountyAnswerManager extends core.BaseManager {
 
         let final_result: boolean;
         if (!cleared_execute) {
-            const execute_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, execute);
+            const execute_result = await (await this.f_platform.account_op.cursor).updateOne({ user_id: user_id }, execute);
             final_result = execute_result.acknowledged;
         } else {
-            const execute_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, execute);
-            const cleared_result = await (await this.account_op.cursor).updateOne({ user_id: user_id }, cleared_execute);
+            const execute_result = await (await this.f_platform.account_op.cursor).updateOne({ user_id: user_id }, execute);
+            const cleared_result = await (await this.f_platform.account_op.cursor).updateOne({ user_id: user_id }, cleared_execute);
             final_result = (execute_result.acknowledged && cleared_result.acknowledged);
         }
 
@@ -257,8 +255,8 @@ export class SelectBountyAnswerManager extends core.BaseManager {
                 }
             };
 
-            await (await this.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, ongoing_update);
-            await (await this.account_op.cursor).updateOne({ user_id: interaction.user.id }, main_statistics_update);
+            await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, ongoing_update);
+            await (await this.f_platform.account_op.cursor).updateOne({ user_id: interaction.user.id }, main_statistics_update);
 
             return {
                 result: 'gave',
@@ -271,7 +269,7 @@ export class SelectBountyAnswerManager extends core.BaseManager {
                     exp: 10
                 }
             };
-            await (await this.account_op.cursor).updateOne({ user_id: interaction.user.id }, execute);
+            await (await this.f_platform.account_op.cursor).updateOne({ user_id: interaction.user.id }, execute);
             return {
                 result: 'overflow',
                 overflow_exp: 10

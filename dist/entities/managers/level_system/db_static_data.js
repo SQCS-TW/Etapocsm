@@ -4,7 +4,8 @@ exports.StaticDataSetter = void 0;
 const shortcut_1 = require("../../shortcut");
 class StaticDataSetter extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
-        super(f_platform);
+        super();
+        this.f_platform = f_platform;
         this.setupListener();
     }
     setupListener() {
