@@ -8,7 +8,7 @@ import { BountyPlatform } from '../../platforms/bounty';
 const bounty_embed = new MessageEmbed()
     .setTitle('懸賞區選單')
     .setColor('#ffffff')
-    .setImage('https://i.imgur.com/iAEU0wz.png')
+    .setImage('https://i.imgur.com/y4Iy9qd.jpg')
     .setFooter({ text: '如要開始遊玩，請先註冊帳號' });
 
 const reg_btn = new MessageButton()

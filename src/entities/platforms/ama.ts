@@ -6,6 +6,7 @@ export class AMAPlatform extends core.BasePlatform {
         super(f_bot);
 
         this.managers = [
+            
         ];
     }
 }

@@ -10,7 +10,7 @@ class AutoManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super();
         this.BOUNTY_BANNER_CHANNEL_ID = '991731828845195324';
-        this.BOUNTY_BANNER_MSG_ID = '992659965556818100';
+        this.BOUNTY_BANNER_MSG_ID = '1005100098952376420';
         this.f_platform = f_platform;
         (0, node_cron_1.schedule)('30 22 * * *', async () => { await this.refreshStamina(); });
         (0, node_cron_1.schedule)('0 0 * * *', async () => { await this.refreshBanner(); });

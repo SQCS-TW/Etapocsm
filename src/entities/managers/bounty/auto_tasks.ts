@@ -11,7 +11,7 @@ export class AutoManager extends core.BaseManager {
     public f_platform: BountyPlatform;
     
     private BOUNTY_BANNER_CHANNEL_ID = '991731828845195324';
-    private BOUNTY_BANNER_MSG_ID = '992659965556818100';
+    private BOUNTY_BANNER_MSG_ID = '1005100098952376420';
 
     constructor(f_platform: BountyPlatform) {
         super();
