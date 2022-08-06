@@ -39,7 +39,7 @@ const play_info_btn = new MessageButton()
     .setEmoji('🤔')
     .setLabel('遊玩方式')
     .setStyle('LINK')
-    .setURL('https://hackmd.io/@Quantami/lvl-sys-intro');
+    .setURL('https://fluctuating-photons.notion.site/9e8f8e5ba65e401e8eee728cd41e2690');
 
 export const makeBountyBannerEmbed = () => {
     const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
@@ -59,8 +59,8 @@ export const makeBountyBannerEmbed = () => {
     const new_embed = new MessageEmbed(bounty_embed)
         .addField('問題串刷新時間', qns_thread_refresh_timestamp, true)
         .addField('體力更新時間', stamina_refresh_timestamp, true);
-        // .addField('此輪開始時間', weekly_start_timestamp, false)
-        // .addField('此輪結束時間', weekly_end_timestamp, false);
+    // .addField('此輪開始時間', weekly_start_timestamp, false)
+    // .addField('此輪結束時間', weekly_end_timestamp, false);
 
     return new_embed;
 }
@@ -74,7 +74,7 @@ export const makeBountyBannerButtons = () => {
 
 export class BountyUIManager extends core.BaseManager {
     public f_platform: BountyPlatform;
-    
+
     constructor(f_platform: BountyPlatform) {
         super();
         this.f_platform = f_platform;

@@ -34,7 +34,7 @@ const play_info_btn = new discord_js_1.MessageButton()
     .setEmoji('🤔')
     .setLabel('遊玩方式')
     .setStyle('LINK')
-    .setURL('https://hackmd.io/@Quantami/lvl-sys-intro');
+    .setURL('https://fluctuating-photons.notion.site/9e8f8e5ba65e401e8eee728cd41e2690');
 const makeBountyBannerEmbed = () => {
     const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
     const end_of_week_time = (0, date_fns_1.addHours)((0, date_fns_1.endOfWeek)(curr_time), -2);
