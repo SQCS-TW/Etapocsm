@@ -8,7 +8,7 @@ const date_fns_tz_1 = require("date-fns-tz");
 const bounty_embed = new discord_js_1.MessageEmbed()
     .setTitle('懸賞區選單')
     .setColor('#ffffff')
-    .setImage('https://i.imgur.com/y4Iy9qd.jpg')
+    .setImage('https://i.imgur.com/7ZzSXkX.jpg')
     .setFooter({ text: '如要開始遊玩，請先註冊帳號' });
 const reg_btn = new discord_js_1.MessageButton()
     .setEmoji('🧾')
