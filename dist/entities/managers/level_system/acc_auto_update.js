@@ -79,8 +79,9 @@ class AutoUpdateAccountManager extends shortcut_1.core.BaseManager {
                 return 60;
             else if (exp < this.lvl_exp_dict[0])
                 return 0;
-            else if (this.lvl_exp_dict[cur_lvl] <= exp && exp < this.lvl_exp_dict[cur_lvl + 1])
-                return cur_lvl;
+            else if (this.lvl_exp_dict[cur_lvl] <= exp && exp < this.lvl_exp_dict[cur_lvl + 1]) {
+                return cur_lvl + 1;
+            }
         }
     }
     async sendUserLevelUpdate(user_id, old_lvl, new_lvl) {
