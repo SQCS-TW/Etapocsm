@@ -23,7 +23,7 @@ class Etapocsm extends discord_js_1.Client {
         this.on('ready', async () => {
             if (!this.user)
                 throw new Error('Client is null.');
-            reglist_1.logger.info(`${this.user.username} has logged in!`);
+            reglist_1.normal_logger.info(`${this.user.username} has logged in!`);
         });
     }
     async registerSlcmd(guild_id) {
@@ -46,7 +46,7 @@ class Etapocsm extends discord_js_1.Client {
         await rest.put(v9_1.Routes.applicationGuildCommands(BOT_ID, guild_id), { body: [] });
         if (slcmd_register_list.length !== 0) {
             await rest.put(v9_1.Routes.applicationGuildCommands(BOT_ID, guild_id), { body: slcmd_register_list });
-            reglist_1.logger.info(`slcmd of guild ${guild_id} registered!`);
+            reglist_1.normal_logger.info(`Slcmd of guild ${guild_id} registered!`);
         }
     }
 }

@@ -72,7 +72,7 @@ export class AutoManager extends core.BaseManager {
         };
 
         await (await this.f_platform.ongoing_op.cursor).updateMany({}, reset_stamina);
-        core.logger.alert('[BOUNTY] STAMINA REFRESHED');
+        core.normal_logger.info('[Bounty] 活動體力值已重置');
     }
 
     private async refreshBanner() {
@@ -87,11 +87,11 @@ export class AutoManager extends core.BaseManager {
             embeds: [makeBountyBannerEmbed()],
             components: makeBountyBannerButtons()
         });
-        core.logger.alert('[BOUNTY] BANNER REFRESHED');
+        core.normal_logger.info('[Bounty] 活動橫幅已更新');
     }
 
     private async refreshOngoing() {
         await (await this.f_platform.ongoing_op.cursor).deleteMany({});
-        core.logger.alert('[BOUNTY] ONGOING REFRESHED');
+        core.normal_logger.info('[Bounty] 問題串已刷新（成員進行中資料已刪除˙）');
     }
 }

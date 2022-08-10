@@ -1,18 +1,34 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logger = void 0;
+exports.normal_logger = exports.critical_logger = void 0;
+const utils_1 = require("./utils");
 const winston_1 = require("winston");
-exports.logger = (0, winston_1.createLogger)({
-    level: 'info',
-    defaultMeta: { service: 'user-service' },
+const { combine, label, printf } = winston_1.format;
+const onlyLogCertainLevels = (0, winston_1.format)((info, target_levels) => {
+    if (target_levels.includes(info.level))
+        return info;
+    else
+        return false;
+});
+const myFormat = printf(({ level, label, message, metadata }) => {
+    let output = `${(0, utils_1.localizeDatetime)()} [${label}] ${level}: ${message}\n`;
+    if (metadata)
+        output += `meta: ${JSON.stringify(metadata, null, 4)}\n`;
+    return output;
+});
+exports.critical_logger = (0, winston_1.createLogger)({
+    level: 'warn',
+    format: combine(onlyLogCertainLevels(['warn', 'error']), label({ label: 'CRITICAL' }), myFormat),
     transports: [
-        new winston_1.transports.Console({
-            level: 'debug'
-        }),
-        new winston_1.transports.File({ filename: './logs/error.log', level: 'error' }),
-        new winston_1.transports.File({ filename: './logs/info.log', level: 'info' })
-    ],
-    format: winston_1.format.combine(winston_1.format.timestamp({
-        format: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
-    }), winston_1.format.printf(info => `[${info.level.toUpperCase()}] (${[info.timestamp]}): ${info.message}\n`))
+        new winston_1.transports.Console(),
+        new winston_1.transports.File({ filename: './logs/critical.log' })
+    ]
+});
+exports.normal_logger = (0, winston_1.createLogger)({
+    level: 'debug',
+    format: combine(onlyLogCertainLevels(['debug', 'info']), label({ label: 'NORMAL' }), myFormat),
+    transports: [
+        new winston_1.transports.Console(),
+        new winston_1.transports.File({ filename: './logs/normal.log' })
+    ]
 });

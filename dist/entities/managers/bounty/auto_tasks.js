@@ -57,7 +57,7 @@ class AutoManager extends shortcut_1.core.BaseManager {
             }
         };
         await (await this.f_platform.ongoing_op.cursor).updateMany({}, reset_stamina);
-        shortcut_1.core.logger.alert('[BOUNTY] STAMINA REFRESHED');
+        shortcut_1.core.normal_logger.info('[Bounty] 活動體力值已重置');
     }
     async refreshBanner() {
         const main_guild = await this.f_platform.f_bot.guilds.fetch(shortcut_1.core.GuildId.MAIN);
@@ -69,11 +69,11 @@ class AutoManager extends shortcut_1.core.BaseManager {
             embeds: [(0, ui_1.makeBountyBannerEmbed)()],
             components: (0, ui_1.makeBountyBannerButtons)()
         });
-        shortcut_1.core.logger.alert('[BOUNTY] BANNER REFRESHED');
+        shortcut_1.core.normal_logger.info('[Bounty] 活動橫幅已更新');
     }
     async refreshOngoing() {
         await (await this.f_platform.ongoing_op.cursor).deleteMany({});
-        shortcut_1.core.logger.alert('[BOUNTY] ONGOING REFRESHED');
+        shortcut_1.core.normal_logger.info('[Bounty] 問題串已刷新（成員進行中資料已刪除˙）');
     }
 }
 exports.AutoManager = AutoManager;

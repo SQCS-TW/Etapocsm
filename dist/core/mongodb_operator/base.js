@@ -40,7 +40,10 @@ class BaseMongoOperator {
             };
         }
         catch (err) {
-            logger_1.logger.error(err);
+            logger_1.critical_logger.error({
+                message: err.message,
+                metadata: err
+            });
         }
     }
 }

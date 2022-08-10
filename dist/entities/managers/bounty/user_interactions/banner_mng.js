@@ -31,6 +31,12 @@ class BountyAccountManager extends shortcut_1.core.BaseManager {
                     return await interaction.editReply('建立帳號時發生錯誤了！');
                 else {
                     await this.f_platform.mainlvl_acc_op.createUserMainAccount(interaction.user.id);
+                    shortcut_1.core.normal_logger.info({
+                        message: '[Bounty] 成員帳號建立成功',
+                        metadata: {
+                            player_id: interaction.user.id
+                        }
+                    });
                     return await interaction.editReply('帳號建立成功！');
                 }
             }

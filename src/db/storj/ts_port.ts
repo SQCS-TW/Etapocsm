@@ -5,7 +5,7 @@
 */
 
 import { execSync } from 'child_process';
-import { logger } from '../../core/reglist';
+import { normal_logger } from '../../core/reglist';
 
 type StorjDown_UploadOptions = {
     bucket_name: string,
@@ -25,6 +25,14 @@ export async function storjDownload(options: StorjDown_UploadOptions) {
     let download_result: any = execSync(command);
     download_result = download_result.toString("utf-8");
 
+    normal_logger.info({
+        message: '[Storj ts-port] download-result',
+        metadata: {
+            dl_result: download_result,
+            cmd: command
+        }
+    });
+
     download_result = (download_result.trim() === 'true');
     return download_result;
 }
@@ -41,7 +49,13 @@ export async function storjUpload(options: StorjDown_UploadOptions) {
     let upload_result: any = execSync(command);
     upload_result = upload_result.toString("utf-8");
 
-    logger.debug(`upload result: ${upload_result}`);
+    normal_logger.info({
+        message: '[Storj ts-port] upload-result',
+        metadata: {
+            ul_result: upload_result,
+            cmd: command
+        }
+    });
 
     upload_result = (upload_result.trim() === 'true');
     return upload_result;
@@ -114,7 +128,13 @@ export async function storjDeleteFile(options: DeleteFileOptions) {
     let delete_result: any = execSync(command);
     delete_result = delete_result.toString("utf-8");
 
-    logger.debug(`delete result: ${delete_result}`);
+    normal_logger.info({
+        message: '[Storj ts-port] delete-result',
+        metadata: {
+            del_result: delete_result,
+            cmd: command
+        }
+    });
 
     delete_result = (delete_result.trim() === 'true');
     return delete_result;

@@ -1,5 +1,5 @@
 import { Client, ClientOptions } from 'discord.js';
-import { BasePlatform, logger } from './core/reglist';
+import { BasePlatform, normal_logger } from './core/reglist';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import { core } from './entities/shortcut';
@@ -32,7 +32,7 @@ export class Etapocsm extends Client {
     private setupListener() {
         this.on('ready', async () => {
             if (!this.user) throw new Error('Client is null.');
-            logger.info(`${this.user.username} has logged in!`);
+            normal_logger.info(`${this.user.username} has logged in!`);
         });
     }
 
@@ -59,7 +59,7 @@ export class Etapocsm extends Client {
         await rest.put(Routes.applicationGuildCommands(BOT_ID, guild_id), { body: [] }) // reset slcmd
         if (slcmd_register_list.length !== 0) {
             await rest.put(Routes.applicationGuildCommands(BOT_ID, guild_id), { body: slcmd_register_list })
-            logger.info(`slcmd of guild ${guild_id} registered!`);
+            normal_logger.info(`Slcmd of guild ${guild_id} registered!`);
         }
     }
 }

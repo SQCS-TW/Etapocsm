@@ -31,10 +31,10 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
         switch (msg.content) {
             case 'e:REGISTER-SLASH-COMMAND': {
                 await this.f_platform.f_bot.registerSlcmd(msg.guildId);
-                await msg.reply(`slcmd of guild ${msg.guildId} registered!`);
+                await msg.reply(`Slcmd of guild ${msg.guildId} registered!`);
                 break;
             }
-            case 'e:TempUpdateDb': {
+            case 'e:RESET-EXP-MULTIPLIER': {
                 const mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
                 const update = {
                     $set: {
@@ -43,6 +43,7 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
                 };
                 await (await mainlvl_acc_op.cursor).updateMany({}, update);
                 await msg.reply('fin.');
+                break;
             }
         }
     }

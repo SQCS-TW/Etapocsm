@@ -5,6 +5,7 @@ const bot_1 = require("./bot");
 const discord_js_1 = require("discord.js");
 const shortcut_1 = require("./entities/shortcut");
 const reglist_1 = require("./core/reglist");
+require('events').EventEmitter.defaultMaxListeners = 30;
 let bot;
 async function main() {
     await shortcut_1.db.connectMongoDB();
@@ -14,12 +15,13 @@ async function main() {
     });
     await bot.login(process.env.BOT_TOKEN);
 }
-function getStackTrace(err) {
-    Error.captureStackTrace(err, getStackTrace);
-    return err;
-}
 process.on('uncaughtException', async (err) => {
-    const refined_err = getStackTrace(err);
-    reglist_1.logger.error(`${refined_err.stack} ${JSON.stringify(refined_err, null, 4)}`);
+    reglist_1.critical_logger.error({
+        message: err.message,
+        metadata: {
+            error: err,
+            stack: err.stack
+        }
+    });
 });
 main();

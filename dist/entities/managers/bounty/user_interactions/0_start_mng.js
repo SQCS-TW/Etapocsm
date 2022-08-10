@@ -35,16 +35,26 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
         if (!main_acc.auth)
             return await interaction.editReply('你沒有遊玩懸賞區的權限！');
         const create_ongoing_data = await this.createOrGetOngoingInfo(interaction.user.id);
-        if (create_ongoing_data.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
-            return await interaction.editReply('創建行進資料時發生錯誤');
+        if (create_ongoing_data.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
+            shortcut_1.core.critical_logger.error({
+                message: '[BOUNTY] 創建遊玩中資料時發生錯誤',
+                metadata: {
+                    player_id: interaction.user.id,
+                    error_code: shortcut_1.db.StatusCode.WRITE_DATA_ERROR
+                }
+            });
+            return await interaction.editReply('創建遊玩中資料時發生錯誤');
+        }
         else if (create_ongoing_data.status == shortcut_1.db.StatusCode.DATA_FOUND && create_ongoing_data.playing) {
             return await interaction.editReply('請專心回答問題');
         }
         try {
-            await (await this.f_platform.start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
-            await (await this.f_platform.confirm_start_button_op.cursor).deleteMany({ user_id: interaction.user.id });
-            await (await this.f_platform.end_button_op.cursor).deleteMany({ user_id: interaction.user.id });
-            await (await this.f_platform.dropdown_op.cursor).deleteMany({ user_id: interaction.user.id });
+            await Promise.all([
+                (await this.f_platform.start_button_op.cursor).deleteMany({ user_id: interaction.user.id }),
+                (await this.f_platform.confirm_start_button_op.cursor).deleteMany({ user_id: interaction.user.id }),
+                (await this.f_platform.end_button_op.cursor).deleteMany({ user_id: interaction.user.id }),
+                (await this.f_platform.dropdown_op.cursor).deleteMany({ user_id: interaction.user.id })
+            ]);
         }
         catch (e) { }
         let stamina_consume_type;
@@ -87,7 +97,13 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
             });
         }
         catch (err) {
-            console.log(err);
+            shortcut_1.core.critical_logger.error({
+                message: '[Bounty] 私訊問題資訊時發生錯誤',
+                metadata: {
+                    player_id: interaction.user.id,
+                    error: err
+                }
+            });
             return await interaction.followUp({
                 content: '❗ 傳送問題資訊錯誤，請確認你是否有開啟私訊權限',
                 ephemeral: true

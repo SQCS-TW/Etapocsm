@@ -51,7 +51,15 @@ export class EndBountyManager extends core.BaseManager {
             const stop_answering_time = Date.now();
 
             const delete_result = await (await this.f_platform.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-            if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+            if (!delete_result.ok) {
+                core.critical_logger.error({
+                    message: '[Bounty] 刪除玩家的 end-bounty 按鈕驗證資料時發生錯誤',
+                    metadata: {
+                        player_id: interaction.user.id
+                    }
+                });
+                return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+            }
 
             const end_btn_data = delete_result.value;
             if (!end_btn_data) return await interaction.editReply('抱歉，我們找不到驗證資料...');
@@ -62,7 +70,16 @@ export class EndBountyManager extends core.BaseManager {
                 }
             };
             const update_result = await (await this.f_platform.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
-            if (!update_result.ok) return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
+            if (!update_result.ok) {
+                core.critical_logger.error({
+                    message: '[Bounty] 更新玩家進行中狀態時發生錯誤了',
+                    metadata: {
+                        player_id: interaction.user.id,
+                        new_status: false
+                    }
+                });
+                return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
+            }
             
             // disabled the end-bounty-btn in qns-pic-msg
             const new_button = await core.discord.getDisabledButton(default_end_button);
@@ -84,7 +101,16 @@ export class EndBountyManager extends core.BaseManager {
                 ans_duration: stop_answering_time - end_btn_data.time.start
             };
             const create_result = await (await this.f_platform.dropdown_op.cursor).insertOne(dp_data);
-            if (!create_result.acknowledged) return await interaction.user.send('創建驗證資訊時發生錯誤...');
+            if (!create_result.acknowledged) {
+                core.critical_logger.error({
+                    message: '[Bounty] 創建玩家 dp_data 資料時發生錯誤',
+                    metadata: {
+                        player_id: interaction.user.id,
+                        dp_data: dp_data
+                    }
+                });
+                return await interaction.user.send('創建驗證資訊時發生錯誤...');
+            }
 
             await interaction.editReply({
                 content: '請選擇答案（限時30秒）',
@@ -112,7 +138,15 @@ export class EndBountyManager extends core.BaseManager {
                 await interaction.message.delete();
 
                 const delete_result = await (await this.f_platform.end_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-                if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+                if (!delete_result.ok) {
+                    core.critical_logger.error({
+                        message: '[Bounty] 刪除玩家 end-btn 驗證資訊時發生錯誤',
+                        metadata: {
+                            player_id: interaction.user.id
+                        }
+                    });
+                    return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+                }
 
                 const update_end_bounty = {
                     $set: {
@@ -120,8 +154,23 @@ export class EndBountyManager extends core.BaseManager {
                     }
                 };
                 const update_result = await (await this.f_platform.ongoing_op.cursor).findOneAndUpdate({ user_id: interaction.user.id }, update_end_bounty);
-                if (!update_result.ok) return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
+                if (!update_result.ok) {
+                    core.critical_logger.error({
+                        message: '[Bounty] 更新玩家進行中狀態時發生錯誤了',
+                        metadata: {
+                            player_id: interaction.user.id,
+                            new_status: false
+                        }
+                    });
+                    return await interaction.editReply('抱歉，設定懸賞狀態時發生錯誤了...');
+                }
 
+                core.normal_logger.info({
+                    message: '[Bounty] 玩家放棄答題',
+                    metadata: {
+                        player_id: interaction.user.id
+                    }
+                });
                 return await interaction.editReply('✅ 已放棄答題');
             } else await interaction.editReply('Message not cached!');
         }

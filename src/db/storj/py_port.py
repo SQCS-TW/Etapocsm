@@ -24,8 +24,8 @@ if mode == 'download_file':
         )
         print('true')
 
-    except:
-        print('false')
+    except Exception as e:
+        print(f'false, ${e}')
 
 elif mode == 'upload_file':
     bucket_name = sys.argv[2]

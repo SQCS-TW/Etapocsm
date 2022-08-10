@@ -40,8 +40,15 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             return;
         await interaction.deferReply();
         const delete_result = await (await this.f_platform.dropdown_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-        if (!delete_result.ok)
+        if (!delete_result.ok) {
+            shortcut_1.core.critical_logger.error({
+                message: '[Bounty] 刪除玩家 ans-dp 驗證資訊時發生錯誤',
+                metadata: {
+                    player_id: interaction.user.id
+                }
+            });
             return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+        }
         const dp_data = delete_result.value;
         if (!dp_data)
             return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
@@ -59,20 +66,53 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             .setTitle(`🚩｜你選擇了 ${interaction.values[0]}`)
             .setColor('#ffffff');
         const correct = this.isUserCorrect(interaction, qns_data.correct_ans);
-        if (correct)
+        if (correct) {
+            shortcut_1.core.normal_logger.info({
+                message: '[Bounty] 玩家答題正確',
+                metadata: {
+                    player_id: interaction.user.id,
+                    diffi: qns_data.difficulty,
+                    number: qns_data.number
+                }
+            });
             bounty_result_embed.setDescription('恭喜，這是正確答案！');
-        else
+        }
+        else {
+            shortcut_1.core.normal_logger.info({
+                message: '[Bounty] 玩家答題錯誤',
+                metadata: {
+                    player_id: interaction.user.id,
+                    diffi: qns_data.difficulty,
+                    number: qns_data.number
+                }
+            });
             bounty_result_embed.setDescription('可惜，這不是正確答案');
+        }
         const give_result = await this.giveExp(correct, thread_data.curr_diffi, interaction.user.id);
         if (give_result.status === shortcut_1.db.StatusCode.WRITE_DATA_SUCCESS)
             bounty_result_embed.addField('✨ 獲得經驗值', `**${give_result.delta_exp}** exp`, true);
-        else
+        else {
+            shortcut_1.core.critical_logger.error({
+                message: '[Bounty] 給玩家經驗值時發生錯誤了',
+                metadata: {
+                    player_id: interaction.user.id,
+                    delta_exp: give_result.delta_exp
+                }
+            });
             await interaction.channel.send(`給你 ${give_result.delta_exp} exp 時發生錯誤了！`);
+        }
         let new_thread = undefined;
         if (correct) {
             const result = await this.updateQnsThread(interaction.user.id, ongoing_data.qns_thread, thread_data.curr_diffi);
-            if (result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+            if (result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR) {
+                shortcut_1.core.critical_logger.error({
+                    message: '[Bounty] 更新玩家問題串時發生錯誤',
+                    metadata: {
+                        player_id: interaction.user.id
+                    }
+                });
                 await interaction.channel.send('更新問題串時發生錯誤');
+            }
             new_thread = result.new_thread;
         }
         if (correct) {
@@ -89,8 +129,15 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             embeds: [bounty_result_embed]
         });
         const stat_result = await this.updateStatistics(interaction.user.id, correct, thread_data.curr_diffi, thread_data.curr_qns_number, new_thread);
-        if (!stat_result)
+        if (!stat_result) {
+            shortcut_1.core.critical_logger.error({
+                message: '[Bounty] 更新玩家統計數據時發生錯誤了',
+                metadata: {
+                    player_id: interaction.user.id
+                }
+            });
             return await interaction.channel.send('更新統計資料時發生錯誤');
+        }
     }
     async getOrSetQnsCache(diffi, qns_number) {
         const key = `bounty-qns-data?diffi=${diffi}&number=${qns_number}`;
@@ -117,7 +164,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             delta_exp = 2;
         else
             delta_exp = this.qns_diffi_exp[diffi];
-        delta_exp *= exp_multiplier;
+        delta_exp = Math.round(delta_exp * exp_multiplier);
         const execute = {
             $inc: {
                 exp: delta_exp
@@ -222,15 +269,19 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
             };
         }
         else {
+            const user_lvl_main_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
+            const exp_multiplier = user_lvl_main_acc.exp_multiplier;
+            const convert_exp = 10;
+            const delta_exp = Math.round(convert_exp * exp_multiplier);
             const execute = {
                 $inc: {
-                    exp: 10
+                    exp: delta_exp
                 }
             };
             await (await this.f_platform.account_op.cursor).updateOne({ user_id: interaction.user.id }, execute);
             return {
                 result: 'overflow',
-                overflow_exp: 10
+                overflow_exp: delta_exp
             };
         }
     }

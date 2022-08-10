@@ -36,6 +36,12 @@ export class BountyAccountManager extends core.BaseManager {
                 if (create_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.editReply('建立帳號時發生錯誤了！');
                 else {
                     await this.f_platform.mainlvl_acc_op.createUserMainAccount(interaction.user.id);
+                    core.normal_logger.info({
+                        message: '[Bounty] 成員帳號建立成功',
+                        metadata: {
+                            player_id: interaction.user.id
+                        }
+                    });
                     return await interaction.editReply('帳號建立成功！');
                 }
             }

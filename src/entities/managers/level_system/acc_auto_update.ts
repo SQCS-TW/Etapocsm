@@ -28,7 +28,10 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         });
 
         this.f_platform.f_bot.on('rateLimit', async (rateLimitData) => {
-            core.logger.warn(`RATE LIMITED: ${rateLimitData}`);
+            core.critical_logger.warn({
+                message: '[Lvl-sys] rate-limited!',
+                metadata: rateLimitData
+            });
         });
     }
 
@@ -109,10 +112,28 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                 notif_embed = new MessageEmbed()
                     .setTitle('📈｜你升級了！')
                     .setDescription(`LV.**${old_lvl}** -> LV.**${new_lvl}**`);
+
+                core.normal_logger.info({
+                    message: '[Lvl-sys] 成員升級了',
+                    metadata: {
+                        member_name: member.displayName,
+                        old_lvl: old_lvl,
+                        new_lvl: new_lvl
+                    }
+                });
             } else {
                 notif_embed = new MessageEmbed()
                     .setTitle('📉｜你降級了...')
                     .setDescription(`LV.**${old_lvl}** -> LV.**${new_lvl}**`);
+
+                core.normal_logger.info({
+                    message: '[Lvl-sys] 成員降級了',
+                    metadata: {
+                        member_name: member.displayName,
+                        old_lvl: old_lvl,
+                        new_lvl: new_lvl
+                    }
+                });
             }
             notif_embed.setColor('#ffffff');
 
@@ -157,8 +178,17 @@ export class AutoUpdateAccountManager extends core.BaseManager {
                 }
             }
             await (await this.f_platform.mainlvl_acc_op.cursor).updateOne({ user_id: user_mainlvl_data.user_id }, update_curr_role_id);
-            core.logger.info(`role edit: ${member.displayName}; old: ${old_role.name}, new: ${new_role.name}`);
 
+            core.normal_logger.info({
+                message: '[Lvl-sys] 成員身分組已更新',
+                metadata: {
+                    member_name: member.displayName,
+                    old_role_name: old_role.name,
+                    new_role_name: new_role.name
+                }
+            });
+
+            // avoid rate limit
             await core.sleep(4);
         }
 

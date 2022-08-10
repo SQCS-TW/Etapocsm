@@ -1,7 +1,7 @@
 import { Mongo } from '../../db/reglist';
 import { Collection } from 'mongodb';
 import { StatusCode } from '../../db/reglist';
-import { logger } from '../logger';
+import { critical_logger } from '../logger';
 
 
 export type OperatorResponse = {
@@ -64,6 +64,11 @@ export class BaseMongoOperator {
                 status: StatusCode.WRITE_DATA_ERROR,
                 message: ':x:**【操作錯誤】**資料新增錯誤'
             };
-        } catch (err) { logger.error(err); }
+        } catch (err: any) {
+            critical_logger.error({
+                message: err.message,
+                metadata: err
+            });
+        }
     }
 }

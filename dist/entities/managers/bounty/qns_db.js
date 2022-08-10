@@ -21,7 +21,6 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                 return;
             let role_found = false;
             const roles = interaction.member.roles;
-            shortcut_1.core.logger.debug(typeof roles);
             if (roles instanceof (Array)) {
                 roles.forEach(role => {
                     if (['教學組', '總召'].includes(role))
@@ -231,7 +230,6 @@ const CBQ_functions = {
                 prefix: `${diffi}/`,
                 suffixes: '.png'
             });
-            shortcut_1.core.logger.debug(`file names: ${file_names}`);
             let max_number = undefined;
             let skipped_numbers = undefined;
             if (file_names.length === 1 && file_names[0] === '') {

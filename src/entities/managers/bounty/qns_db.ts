@@ -26,7 +26,6 @@ export class BountyQnsDBManager extends core.BaseManager {
 
             let role_found = false;
             const roles = interaction.member.roles;
-            core.logger.debug(typeof roles);
             if (roles instanceof Array<string>) {
                 roles.forEach(role => {
                     if (['教學組', '總召'].includes(role)) role_found = true;
@@ -273,8 +272,6 @@ const CBQ_functions = {
                 prefix: `${diffi}/`,
                 suffixes: '.png'
             });
-
-            core.logger.debug(`file names: ${file_names}`);
 
             let max_number = undefined;
             let skipped_numbers = undefined;

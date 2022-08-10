@@ -77,9 +77,12 @@ class EndBountySessionManager extends session.SessionManager {
                 id: data.user_id,
                 expired_date: data.time.end
             });
-            shortcut_1.core.logger.debug('cache pushed', {
-                id: data.user_id,
-                expired_date: data.time.end
+            shortcut_1.core.normal_logger.debug({
+                message: '[Bounty] 成員答題時段快取已建立',
+                metadata: {
+                    id: data.user_id,
+                    expired_date: data.time.end
+                }
             });
         }
         cache_data.sort((a, b) => a.expired_date - b.expired_date);
@@ -87,13 +90,13 @@ class EndBountySessionManager extends session.SessionManager {
         return self_routine(10);
     }
     async doAfterExpired(session_data) {
-        const acc_data = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: session_data.id });
+        const ongoing_data = await (await this.f_platform.ongoing_op.cursor).findOne({ user_id: session_data.id });
         try {
-            const channel = await this.f_platform.f_bot.channels.fetch(acc_data.dm_channel_id);
+            const channel = await this.f_platform.f_bot.channels.fetch(ongoing_data.dm_channel_id);
             if (!(channel instanceof discord_js_1.DMChannel))
                 return;
             const new_button = await shortcut_1.core.discord.getDisabledButton(components_1.default_end_button);
-            const msg = await channel.messages.fetch(acc_data.qns_msg_id);
+            const msg = await channel.messages.fetch(ongoing_data.qns_msg_id);
             await msg.edit({
                 content: '已超過可回答時間',
                 files: [],
@@ -103,7 +106,12 @@ class EndBountySessionManager extends session.SessionManager {
             });
         }
         catch {
-            shortcut_1.core.logger.error(`err deleting msg ${acc_data.qns_msg_id}`);
+            shortcut_1.core.critical_logger.error({
+                message: '[Bounty] 刪除用戶進行中的問題訊息時發生錯誤了',
+                metadata: {
+                    ongoing_data: ongoing_data
+                }
+            });
         }
         const status_execute = {
             $set: {

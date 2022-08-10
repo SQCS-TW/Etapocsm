@@ -124,7 +124,15 @@ export class ConfirmStartBountyManager extends core.BaseManager {
         await interaction.deferReply();
 
         const delete_result = await (await this.f_platform.confirm_start_button_op.cursor).findOneAndDelete({ user_id: interaction.user.id });
-        if (!delete_result.ok) return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+        if (!delete_result.ok) {
+            core.critical_logger.error({
+                message: '[Bounty] 刪除玩家的 confirm-start-bounty 按鈕驗證資訊時發生錯誤',
+                metadata: {
+                    player_id: interaction.user.id
+                }
+            });
+            return await interaction.editReply('刪除驗證資訊時發生錯誤！');
+        }
         
         const user_btn_data = delete_result.value;
         if (!user_btn_data) return await interaction.editReply('抱歉，我們找不到你的驗證資訊...');
@@ -147,11 +155,29 @@ export class ConfirmStartBountyManager extends core.BaseManager {
             }
         }
         const takeaway_result = await (await this.f_platform.ongoing_op.cursor).updateOne({ user_id: interaction.user.id }, takeaway_stamina);
-        if (!takeaway_result.acknowledged) return await interaction.editReply('抱歉，消耗體力時發生錯誤了...');
+        if (!takeaway_result.acknowledged) {
+            core.critical_logger.error({
+                message: '[Bounty] 更新玩家體力時發生錯誤',
+                metadata: {
+                    player_id: interaction.user.id,
+                    execute: takeaway_stamina
+                }
+            });
+            return await interaction.editReply('抱歉，消耗體力時發生錯誤了...');
+        }
 
         // activate user ongoing status
         const update_result = await this.f_platform.ongoing_op.setStatus(interaction.user.id, true);
-        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
+        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) {
+            core.critical_logger.error({
+                message: '[Bounty] 更新玩家進行中狀態時發生錯誤了',
+                metadata: {
+                    player_id: interaction.user.id,
+                    new_status: true
+                }
+            });
+            return await interaction.user.send('抱歉，開始懸賞時發生錯誤了...');
+        }
         //
 
         const qns_diffi = user_btn_data.qns_info.difficulty;
@@ -206,7 +232,15 @@ export class ConfirmStartBountyManager extends core.BaseManager {
             }
         };
         const create_result = await (await this.f_platform.end_button_op.cursor).insertOne(end_btn_info);
-        if (!create_result.acknowledged) return await interaction.user.send('創建驗證資訊時發生錯誤...');
+        if (!create_result.acknowledged) {
+            core.critical_logger.error({
+                message: '[Bounty] 創建玩家 end_btn_info 時發生錯誤',
+                metadata: {
+                    end_btn_info: end_btn_info
+                }
+            });
+            return await interaction.user.send('創建驗證資訊時發生錯誤...');
+        }
         //
 
         const qns_msg = await interaction.user.send({

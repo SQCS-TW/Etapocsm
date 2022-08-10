@@ -7,6 +7,13 @@ async function storjDownload(options) {
     const command = `python ./src/db/storj/py_port.py download_file ${options.bucket_name} ${options.local_file_name} ${options.db_file_name}`;
     let download_result = (0, child_process_1.execSync)(command);
     download_result = download_result.toString("utf-8");
+    reglist_1.normal_logger.info({
+        message: '[Storj ts-port] download-result',
+        metadata: {
+            dl_result: download_result,
+            cmd: command
+        }
+    });
     download_result = (download_result.trim() === 'true');
     return download_result;
 }
@@ -15,7 +22,13 @@ async function storjUpload(options) {
     const command = `python ./src/db/storj/py_port.py upload_file ${options.bucket_name} ${options.local_file_name} ${options.db_file_name}`;
     let upload_result = (0, child_process_1.execSync)(command);
     upload_result = upload_result.toString("utf-8");
-    reglist_1.logger.debug(`upload result: ${upload_result}`);
+    reglist_1.normal_logger.info({
+        message: '[Storj ts-port] upload-result',
+        metadata: {
+            ul_result: upload_result,
+            cmd: command
+        }
+    });
     upload_result = (upload_result.trim() === 'true');
     return upload_result;
 }
@@ -50,7 +63,13 @@ async function storjDeleteFile(options) {
     const command = `python ./src/db/storj/py_port.py delete_file ${options.bucket_name} ${options.delete_path}`;
     let delete_result = (0, child_process_1.execSync)(command);
     delete_result = delete_result.toString("utf-8");
-    reglist_1.logger.debug(`delete result: ${delete_result}`);
+    reglist_1.normal_logger.info({
+        message: '[Storj ts-port] delete-result',
+        metadata: {
+            del_result: delete_result,
+            cmd: command
+        }
+    });
     delete_result = (delete_result.trim() === 'true');
     return delete_result;
 }
