@@ -73,7 +73,7 @@ class AutoManager extends shortcut_1.core.BaseManager {
     }
     async refreshOngoing() {
         await (await this.f_platform.ongoing_op.cursor).deleteMany({});
-        shortcut_1.core.normal_logger.info('[Bounty] 問題串已刷新（成員進行中資料已刪除˙）');
+        shortcut_1.core.normal_logger.info('[Bounty] 問題串已刷新（成員進行中資料已刪除）');
     }
 }
 exports.AutoManager = AutoManager;

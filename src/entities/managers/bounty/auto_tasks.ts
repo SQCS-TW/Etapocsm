@@ -92,6 +92,6 @@ export class AutoManager extends core.BaseManager {
 
     private async refreshOngoing() {
         await (await this.f_platform.ongoing_op.cursor).deleteMany({});
-        core.normal_logger.info('[Bounty] 問題串已刷新（成員進行中資料已刪除˙）');
+        core.normal_logger.info('[Bounty] 問題串已刷新（成員進行中資料已刪除）');
     }
 }

@@ -10,6 +10,8 @@ const reglist_2 = require("./entities/platforms/reglist");
 class Etapocsm extends discord_js_1.Client {
     constructor(options) {
         super(options);
+        this.BOT_TOKEN = process.env.BOT_TOKEN;
+        this.BOT_ID = process.env.BOT_ID;
         this.platforms = [
             new reglist_2.ChatExpPlatform(this),
             new reglist_2.BountyPlatform(this),
@@ -27,6 +29,15 @@ class Etapocsm extends discord_js_1.Client {
         });
     }
     async registerSlcmd(guild_id) {
+        const slcmd_register_list = await this.findSlcmdOfCertainGuild(guild_id);
+        const rest = new rest_1.REST({ version: '9' }).setToken(this.BOT_TOKEN);
+        await rest.put(v9_1.Routes.applicationGuildCommands(this.BOT_ID, guild_id), { body: [] });
+        if (slcmd_register_list.length !== 0) {
+            await rest.put(v9_1.Routes.applicationGuildCommands(this.BOT_ID, guild_id), { body: slcmd_register_list });
+            reglist_1.normal_logger.info(`Slcmd of guild ${guild_id} registered!`);
+        }
+    }
+    async findSlcmdOfCertainGuild(guild_id) {
         const slcmd_register_list = [];
         await shortcut_1.core.asyncForEach(this.platforms, async (pf) => {
             await shortcut_1.core.asyncForEach(pf.managers, async (mng) => {
@@ -40,14 +51,7 @@ class Etapocsm extends discord_js_1.Client {
                 });
             });
         });
-        const BOT_TOKEN = process.env.BOT_TOKEN;
-        const BOT_ID = process.env.BOT_ID;
-        const rest = new rest_1.REST({ version: '9' }).setToken(BOT_TOKEN);
-        await rest.put(v9_1.Routes.applicationGuildCommands(BOT_ID, guild_id), { body: [] });
-        if (slcmd_register_list.length !== 0) {
-            await rest.put(v9_1.Routes.applicationGuildCommands(BOT_ID, guild_id), { body: slcmd_register_list });
-            reglist_1.normal_logger.info(`Slcmd of guild ${guild_id} registered!`);
-        }
+        return slcmd_register_list;
     }
 }
 exports.Etapocsm = Etapocsm;

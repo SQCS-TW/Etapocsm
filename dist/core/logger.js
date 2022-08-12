@@ -7,8 +7,7 @@ const { combine, label, printf } = winston_1.format;
 const onlyLogCertainLevels = (0, winston_1.format)((info, target_levels) => {
     if (target_levels.includes(info.level))
         return info;
-    else
-        return false;
+    return false;
 });
 const myFormat = printf(({ level, label, message, metadata }) => {
     let output = `${(0, utils_1.localizeDatetime)()} [${label}] ${level}: ${message}\n`;

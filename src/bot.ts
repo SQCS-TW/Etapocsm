@@ -15,6 +15,9 @@ import {
 export class Etapocsm extends Client {
     private platforms: Array<BasePlatform>;
 
+    private readonly BOT_TOKEN = process.env.BOT_TOKEN;
+    private readonly BOT_ID = process.env.BOT_ID;
+
     constructor(options: ClientOptions) {
         super(options);
 
@@ -37,6 +40,17 @@ export class Etapocsm extends Client {
     }
 
     public async registerSlcmd(guild_id: string) {
+        const slcmd_register_list = await this.findSlcmdOfCertainGuild(guild_id);
+        const rest = new REST({ version: '9' }).setToken(this.BOT_TOKEN);
+
+        await rest.put(Routes.applicationGuildCommands(this.BOT_ID, guild_id), { body: [] }) // reset slcmd
+        if (slcmd_register_list.length !== 0) {
+            await rest.put(Routes.applicationGuildCommands(this.BOT_ID, guild_id), { body: slcmd_register_list })
+            normal_logger.info(`Slcmd of guild ${guild_id} registered!`);
+        }
+    }
+
+    private async findSlcmdOfCertainGuild(guild_id: string) {
         const slcmd_register_list = [];
 
         await core.asyncForEach(this.platforms, async (pf: any) => {
@@ -51,15 +65,6 @@ export class Etapocsm extends Client {
             });
         });
 
-        const BOT_TOKEN = process.env.BOT_TOKEN;
-        const BOT_ID = process.env.BOT_ID;
-
-        const rest = new REST({ version: '9' }).setToken(BOT_TOKEN);
-
-        await rest.put(Routes.applicationGuildCommands(BOT_ID, guild_id), { body: [] }) // reset slcmd
-        if (slcmd_register_list.length !== 0) {
-            await rest.put(Routes.applicationGuildCommands(BOT_ID, guild_id), { body: slcmd_register_list })
-            normal_logger.info(`Slcmd of guild ${guild_id} registered!`);
-        }
+        return slcmd_register_list;
     }
 }

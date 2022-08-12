@@ -98,7 +98,7 @@ export class StartBountyManager extends core.BaseManager {
 
         // ==== modify embed -> set difficulty and qns_number
         const new_embed = await this.getStartBountyEmbed(qns_data.curr_diffi, qns_data.curr_qns_number, stamina_consume_type);
-        
+
         let msg: Message;
         try {
             msg = await interaction.user.send('等待驗證資訊...');
@@ -165,11 +165,10 @@ export class StartBountyManager extends core.BaseManager {
 
     private isNowInBountyWeeklyTimeInterval() {
         const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
-        
-        const day = curr_time.getDay() % 7;
         const hour = curr_time.getHours();
 
-        if ((1 <= day && day <= 6) || (day === 0 && hour >= 7) || (day === 6 && hour <= 22)) return true;
+        // default 7am to 10pm -> 7.00 ~ 9.59
+        if (7 <= hour && hour <= 9) return true;
         return false;
     }
 

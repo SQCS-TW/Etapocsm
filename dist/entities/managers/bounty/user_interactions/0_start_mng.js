@@ -131,9 +131,8 @@ class StartBountyManager extends shortcut_1.core.BaseManager {
     }
     isNowInBountyWeeklyTimeInterval() {
         const curr_time = (0, date_fns_tz_1.utcToZonedTime)(Date.now(), 'Asia/Taipei');
-        const day = curr_time.getDay() % 7;
         const hour = curr_time.getHours();
-        if ((1 <= day && day <= 6) || (day === 0 && hour >= 7) || (day === 6 && hour <= 22))
+        if (7 <= hour && hour <= 9)
             return true;
         return false;
     }

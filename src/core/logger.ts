@@ -5,7 +5,7 @@ const { combine, label, printf } = format;
 
 const onlyLogCertainLevels = format((info, target_levels) => {
     if (target_levels.includes(info.level)) return info;
-    else return false;
+    return false;
 });
 
 const myFormat = printf(({ level, label, message, metadata }) => {
