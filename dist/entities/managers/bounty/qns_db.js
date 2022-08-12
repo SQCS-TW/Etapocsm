@@ -36,6 +36,10 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
             if (interaction.isCommand())
                 await this.slcmdHandler(interaction);
         });
+        this.f_platform.f_bot.on('messageCreate', async (msg) => {
+            if (msg.member?.permissions?.any('ADMINISTRATOR'))
+                await this.messageHandler(msg);
+        });
     }
     async slcmdHandler(interaction) {
         switch (interaction.commandName) {
@@ -182,6 +186,8 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
                     await interaction.followUp('刪除成功！');
             }
         }
+    }
+    async messageHandler(msg) {
     }
 }
 exports.BountyQnsDBManager = BountyQnsDBManager;

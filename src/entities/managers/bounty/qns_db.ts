@@ -1,4 +1,4 @@
-import { CommandInteraction, GuildMemberRoleManager } from 'discord.js';
+import { CommandInteraction, GuildMemberRoleManager, Message } from 'discord.js';
 import { REGISTER_LIST } from './components/qns_db';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
@@ -7,7 +7,7 @@ import { BountyPlatform } from '../../platforms/bounty';
 
 export class BountyQnsDBManager extends core.BaseManager {
     public f_platform: BountyPlatform;
-    
+
     constructor(f_platform: BountyPlatform) {
         super();
         this.f_platform = f_platform;
@@ -37,6 +37,10 @@ export class BountyQnsDBManager extends core.BaseManager {
 
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });
+
+        this.f_platform.f_bot.on('messageCreate', async (msg: Message) => {
+            if (msg.member?.permissions?.any('ADMINISTRATOR')) await this.messageHandler(msg);
+        })
     }
 
     private async slcmdHandler(interaction: CommandInteraction) {
@@ -218,6 +222,11 @@ export class BountyQnsDBManager extends core.BaseManager {
                 else await interaction.followUp('刪除成功！');
             }
         }
+    }
+
+    private async messageHandler(msg: Message) {
+        // switch (msg.content) {
+        // }
     }
 }
 
