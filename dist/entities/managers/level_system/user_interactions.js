@@ -59,8 +59,20 @@ class UserInteractionsManager extends shortcut_1.core.BaseManager {
             const server_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).find().sort({ total_exp: -1 }).limit(10).toArray();
             const user_data_beautify = [];
             await shortcut_1.core.asyncForEach(server_lvl_data, async (user_data) => {
-                const member = await interaction.guild.members.fetch(user_data.user_id);
-                user_data_beautify.push(`**${member.displayName}**: **${user_data.total_exp}** exp, LV.**${user_data.level}**`);
+                try {
+                    const member = await interaction.guild.members.fetch(user_data.user_id);
+                    user_data_beautify.push(`**${member.displayName}**: **${user_data.total_exp}** exp, LV.**${user_data.level}**`);
+                }
+                catch (e) {
+                    user_data_beautify.push(`**unknown**: **?** exp, LV.**?**`);
+                    await (await this.f_platform.mainlvl_acc_op.cursor).deleteOne({ user_id: user_data.user_id });
+                    shortcut_1.core.critical_logger.error({
+                        message: '[Lvl-sys] 找不到成員，將刪除其主資料',
+                        metadata: {
+                            member_id: user_data.user_id
+                        }
+                    });
+                }
             });
             const rank_embed = new discord_js_1.MessageEmbed()
                 .setTitle('🥇｜經驗前10排行榜')
