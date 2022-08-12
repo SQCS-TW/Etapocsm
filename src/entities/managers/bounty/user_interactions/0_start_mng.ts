@@ -167,8 +167,8 @@ export class StartBountyManager extends core.BaseManager {
         const curr_time = utcToZonedTime(Date.now(), 'Asia/Taipei');
         const hour = curr_time.getHours();
 
-        // default 7am to 10pm -> 7.00 ~ 9.59
-        if (7 <= hour && hour <= 9) return true;
+        // default 7am to 10pm -> 7.00 ~ 21.59
+        if (7 <= hour && hour <= 21) return true;
         return false;
     }
 
