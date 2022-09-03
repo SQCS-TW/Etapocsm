@@ -1,7 +1,8 @@
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, Message } from 'discord.js';
 import { REGISTER_LIST } from './components/user_mani';
 import { core } from '../../shortcut';
 import { BountyPlatform } from '../../platforms/bounty';
+import fs from 'fs';
 
 
 export class BountyUserManiManager extends core.BaseManager {
@@ -25,6 +26,54 @@ export class BountyUserManiManager extends core.BaseManager {
             if (!(this.checkPerm(interaction, 'ADMINISTRATOR'))) return;
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });
+
+        this.f_platform.f_bot.on('messageCreate', async (msg) => {
+            if (msg.member?.permissions?.any('ADMINISTRATOR')) await this.messageHandler(msg);
+        });
+    }
+
+    private async messageHandler(msg: Message) {
+        if (msg.content === 'e:GENERATE-BOUNTY-POLL-DATA') {
+            const poll_requirements = {
+                level: {
+                    $gte: 3
+                }
+            };
+
+            const players_data = await (await this.f_platform.mainlvl_acc_op.cursor).find(poll_requirements).sort({ total_exp: -1 }).toArray();
+            const poll_data: string[] = [];
+
+            for (let i = 0, ordinal_num = 1; i < players_data.length; i++) {
+                const player_data = players_data[i];
+
+                const bounty_main_acc = await (await this.f_platform.account_op.cursor).findOne({ user_id: player_data.user_id });
+                if (!bounty_main_acc) continue;
+
+                const answered_count = bounty_main_acc.qns_record.answered_qns_count.easy
+                    + bounty_main_acc.qns_record.answered_qns_count.medium
+                    + bounty_main_acc.qns_record.answered_qns_count.hard;
+
+                if (answered_count === 0) continue;
+
+                if (ordinal_num <= 10) {
+                    // use leq for "1 + extra" ticket
+                    for (let j = 0; j <= 11 - ordinal_num; j++) poll_data.push(`${player_data.user_id}_${j}`);
+                    ordinal_num++;
+                } else {
+                    poll_data.push(`${player_data.user_id}`);
+                }
+            }
+
+            const buffer_file_path = './buffer/lottery.txt';
+            fs.writeFileSync(buffer_file_path, poll_data.join("\n"));
+
+            await msg.channel.send({
+                content: 'fin.',
+                files: [buffer_file_path]
+            });
+
+            fs.unlinkSync(buffer_file_path);
+        }
     }
 
     private async slcmdHandler(interaction: CommandInteraction) {
