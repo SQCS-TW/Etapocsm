@@ -57,10 +57,10 @@ export class BountyUserManiManager extends core.BaseManager {
 
                 if (ordinal_num <= 10) {
                     // use leq for "1 + extra" ticket
-                    for (let j = 0; j <= 11 - ordinal_num; j++) poll_data.push(`${player_data.user_id}_${j}`);
+                    for (let j = 0; j <= 11 - ordinal_num; j++) poll_data.push(`${ordinal_num}-${player_data.user_id}_${j}`);
                     ordinal_num++;
                 } else {
-                    poll_data.push(`${player_data.user_id}`);
+                    poll_data.push(`${ordinal_num}-${player_data.user_id}`);
                 }
             }
 

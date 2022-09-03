@@ -52,11 +52,11 @@ class BountyUserManiManager extends shortcut_1.core.BaseManager {
                     continue;
                 if (ordinal_num <= 10) {
                     for (let j = 0; j <= 11 - ordinal_num; j++)
-                        poll_data.push(`${player_data.user_id}_${j}`);
+                        poll_data.push(`${ordinal_num}-${player_data.user_id}_${j}`);
                     ordinal_num++;
                 }
                 else {
-                    poll_data.push(`${player_data.user_id}`);
+                    poll_data.push(`${ordinal_num}-${player_data.user_id}`);
                 }
             }
             const buffer_file_path = './buffer/lottery.txt';
