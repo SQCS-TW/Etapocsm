@@ -40,7 +40,7 @@ class UserInteractionsManager extends shortcut_1.core.BaseManager {
             }
             let exp_to_next_level;
             if (user_data.level !== 60)
-                exp_to_next_level = this.lvl_exp_dict[user_data.level + 1] - user_data.total_exp;
+                exp_to_next_level = this.lvl_exp_dict[user_data.level] - user_data.total_exp;
             else
                 exp_to_next_level = undefined;
             const resp_embed = new discord_js_1.MessageEmbed()
