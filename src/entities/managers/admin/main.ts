@@ -5,6 +5,7 @@ import { AdministratorPlatform } from '../../platforms/admin';
 
 export class AdministratorManager extends core.BaseManager {
     public f_platform: AdministratorPlatform;
+    
     constructor(f_platform: AdministratorPlatform) {
         super();
         this.f_platform = f_platform;

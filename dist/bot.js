@@ -17,7 +17,8 @@ class Etapocsm extends discord_js_1.Client {
             new reglist_2.BountyPlatform(this),
             new reglist_2.LvlSysPlatform(this),
             new reglist_2.AdministratorPlatform(this),
-            new reglist_2.LogsPlatform(this)
+            new reglist_2.LogsPlatform(this),
+            new reglist_2.AMAPlatform(this)
         ];
         this.setupListener();
     }

@@ -9,7 +9,8 @@ import {
     BountyPlatform,
     LvlSysPlatform,
     AdministratorPlatform,
-    LogsPlatform
+    LogsPlatform,
+    AMAPlatform
 } from './entities/platforms/reglist';
 
 export class Etapocsm extends Client {
@@ -26,7 +27,8 @@ export class Etapocsm extends Client {
             new BountyPlatform(this),
             new LvlSysPlatform(this),
             new AdministratorPlatform(this),
-            new LogsPlatform(this)
+            new LogsPlatform(this),
+            new AMAPlatform(this)
         ];
 
         this.setupListener();
