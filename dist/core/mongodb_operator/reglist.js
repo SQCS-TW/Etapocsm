@@ -20,3 +20,4 @@ __exportStar(require("./bounty/user_account"), exports);
 __exportStar(require("./bounty/user_ongoing_info"), exports);
 __exportStar(require("./chat/account"), exports);
 __exportStar(require("./lvl_sys/account"), exports);
+__exportStar(require("./ama/user_account"), exports);

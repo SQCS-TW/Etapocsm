@@ -7,3 +7,5 @@ export * from './bounty/user_ongoing_info';
 export * from './chat/account';
 
 export * from './lvl_sys/account';
+
+export * from './ama/user_account';

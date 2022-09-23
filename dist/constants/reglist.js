@@ -19,3 +19,4 @@ __exportStar(require("./bounty/user_account"), exports);
 __exportStar(require("./bounty/user_ongoing_data"), exports);
 __exportStar(require("./chat/chat_accounts"), exports);
 __exportStar(require("./level/level_main_account"), exports);
+__exportStar(require("./ama/user_account"), exports);

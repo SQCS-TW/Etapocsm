@@ -1,8 +1,8 @@
-import { core } from '../../shortcut';
+import { core, db } from '../../shortcut';
 import { AMAPlatform } from '../../platforms/ama';
 
 import { SLCMD_REGISTER_LIST, REACTION_EXP_EMBED } from './components';
-import { CommandInteraction, MessageEmbed, MessageReaction, User } from 'discord.js';
+import { CommandInteraction, MessageEmbed, MessageReaction, User, GuildMemberRoleManager } from 'discord.js';
 
 
 export class ReactionExpManager extends core.BaseManager {
@@ -23,6 +23,19 @@ export class ReactionExpManager extends core.BaseManager {
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.user.bot) return;
+
+            // low-leveled code, need to be fixed
+            let role_found = false;
+            const roles = interaction?.member?.roles;
+            if (roles instanceof Array<string>) {
+                roles.forEach(role => {
+                    if (['AMA 講師'].includes(role)) role_found = true;
+                });
+            } else if (roles instanceof GuildMemberRoleManager) {
+                if (roles.cache.some(role => ['AMA 講師'].includes(role.name))) role_found = true;
+            }
+            if (!role_found) return;
+
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });
 
@@ -55,7 +68,7 @@ export class ReactionExpManager extends core.BaseManager {
             participated_users_id: []
         };
 
-        const insert_result = await (await this.f_platform.react_exp_op.cursor).insertOne(reaction_exp_event_data);
+        const insert_result = await (await this.f_platform.react_event_op.cursor).insertOne(reaction_exp_event_data);
         if (!insert_result.acknowledged) return await interaction.editReply('建立活動時發生錯誤...');
         else await interaction.editReply('活動建立成功！');
 
@@ -67,37 +80,40 @@ export class ReactionExpManager extends core.BaseManager {
 
         await core.sleep(31);
         await exp_message.delete();
-        await (await this.f_platform.react_exp_op.cursor).deleteMany({ msg_id: exp_message.id });
+        await (await this.f_platform.react_event_op.cursor).deleteMany({ msg_id: exp_message.id });
     }
 
     private async addReactionExp(messageReaction: MessageReaction, user: User) {
-        const event_data = await (await this.f_platform.react_exp_op.cursor).findOne({ msg_id: messageReaction.message.id });
+        const event_data = await (await this.f_platform.react_event_op.cursor).findOne({ msg_id: messageReaction.message.id });
         if (event_data.participated_users_id.includes(user.id)) try {
             return await user.send('還想重複獲取ama經驗值呀 ><！');
-        } catch { /* ignore */}
+        } catch { /* ignore */ }
 
         const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user.id });
 
         const delta_exp = Math.round(event_data.exp * user_lvl_data.exp_multiplier);
 
-        const update_exp = {
-            $inc: {
-                total_exp: delta_exp
+        const update_result = await this.f_platform.ama_acc_op.addExp(user.id, delta_exp);
+
+        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) core.critical_logger.error({
+            message: `[AMA] ${update_result.message}`,
+            metadata: {
+                player_id: user.id,
+                delta_exp: delta_exp,
+                error_code: db.StatusCode.WRITE_DATA_ERROR
             }
-        };
+        });
 
-        await (await this.f_platform.mainlvl_acc_op.cursor).updateOne({ user_id: user.id }, update_exp);
-
+        try {
+            await user.send(`🥳｜你獲得了 ${delta_exp} 點經驗值`);
+        } catch { /* ignore */ }
+        
         const push_user_into_list = {
             $push: {
                 participated_users_id: user.id
             }
         };
+        await (await this.f_platform.react_event_op.cursor).updateOne({ msg_id: messageReaction.message.id }, push_user_into_list);
 
-        await (await this.f_platform.react_exp_op.cursor).updateOne({ msg_id: messageReaction.message.id }, push_user_into_list);
-
-        try {
-            await user.send(`🥳｜你獲得了 ${delta_exp} 點經驗值`);
-        } catch { /* ignore */ }
     }
 }

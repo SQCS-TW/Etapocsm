@@ -5,3 +5,5 @@ export * from './bounty/user_ongoing_data'
 export * from './chat/chat_accounts';
 
 export * from './level/level_main_account';
+
+export * from './ama/user_account';

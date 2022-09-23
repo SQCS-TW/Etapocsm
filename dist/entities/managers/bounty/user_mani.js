@@ -53,11 +53,11 @@ class BountyUserManiManager extends shortcut_1.core.BaseManager {
                 if (ordinal_num <= 10) {
                     for (let j = 0; j <= 11 - ordinal_num; j++)
                         poll_data.push(`${ordinal_num}-${player_data.user_id}_${j}`);
-                    ordinal_num++;
                 }
                 else {
                     poll_data.push(`${ordinal_num}-${player_data.user_id}`);
                 }
+                ordinal_num++;
             }
             const buffer_file_path = './buffer/lottery.txt';
             fs_1.default.writeFileSync(buffer_file_path, poll_data.join("\n"));

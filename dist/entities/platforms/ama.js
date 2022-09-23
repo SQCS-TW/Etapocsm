@@ -7,9 +7,10 @@ class AMAPlatform extends shortcut_1.core.BasePlatform {
     constructor(f_bot) {
         super(f_bot);
         this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
-        this.react_exp_op = new shortcut_1.core.BaseMongoOperator({
+        this.ama_acc_op = new shortcut_1.core.AMAUserAccountOperator();
+        this.react_event_op = new shortcut_1.core.BaseMongoOperator({
             db: 'AMA',
-            coll: 'ReactionExp'
+            coll: 'ReactionEvent'
         });
         this.managers = [
             new reglist_1.ReactionExpManager(this)

@@ -15,7 +15,6 @@ export const SLCMD_REGISTER_LIST: ApplicationCommandData[] = [
     }
 ];
 
-
 export const REACTION_EXP_EMBED = new MessageEmbed()
     .setTitle('✨｜AMA經驗值掉寶活動')
     .setColor('#ffffff');

@@ -18,6 +18,20 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.user.bot)
                 return;
+            let role_found = false;
+            const roles = interaction.member.roles;
+            if (roles instanceof (Array)) {
+                roles.forEach(role => {
+                    if (['AMA 講師'].includes(role))
+                        role_found = true;
+                });
+            }
+            else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
+                if (roles.cache.some(role => ['AMA 講師'].includes(role.name)))
+                    role_found = true;
+            }
+            if (!role_found)
+                return;
             if (interaction.isCommand())
                 await this.slcmdHandler(interaction);
         });
@@ -46,7 +60,7 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
             exp: exp,
             participated_users_id: []
         };
-        const insert_result = await (await this.f_platform.react_exp_op.cursor).insertOne(reaction_exp_event_data);
+        const insert_result = await (await this.f_platform.react_event_op.cursor).insertOne(reaction_exp_event_data);
         if (!insert_result.acknowledged)
             return await interaction.editReply('建立活動時發生錯誤...');
         else
@@ -58,10 +72,10 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
         await exp_message.react('✋');
         await shortcut_1.core.sleep(31);
         await exp_message.delete();
-        await (await this.f_platform.react_exp_op.cursor).deleteMany({ msg_id: exp_message.id });
+        await (await this.f_platform.react_event_op.cursor).deleteMany({ msg_id: exp_message.id });
     }
     async addReactionExp(messageReaction, user) {
-        const event_data = await (await this.f_platform.react_exp_op.cursor).findOne({ msg_id: messageReaction.message.id });
+        const event_data = await (await this.f_platform.react_event_op.cursor).findOne({ msg_id: messageReaction.message.id });
         if (event_data.participated_users_id.includes(user.id))
             try {
                 return await user.send('還想重複獲取ama經驗值呀 ><！');
@@ -69,22 +83,26 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
             catch { }
         const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user.id });
         const delta_exp = Math.round(event_data.exp * user_lvl_data.exp_multiplier);
-        const update_exp = {
-            $inc: {
-                total_exp: delta_exp
-            }
-        };
-        await (await this.f_platform.mainlvl_acc_op.cursor).updateOne({ user_id: user.id }, update_exp);
+        const update_result = await this.f_platform.ama_acc_op.addExp(user.id, delta_exp);
+        if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
+            shortcut_1.core.critical_logger.error({
+                message: `[AMA] ${update_result.message}`,
+                metadata: {
+                    player_id: user.id,
+                    delta_exp: delta_exp,
+                    error_code: shortcut_1.db.StatusCode.WRITE_DATA_ERROR
+                }
+            });
+        try {
+            await user.send(`🥳｜你獲得了 ${delta_exp} 點經驗值`);
+        }
+        catch { }
         const push_user_into_list = {
             $push: {
                 participated_users_id: user.id
             }
         };
-        await (await this.f_platform.react_exp_op.cursor).updateOne({ msg_id: messageReaction.message.id }, push_user_into_list);
-        try {
-            await user.send(`🥳｜你獲得了 ${delta_exp} 點經驗值`);
-        }
-        catch { }
+        await (await this.f_platform.react_event_op.cursor).updateOne({ msg_id: messageReaction.message.id }, push_user_into_list);
     }
 }
 exports.ReactionExpManager = ReactionExpManager;
