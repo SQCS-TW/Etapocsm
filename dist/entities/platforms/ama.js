@@ -13,7 +13,8 @@ class AMAPlatform extends shortcut_1.core.BasePlatform {
             coll: 'ReactionEvent'
         });
         this.managers = [
-            new reglist_1.ReactionExpManager(this)
+            new reglist_1.ReactionExpManager(this),
+            new reglist_1.ParticipantExpManager(this)
         ];
     }
 }

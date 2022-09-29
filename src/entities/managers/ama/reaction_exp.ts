@@ -2,11 +2,13 @@ import { core, db } from '../../shortcut';
 import { AMAPlatform } from '../../platforms/ama';
 
 import { SLCMD_REGISTER_LIST, REACTION_EXP_EMBED } from './components';
-import { CommandInteraction, MessageEmbed, MessageReaction, User, GuildMemberRoleManager } from 'discord.js';
+import { CommandInteraction, MessageEmbed, MessageReaction, User, GuildMemberRoleManager, StageChannel } from 'discord.js';
 
 
 export class ReactionExpManager extends core.BaseManager {
     public f_platform: AMAPlatform;
+
+    private ama_stage_channel_id = '947878783099224104';
 
     constructor(f_platform: AMAPlatform) {
         super();
@@ -51,20 +53,15 @@ export class ReactionExpManager extends core.BaseManager {
 
         await interaction.deferReply();
 
-        const exp = interaction.options.getInteger('exp');
-        if (exp < 5) return await interaction.editReply('經驗值數值不行小於5！');
-        else if (exp > 10) return await interaction.editReply('經驗值數值不行大於10！');
-
         const end_time = core.discord.getRelativeTimestamp(core.timeAfterSecs(31));
 
         const exp_embed = new MessageEmbed(REACTION_EXP_EMBED)
-            .setDescription(`👉在 ${end_time} 內按下表情符號以獲得 ${exp} 點經驗值！`);
+            .setDescription(`👉在 ${end_time} 內按下表情符號以獲得 5~15 點經驗值！`);
 
         const exp_message = await interaction.channel.send('獲取資料中...');
 
         const reaction_exp_event_data = {
             msg_id: exp_message.id,
-            exp: exp,
             participated_users_id: []
         };
 
@@ -78,24 +75,35 @@ export class ReactionExpManager extends core.BaseManager {
         });
         await exp_message.react('✋');
 
-        await core.sleep(31);
+        await core.sleep(30);
         await exp_message.delete();
         await (await this.f_platform.react_event_op.cursor).deleteMany({ msg_id: exp_message.id });
     }
 
     private async addReactionExp(messageReaction: MessageReaction, user: User) {
+
+        const stage_channel = await this.f_platform.f_bot.channels.fetch(this.ama_stage_channel_id);
+        if (!(stage_channel instanceof StageChannel)) return;
+
+        const members = stage_channel.members;
+
+        if (!members.get(user.id)) try {
+            return await user.send('Error: Invalid operation.');
+        } catch (e) { return; }
+        
         const event_data = await (await this.f_platform.react_event_op.cursor).findOne({ msg_id: messageReaction.message.id });
+        if (!event_data) return;
         if (event_data.participated_users_id.includes(user.id)) try {
             return await user.send('還想重複獲取ama經驗值呀 ><！');
-        } catch { /* ignore */ }
+        } catch { return; }
 
         const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user.id });
-
-        const delta_exp = Math.round(event_data.exp * user_lvl_data.exp_multiplier);
-
+        
+        const random_event_exp = core.getRandomInt(10) + 5;
+        const delta_exp = Math.round(random_event_exp * user_lvl_data.exp_multiplier);
         const update_result = await this.f_platform.ama_acc_op.addExp(user.id, delta_exp);
 
-        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) core.critical_logger.error({
+        if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return core.critical_logger.error({
             message: `[AMA] ${update_result.message}`,
             metadata: {
                 player_id: user.id,
@@ -114,6 +122,5 @@ export class ReactionExpManager extends core.BaseManager {
             }
         };
         await (await this.f_platform.react_event_op.cursor).updateOne({ msg_id: messageReaction.message.id }, push_user_into_list);
-
     }
 }

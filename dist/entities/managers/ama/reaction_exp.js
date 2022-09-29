@@ -7,6 +7,7 @@ const discord_js_1 = require("discord.js");
 class ReactionExpManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super();
+        this.ama_stage_channel_id = '947878783099224104';
         this.f_platform = f_platform;
         this.setupListener();
         this.slcmd_register_options = {
@@ -19,7 +20,7 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
             if (interaction.user.bot)
                 return;
             let role_found = false;
-            const roles = interaction.member.roles;
+            const roles = interaction?.member?.roles;
             if (roles instanceof (Array)) {
                 roles.forEach(role => {
                     if (['AMA 講師'].includes(role))
@@ -46,18 +47,12 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
         if (interaction.commandName !== 'create-ama-reaction-exp-event')
             return;
         await interaction.deferReply();
-        const exp = interaction.options.getInteger('exp');
-        if (exp < 5)
-            return await interaction.editReply('經驗值數值不行小於5！');
-        else if (exp > 10)
-            return await interaction.editReply('經驗值數值不行大於10！');
         const end_time = shortcut_1.core.discord.getRelativeTimestamp(shortcut_1.core.timeAfterSecs(31));
         const exp_embed = new discord_js_1.MessageEmbed(components_1.REACTION_EXP_EMBED)
-            .setDescription(`👉在 ${end_time} 內按下表情符號以獲得 ${exp} 點經驗值！`);
+            .setDescription(`👉在 ${end_time} 內按下表情符號以獲得 5~15 點經驗值！`);
         const exp_message = await interaction.channel.send('獲取資料中...');
         const reaction_exp_event_data = {
             msg_id: exp_message.id,
-            exp: exp,
             participated_users_id: []
         };
         const insert_result = await (await this.f_platform.react_event_op.cursor).insertOne(reaction_exp_event_data);
@@ -70,22 +65,38 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
             embeds: [exp_embed]
         });
         await exp_message.react('✋');
-        await shortcut_1.core.sleep(31);
+        await shortcut_1.core.sleep(30);
         await exp_message.delete();
         await (await this.f_platform.react_event_op.cursor).deleteMany({ msg_id: exp_message.id });
     }
     async addReactionExp(messageReaction, user) {
+        const stage_channel = await this.f_platform.f_bot.channels.fetch(this.ama_stage_channel_id);
+        if (!(stage_channel instanceof discord_js_1.StageChannel))
+            return;
+        const members = stage_channel.members;
+        if (!members.get(user.id))
+            try {
+                return await user.send('Error: Invalid operation.');
+            }
+            catch (e) {
+                return;
+            }
         const event_data = await (await this.f_platform.react_event_op.cursor).findOne({ msg_id: messageReaction.message.id });
+        if (!event_data)
+            return;
         if (event_data.participated_users_id.includes(user.id))
             try {
                 return await user.send('還想重複獲取ama經驗值呀 ><！');
             }
-            catch { }
+            catch {
+                return;
+            }
         const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user.id });
-        const delta_exp = Math.round(event_data.exp * user_lvl_data.exp_multiplier);
+        const random_event_exp = shortcut_1.core.getRandomInt(10) + 5;
+        const delta_exp = Math.round(random_event_exp * user_lvl_data.exp_multiplier);
         const update_result = await this.f_platform.ama_acc_op.addExp(user.id, delta_exp);
         if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
-            shortcut_1.core.critical_logger.error({
+            return shortcut_1.core.critical_logger.error({
                 message: `[AMA] ${update_result.message}`,
                 metadata: {
                     player_id: user.id,

@@ -1,6 +1,6 @@
 import { core } from '../shortcut';
 import { Etapocsm } from '../../bot';
-import { ReactionExpManager } from '../../entities/managers/ama/reglist';
+import { ReactionExpManager, ParticipantExpManager } from '../../entities/managers/ama/reglist';
 
 export class AMAPlatform extends core.BasePlatform {
     public readonly mainlvl_acc_op = new core.MainLevelAccountOperator();
@@ -16,7 +16,8 @@ export class AMAPlatform extends core.BasePlatform {
         super(f_bot);
 
         this.managers = [
-            new ReactionExpManager(this)
+            new ReactionExpManager(this),
+            new ParticipantExpManager(this)
         ];
     }
 }
