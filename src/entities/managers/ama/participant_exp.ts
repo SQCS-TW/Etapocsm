@@ -25,7 +25,7 @@ export class ParticipantExpManager extends core.BaseManager {
         const self_routine = (min: number) => setTimeout(async () => { await this.giveParticipantExp() }, min * this.mins_in_mili_secs);
         
         const stage_channel = await this.f_platform.f_bot.channels.fetch(this.ama_stage_channel_id);
-        if (!(stage_channel instanceof StageChannel)) return self_routine(1);
+        if (!(stage_channel instanceof StageChannel)) return self_routine(2);
 
         let lecturer_found = false;
         let member_count = 0;
@@ -44,8 +44,8 @@ export class ParticipantExpManager extends core.BaseManager {
         console.log('lecturer found', lecturer_found);
         console.log('parti count', member_count);
 
-        if (!lecturer_found) return self_routine(1);
-        if (member_count < 5) return self_routine(1);
+        if (!lecturer_found) return self_routine(2);
+        if (member_count < 5) return self_routine(2);
 
         
         await core.asyncForEach(Array.from(stage_channel.members.values()), async (member: GuildMember) => {
@@ -71,6 +71,6 @@ export class ParticipantExpManager extends core.BaseManager {
             
         });
 
-        return self_routine(2);
+        return self_routine(10);
     }
 }
