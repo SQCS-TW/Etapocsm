@@ -37,7 +37,7 @@ export class UserManiManager extends core.BaseManager {
                 const user_lvl_main_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user_id });
                 if (!user_lvl_main_acc) return await interaction.editReply('找無用戶等級資料');
 
-                const origin_exp_multiplier = user_lvl_main_acc.exp_multiplier;
+                const origin_exp_multiplier = user_lvl_main_acc?.exp_multiplier ?? 1;
 
                 const update_exp_multiplier = {
                     $set: {

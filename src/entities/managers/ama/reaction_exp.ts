@@ -100,7 +100,8 @@ export class ReactionExpManager extends core.BaseManager {
         const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user.id });
         
         const random_event_exp = core.getRandomInt(10) + 5;
-        const delta_exp = Math.round(random_event_exp * user_lvl_data.exp_multiplier);
+        const exp_multiplier = user_lvl_data?.exp_multiplier ?? 1;
+        const delta_exp = Math.round(random_event_exp * exp_multiplier);
         const update_result = await this.f_platform.ama_acc_op.addExp(user.id, delta_exp);
 
         if (update_result.status === db.StatusCode.WRITE_DATA_ERROR) return core.critical_logger.error({

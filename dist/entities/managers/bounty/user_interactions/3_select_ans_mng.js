@@ -158,7 +158,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
     }
     async giveExp(correct, diffi, user_id) {
         const user_lvl_main_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: user_id });
-        const exp_multiplier = user_lvl_main_acc.exp_multiplier;
+        const exp_multiplier = user_lvl_main_acc?.exp_multiplier ?? 1;
         let delta_exp;
         if (!correct)
             delta_exp = 2;
@@ -270,7 +270,7 @@ class SelectBountyAnswerManager extends shortcut_1.core.BaseManager {
         }
         else {
             const user_lvl_main_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: interaction.user.id });
-            const exp_multiplier = user_lvl_main_acc.exp_multiplier;
+            const exp_multiplier = user_lvl_main_acc?.exp_multiplier ?? 1;
             const convert_exp = 10;
             const delta_exp = Math.round(convert_exp * exp_multiplier);
             const execute = {

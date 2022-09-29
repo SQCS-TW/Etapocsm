@@ -36,7 +36,7 @@ export class ChatListener extends core.BaseManager {
         if (check_result.status === true) return;
 
         const user_main_lvl_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: msg.author.id });
-        const exp_multiplier = user_main_lvl_acc.exp_multiplier;
+        const exp_multiplier = user_main_lvl_acc?.exp_multiplier ?? 1;
 
         const REWARD_EXP = Math.round(core.getRandomInt(2) * exp_multiplier);
 

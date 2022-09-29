@@ -32,7 +32,7 @@ class ChatListener extends shortcut_1.core.BaseManager {
         if (check_result.status === true)
             return;
         const user_main_lvl_acc = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: msg.author.id });
-        const exp_multiplier = user_main_lvl_acc.exp_multiplier;
+        const exp_multiplier = user_main_lvl_acc?.exp_multiplier ?? 1;
         const REWARD_EXP = Math.round(shortcut_1.core.getRandomInt(2) * exp_multiplier);
         let set_result = await this.f_platform.account_op.addExp(msg.member.id, REWARD_EXP);
         if (set_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)

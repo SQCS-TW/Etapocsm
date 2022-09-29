@@ -47,7 +47,8 @@ class ParticipantExpManager extends shortcut_1.core.BaseManager {
             console.log('here!');
             const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: member.id });
             const periodic_exp = 5;
-            const delta_exp = Math.round(periodic_exp * user_lvl_data.exp_multiplier);
+            const exp_multiplier = user_lvl_data?.exp_multiplier ?? 1;
+            const delta_exp = Math.round(periodic_exp * exp_multiplier);
             const update_result = await this.f_platform.ama_acc_op.addExp(member.id, delta_exp);
             if (update_result.status === shortcut_1.db.StatusCode.WRITE_DATA_ERROR)
                 return shortcut_1.core.critical_logger.error({
