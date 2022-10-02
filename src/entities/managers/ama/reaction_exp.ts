@@ -9,7 +9,6 @@ export class ReactionExpManager extends core.BaseManager {
     public f_platform: AMAPlatform;
 
     private readonly ama_stage_channel_id = '947878783099224104';
-    private readonly ama_text_channel_id = '1025021614850584657';
 
     constructor(f_platform: AMAPlatform) {
         super();

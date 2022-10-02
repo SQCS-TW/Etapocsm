@@ -8,7 +8,6 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
     constructor(f_platform) {
         super();
         this.ama_stage_channel_id = '947878783099224104';
-        this.ama_text_channel_id = '1025021614850584657';
         this.f_platform = f_platform;
         this.setupListener();
         this.slcmd_register_options = {
