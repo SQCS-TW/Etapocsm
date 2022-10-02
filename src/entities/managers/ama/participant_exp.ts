@@ -41,15 +41,11 @@ export class ParticipantExpManager extends core.BaseManager {
             }
         });
 
-        console.log('lecturer found', lecturer_found);
-        console.log('parti count', member_count);
-
         if (!lecturer_found) return self_routine(2);
         if (member_count < 5) return self_routine(2);
 
         
         await core.asyncForEach(Array.from(stage_channel.members.values()), async (member: GuildMember) => {
-            console.log('here!');
             const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: member.id });
 
             const periodic_exp = 5;

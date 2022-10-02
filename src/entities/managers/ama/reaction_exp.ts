@@ -8,7 +8,8 @@ import { CommandInteraction, MessageEmbed, MessageReaction, User, GuildMemberRol
 export class ReactionExpManager extends core.BaseManager {
     public f_platform: AMAPlatform;
 
-    private ama_stage_channel_id = '947878783099224104';
+    private readonly ama_stage_channel_id = '947878783099224104';
+    private readonly ama_text_channel_id = '1025021614850584657';
 
     constructor(f_platform: AMAPlatform) {
         super();
@@ -87,9 +88,7 @@ export class ReactionExpManager extends core.BaseManager {
 
         const members = stage_channel.members;
 
-        if (!members.get(user.id)) try {
-            return await user.send('Error: Invalid operation.');
-        } catch (e) { return; }
+        if (!members.get(user.id)) return;
         
         const event_data = await (await this.f_platform.react_event_op.cursor).findOne({ msg_id: messageReaction.message.id });
         if (!event_data) return;

@@ -37,14 +37,11 @@ class ParticipantExpManager extends shortcut_1.core.BaseManager {
                     lecturer_found = true;
             }
         });
-        console.log('lecturer found', lecturer_found);
-        console.log('parti count', member_count);
         if (!lecturer_found)
             return self_routine(2);
         if (member_count < 5)
             return self_routine(2);
         await shortcut_1.core.asyncForEach(Array.from(stage_channel.members.values()), async (member) => {
-            console.log('here!');
             const user_lvl_data = await (await this.f_platform.mainlvl_acc_op.cursor).findOne({ user_id: member.id });
             const periodic_exp = 5;
             const exp_multiplier = user_lvl_data?.exp_multiplier ?? 1;
