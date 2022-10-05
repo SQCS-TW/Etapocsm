@@ -41,7 +41,8 @@ export class AutoUpdateAccountManager extends core.BaseManager {
         const users_data = await (await this.f_platform.mainlvl_acc_op.cursor).find({}).toArray();
         const other_acc_cursors = [
             this.f_platform.bounty_acc_op,
-            this.f_platform.chat_acc_op
+            this.f_platform.chat_acc_op,
+            this.f_platform.ama_acc_op
         ];
 
         for (let i = 0; i < users_data.length; i++) {

@@ -9,6 +9,7 @@ class LvlSysPlatform extends shortcut_1.core.BasePlatform {
         this.mainlvl_acc_op = new shortcut_1.core.MainLevelAccountOperator();
         this.bounty_acc_op = new shortcut_1.core.BountyUserAccountOperator();
         this.chat_acc_op = new shortcut_1.core.ChatAccountOperator();
+        this.ama_acc_op = new shortcut_1.core.AMAUserAccountOperator();
         this.mainlvl_data_op = new shortcut_1.core.BaseMongoOperator({
             db: 'Level',
             coll: 'Data'
