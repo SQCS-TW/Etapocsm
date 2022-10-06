@@ -25,17 +25,8 @@ class ParticipantExpManager extends shortcut_1.core.BaseManager {
         let member_count = 0;
         stage_channel.members.forEach((member) => {
             member_count++;
-            const roles = member?.roles;
-            if (roles instanceof (Array)) {
-                roles.forEach(role => {
-                    if (['AMA 講師'].includes(role))
-                        lecturer_found = true;
-                });
-            }
-            else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
-                if (roles.cache.some(role => ['AMA 講師'].includes(role.name)))
-                    lecturer_found = true;
-            }
+            if (shortcut_1.core.discord.memberHasRole(member, ['AMA 講師']))
+                lecturer_found = true;
         });
         if (!lecturer_found)
             return self_routine(2);

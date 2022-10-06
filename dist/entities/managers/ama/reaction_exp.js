@@ -19,19 +19,7 @@ class ReactionExpManager extends shortcut_1.core.BaseManager {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.user.bot)
                 return;
-            let role_found = false;
-            const roles = interaction?.member?.roles;
-            if (roles instanceof (Array)) {
-                roles.forEach(role => {
-                    if (['AMA 講師'].includes(role))
-                        role_found = true;
-                });
-            }
-            else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
-                if (roles.cache.some(role => ['AMA 講師'].includes(role.name)))
-                    role_found = true;
-            }
-            if (!role_found)
+            if (!shortcut_1.core.discord.memberHasRole(interaction.member, ['AMA 講師']))
                 return;
             if (interaction.isCommand())
                 await this.slcmdHandler(interaction);

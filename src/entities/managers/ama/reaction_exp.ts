@@ -2,7 +2,7 @@ import { core, db } from '../../shortcut';
 import { AMAPlatform } from '../../platforms/ama';
 
 import { SLCMD_REGISTER_LIST, REACTION_EXP_EMBED } from './components';
-import { CommandInteraction, MessageEmbed, MessageReaction, User, GuildMemberRoleManager, StageChannel } from 'discord.js';
+import { CommandInteraction, MessageEmbed, MessageReaction, User, StageChannel } from 'discord.js';
 
 
 export class ReactionExpManager extends core.BaseManager {
@@ -25,19 +25,8 @@ export class ReactionExpManager extends core.BaseManager {
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (interaction.user.bot) return;
-
-            // low-leveled code, need to be fixed
-            let role_found = false;
-            const roles = interaction?.member?.roles;
-            if (roles instanceof Array<string>) {
-                roles.forEach(role => {
-                    if (['AMA 講師'].includes(role)) role_found = true;
-                });
-            } else if (roles instanceof GuildMemberRoleManager) {
-                if (roles.cache.some(role => ['AMA 講師'].includes(role.name))) role_found = true;
-            }
-            if (!role_found) return;
-
+            if (!core.discord.memberHasRole(interaction.member, ['AMA 講師'])) return;
+            
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });
 

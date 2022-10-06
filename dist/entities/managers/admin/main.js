@@ -19,7 +19,7 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
     }
     setupListener() {
         this.f_platform.f_bot.on('messageCreate', async (msg) => {
-            if (msg.member?.permissions?.any('ADMINISTRATOR'))
+            if (shortcut_1.core.discord.memberHasRole(msg.member, ['總召']))
                 await this.messageHandler(msg);
         });
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
@@ -43,6 +43,10 @@ class AdministratorManager extends shortcut_1.core.BaseManager {
                 };
                 await (await mainlvl_acc_op.cursor).updateMany({}, update);
                 await msg.reply('fin.');
+                break;
+            }
+            case 'e:TEST': {
+                await msg.channel.send('test success!');
                 break;
             }
         }

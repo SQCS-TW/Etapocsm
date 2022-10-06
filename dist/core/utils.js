@@ -97,6 +97,22 @@ exports.discord = {
     },
     getRelativeTimestamp(t) {
         return `<t:${Math.trunc(t / 1000)}:R>`;
+    },
+    memberHasRole(member, target_roles) {
+        const roles = member?.roles;
+        if (!roles)
+            return false;
+        if (roles instanceof (Array)) {
+            roles.forEach(role => {
+                if (target_roles.includes(role))
+                    return true;
+            });
+        }
+        else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
+            if (roles.cache.some(role => target_roles.includes(role.name)))
+                return true;
+        }
+        return false;
     }
 };
 const localizeDatetime = () => { return new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }); };

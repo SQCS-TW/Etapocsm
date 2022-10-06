@@ -1,4 +1,10 @@
-import { MessageActionRow, MessageButton } from 'discord.js';
+import { APIInteractionGuildMember } from 'discord-api-types/v10';
+import {
+    GuildMember,
+    MessageActionRow,
+    MessageButton,
+    GuildMemberRoleManager
+} from 'discord.js';
 
 export const timeAfterSecs = (seconds: number) => { return Date.now() + seconds * 1000; };
 
@@ -97,6 +103,20 @@ export const discord = {
 
     getRelativeTimestamp(t: number) {
         return `<t:${Math.trunc(t / 1000)}:R>`;
+    },
+
+    memberHasRole(member: GuildMember | APIInteractionGuildMember, target_roles: string[]): boolean {
+        const roles = member?.roles;
+        if (!roles) return false;
+        
+        if (roles instanceof Array<string>) {
+            roles.forEach(role => {
+                if (target_roles.includes(role)) return true;
+            });
+        } else if (roles instanceof GuildMemberRoleManager) {
+            if (roles.cache.some(role => target_roles.includes(role.name))) return true;
+        }
+        return false;
     }
 }
 

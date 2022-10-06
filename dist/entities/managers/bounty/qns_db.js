@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BountyQnsDBManager = void 0;
-const discord_js_1 = require("discord.js");
 const qns_db_1 = require("./components/qns_db");
 const shortcut_1 = require("../../shortcut");
 const fs_1 = require("fs");
@@ -19,19 +18,7 @@ class BountyQnsDBManager extends shortcut_1.core.BaseManager {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (!interaction.inGuild() || interaction.guildId !== '980630152872615937')
                 return;
-            let role_found = false;
-            const roles = interaction.member.roles;
-            if (roles instanceof (Array)) {
-                roles.forEach(role => {
-                    if (['教學組', '總召'].includes(role))
-                        role_found = true;
-                });
-            }
-            else if (roles instanceof discord_js_1.GuildMemberRoleManager) {
-                if (roles.cache.some(role => ['教學組', '總召'].includes(role.name)))
-                    role_found = true;
-            }
-            if (!role_found)
+            if (!shortcut_1.core.discord.memberHasRole(interaction.member, ['教學組', '總召']))
                 return;
             if (interaction.isCommand())
                 await this.slcmdHandler(interaction);

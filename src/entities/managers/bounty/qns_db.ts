@@ -1,4 +1,4 @@
-import { CommandInteraction, GuildMemberRoleManager, Message } from 'discord.js';
+import { CommandInteraction, Message } from 'discord.js';
 import { REGISTER_LIST } from './components/qns_db';
 import { core, db } from '../../shortcut';
 import { unlink } from 'fs';
@@ -23,17 +23,7 @@ export class BountyQnsDBManager extends core.BaseManager {
     private setupListener() {
         this.f_platform.f_bot.on('interactionCreate', async (interaction) => {
             if (!interaction.inGuild() || interaction.guildId !== '980630152872615937') return;
-
-            let role_found = false;
-            const roles = interaction.member.roles;
-            if (roles instanceof Array<string>) {
-                roles.forEach(role => {
-                    if (['教學組', '總召'].includes(role)) role_found = true;
-                });
-            } else if (roles instanceof GuildMemberRoleManager) {
-                if (roles.cache.some(role => ['教學組', '總召'].includes(role.name))) role_found = true;
-            }
-            if (!role_found) return;
+            if (!core.discord.memberHasRole(interaction.member, ['教學組', '總召'])) return;
 
             if (interaction.isCommand()) await this.slcmdHandler(interaction);
         });
